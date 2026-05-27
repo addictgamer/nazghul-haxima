@@ -39,7 +39,8 @@ def run() -> int:
         hud=HudPane(),
         text_ui=TextUi(),
     )
-    input_controller = InputController(keymap=KeyMap(), renderer=renderer)
+    keymap = KeyMap()
+    input_controller = InputController(keymap=keymap, renderer=renderer)
     save_manager = SaveManager(project_root / "saves")
     loop = TurnLoop(renderer=renderer, audio=AudioManager(assets), save_manager=save_manager)
     session = ContentRegistry().make_new_session()
@@ -48,6 +49,24 @@ def run() -> int:
     }
     session.terrain_fallback_keys = sorted(key for key in terrain_sprite_keys if atlas.is_fallback(key))
     session.terrain_fallback_key_count = len(session.terrain_fallback_keys)
+    session.option_scale = renderer.scale
+    session.option_fullscreen = renderer.is_fullscreen
+    session.command_prompt = "Command> (H help, F10 options)"
+    keybind_order = [
+        ("move_n", "Move north"),
+        ("move_s", "Move south"),
+        ("move_w", "Move west"),
+        ("move_e", "Move east"),
+        ("talk", "Talk"),
+        ("open", "Open"),
+        ("get", "Get"),
+        ("attack", "Attack"),
+        ("options_menu", "Options menu"),
+    ]
+    session.keybind_preview = [
+        f"{label}: {', '.join(pygame.key.name(key) for key in keymap.bindings[action])}"
+        for action, label in keybind_order
+    ]
 
     while session.running:
         events = input_controller.poll(session)

@@ -11,6 +11,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Terrain debug overlay exists (`F2`) for terrain-id validation during map tuning.
 - Sprite coverage diagnostics now print at startup and write to `pygame_haxima/reports/sprite_coverage_report.txt`.
 - Sprite warning overlay exists (`F3`) to show terrain fallback-key counts in-game.
+- In-game options panel exists (`F10`) with scale/fullscreen/debug toggles and keybind preview.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -21,7 +22,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M0 | Build + launch tooling | Completed | 100% | `pygame.sh`, `pygame.bat`, `requirements.txt`, package entrypoints working |
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
-| M3 | UX redesign pass | In Progress | 60% | Scalable display, polished UI readability, robust mouse-target command UX |
+| M3 | UX redesign pass | In Progress | 70% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | In Progress | 35% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
@@ -32,8 +33,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 ### M3: UX redesign pass (next major deliverable)
 
-- [ ] Add in-game menu/options screen for scale/fullscreen/keybinds.
-- [ ] Improve text system (font fallback + wrapping + dialogue panel behavior).
+- [x] Add in-game menu/options screen for scale/fullscreen/keybinds.
+- [~] Improve text system (font fallback + wrapping + dialogue panel behavior) (options panel and command hints improved; wrapping not done).
 - [ ] Implement command targeting UX parity (cursor mode, cancel/confirm flow, prompts).
 - [x] Add terrain debug overlay toggle for visual map validation (`F2`).
 - [x] Add sprite warning overlay toggle for fallback-key monitoring (`F3`).
@@ -103,6 +104,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Fixed startup crash caused by calling `convert_alpha()` before a display surface existed.
 - Added startup sprite coverage summary + report file output (`pygame_haxima/reports/sprite_coverage_report.txt`).
 - Added sprite warning overlay toggle (`F3`) for terrain fallback diagnostics.
+- Added in-game options panel (`F10`) for scale/fullscreen/debug toggles plus keybind preview.
 
 ## Suggested Delivery Sequence
 

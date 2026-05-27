@@ -26,6 +26,12 @@ class TurnLoop:
             if event.kind != EngineEventType.ACTION:
                 continue
             action = event.payload["action"]
+            if action == "options_menu":
+                self._toggle_options_menu(session)
+                continue
+            if session.show_options_menu:
+                self._handle_options_menu_action(session, action)
+                continue
             if action in {"move_n", "move_s", "move_w", "move_e"}:
                 dx, dy = {
                     "move_n": (0, -1),
@@ -54,9 +60,10 @@ class TurnLoop:
                 self._help(session)
             elif action == "cancel":
                 session.target_cursor = None
-                session.command_prompt = "Command>"
+                session.command_prompt = "Command> (H help, F10 options)"
             elif action == "fullscreen":
                 self.renderer.toggle_fullscreen()
+                session.option_fullscreen = self.renderer.is_fullscreen
             elif action == "debug_terrain":
                 session.debug_terrain_ids = not session.debug_terrain_ids
                 state = "ON" if session.debug_terrain_ids else "OFF"
@@ -164,8 +171,56 @@ class TurnLoop:
     def _help(self, session: GameSession) -> None:
         session.append_log("Move: arrows/WASD | t talk | o open | g get | f attack | x examine")
         session.append_log(
-            "F5 save | F9 load | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | click to move"
+            "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings"
         )
+
+    def _toggle_options_menu(self, session: GameSession) -> None:
+        session.show_options_menu = not session.show_options_menu
+        session.option_scale = self.renderer.scale
+        session.option_fullscreen = self.renderer.is_fullscreen
+        if session.show_options_menu:
+            session.command_prompt = "Options> arrows navigate, left/right change, Esc/F10 close"
+            session.append_log("Opened options menu.")
+        else:
+            session.command_prompt = "Command> (H help, F10 options)"
+            session.append_log("Closed options menu.")
+
+    def _handle_options_menu_action(self, session: GameSession, action: str) -> None:
+        option_count = 4
+        if action == "cancel":
+            self._toggle_options_menu(session)
+            return
+        if action == "move_n":
+            session.options_selected_index = (session.options_selected_index - 1) % option_count
+            return
+        if action == "move_s":
+            session.options_selected_index = (session.options_selected_index + 1) % option_count
+            return
+        if action not in {"move_w", "move_e", "fullscreen"}:
+            return
+        option = session.options_selected_index
+        if option == 0:
+            delta = 1 if action == "move_e" else -1
+            self.renderer.set_scale(max(1, min(4, self.renderer.scale + delta)))
+            session.option_scale = self.renderer.scale
+            session.append_log(f"UI scale set to {self.renderer.scale}x.")
+            return
+        if option == 1 or action == "fullscreen":
+            self.renderer.toggle_fullscreen()
+            session.option_fullscreen = self.renderer.is_fullscreen
+            state = "ON" if session.option_fullscreen else "OFF"
+            session.append_log(f"Fullscreen {state}.")
+            return
+        if option == 2:
+            session.debug_terrain_ids = not session.debug_terrain_ids
+            state = "ON" if session.debug_terrain_ids else "OFF"
+            session.append_log(f"Terrain debug overlay {state}.")
+            return
+        if option == 3:
+            session.debug_sprite_warnings = not session.debug_sprite_warnings
+            state = "ON" if session.debug_sprite_warnings else "OFF"
+            session.append_log(f"Sprite warning overlay {state}.")
+            return
 
     def _check_auto_combat(self, session: GameSession) -> None:
         monster = self._adjacent_monster(session)

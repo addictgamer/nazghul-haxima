@@ -17,6 +17,7 @@ python -m pygame_haxima
 - Get items: `g`
 - Attack: `f`
 - Examine: `x`
+- Options panel: `F10`
 - Terrain debug overlay: `F2`
 - Sprite warning overlay: `F3`
 - Save/load: `F5` / `F9`

@@ -20,6 +20,7 @@ class KeyMap:
             "help": [pygame.K_h],
             "cancel": [pygame.K_ESCAPE],
             "fullscreen": [pygame.K_F11],
+            "options_menu": [pygame.K_F10],
             "debug_terrain": [pygame.K_F2],
             "debug_sprite_warnings": [pygame.K_F3],
         }
