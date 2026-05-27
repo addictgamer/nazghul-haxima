@@ -19,6 +19,7 @@ class KeyMap:
             "load": [pygame.K_F9],
             "help": [pygame.K_h],
             "cancel": [pygame.K_ESCAPE],
+            "confirm": [pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE],
             "fullscreen": [pygame.K_F11],
             "options_menu": [pygame.K_F10],
             "debug_terrain": [pygame.K_F2],

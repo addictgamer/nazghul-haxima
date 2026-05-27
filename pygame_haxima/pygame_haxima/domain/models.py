@@ -151,6 +151,7 @@ class GameSession:
     log_lines: list[str] = field(default_factory=list)
     command_prompt: str = "Command>"
     target_cursor: tuple[int, int] | None = None
+    targeting_action: str | None = None
     selected_npc_id: str | None = None
     combat: CombatState = field(default_factory=CombatState)
     running: bool = True

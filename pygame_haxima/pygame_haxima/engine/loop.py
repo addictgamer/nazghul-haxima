@@ -32,6 +32,9 @@ class TurnLoop:
             if session.show_options_menu:
                 self._handle_options_menu_action(session, action)
                 continue
+            if session.targeting_action is not None:
+                self._handle_targeting_action(session, action)
+                continue
             if action in {"move_n", "move_s", "move_w", "move_e"}:
                 dx, dy = {
                     "move_n": (0, -1),
@@ -41,15 +44,15 @@ class TurnLoop:
                 }[action]
                 self._move_party(session, dx, dy)
             elif action == "talk":
-                self._talk(session)
+                self._start_targeting(session, "talk", "Talk-<target>(Enter confirm, Esc cancel)")
             elif action == "open":
-                self._open_chest(session)
+                self._start_targeting(session, "open", "Open-<target>(Enter confirm, Esc cancel)")
             elif action == "get":
                 self._get_items(session)
             elif action == "attack":
-                self._attack(session)
+                self._start_targeting(session, "attack", "Attack-<target>(Enter confirm, Esc cancel)")
             elif action == "examine":
-                self._examine(session)
+                self._start_targeting(session, "examine", "Xamine-<target>(Enter confirm, Esc cancel)")
             elif action == "save":
                 path = self.save_manager.save(session)
                 session.append_log(f"Saved game to {path.name}.")
@@ -59,8 +62,7 @@ class TurnLoop:
             elif action == "help":
                 self._help(session)
             elif action == "cancel":
-                session.target_cursor = None
-                session.command_prompt = "Command> (H help, F10 options)"
+                self._end_targeting(session)
             elif action == "fullscreen":
                 self.renderer.toggle_fullscreen()
                 session.option_fullscreen = self.renderer.is_fullscreen
@@ -74,6 +76,10 @@ class TurnLoop:
                 session.append_log(f"Sprite warning overlay {state}.")
 
     def _handle_mouse_move(self, session: GameSession, tile: tuple[int, int]) -> None:
+        if session.targeting_action is not None:
+            session.target_cursor = tile
+            self._confirm_target_action(session)
+            return
         tx, ty = tile
         dx = 0 if tx == session.party.x else (1 if tx > session.party.x else -1)
         dy = 0 if ty == session.party.y else (1 if ty > session.party.y else -1)
@@ -97,36 +103,6 @@ class TurnLoop:
         self._check_auto_combat(session)
         self._npc_turn(session)
 
-    def _talk(self, session: GameSession) -> None:
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            npc = session.place.npc_at(session.party.x + dx, session.party.y + dy)
-            if npc is None:
-                continue
-            session.mode = Mode.TALK
-            session.append_log(f"{npc.name}: {npc.keywords.get('name', 'Greetings.')}")
-            session.append_log(f"{npc.name}: {npc.keywords.get('job', 'I wander.')}")
-            session.append_log(f"{npc.name}: {npc.keywords.get('bye', 'Farewell.')}")
-            session.mode = Mode.EXPLORE
-            session.advance_turn()
-            return
-        session.append_log("No one nearby to talk to.")
-
-    def _open_chest(self, session: GameSession) -> None:
-        for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
-            chest = session.place.chest_at(session.party.x + dx, session.party.y + dy)
-            if chest is None:
-                continue
-            if chest.opened:
-                session.append_log("Chest is already open.")
-                return
-            chest.opened = True
-            if chest.items:
-                session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
-            session.append_log("You open the chest. Items spill onto the ground.")
-            session.advance_turn()
-            return
-        session.append_log("No chest nearby.")
-
     def _get_items(self, session: GameSession) -> None:
         stack = session.place.ground_items.get((session.party.x, session.party.y), [])
         if not stack:
@@ -140,11 +116,7 @@ class TurnLoop:
         session.place.ground_items[(session.party.x, session.party.y)] = []
         session.advance_turn()
 
-    def _attack(self, session: GameSession) -> None:
-        monster = self._adjacent_monster(session)
-        if monster is None:
-            session.append_log("No enemy in range.")
-            return
+    def _attack(self, session: GameSession, monster: Entity) -> None:
         session.mode = Mode.COMBAT
         self._resolve_combat_round(session, monster)
         if not monster.is_alive():
@@ -160,9 +132,18 @@ class TurnLoop:
         session.mode = Mode.EXPLORE
         session.advance_turn()
 
-    def _examine(self, session: GameSession) -> None:
-        terrain = session.place.terrain_at(session.party.x, session.party.y)
+    def _examine(self, session: GameSession, x: int, y: int) -> None:
+        terrain = session.place.terrain_at(x, y)
         session.append_log(f"You are on {terrain.name}.")
+        npc = session.place.npc_at(x, y)
+        chest = session.place.chest_at(x, y)
+        monster = session.place.monster_at(x, y)
+        if npc is not None:
+            session.append_log(f"You see {npc.name}.")
+        if chest is not None and not chest.opened:
+            session.append_log("You see a closed chest.")
+        if monster is not None:
+            session.append_log(f"You see a hostile {monster.name}.")
         if session.party.inventory:
             session.append_log("Inventory: " + ", ".join(item.name for item in session.party.inventory))
         else:
@@ -173,6 +154,7 @@ class TurnLoop:
         session.append_log(
             "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings"
         )
+        session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
 
     def _toggle_options_menu(self, session: GameSession) -> None:
         session.show_options_menu = not session.show_options_menu
@@ -221,6 +203,99 @@ class TurnLoop:
             state = "ON" if session.debug_sprite_warnings else "OFF"
             session.append_log(f"Sprite warning overlay {state}.")
             return
+
+    def _start_targeting(self, session: GameSession, action: str, prompt: str) -> None:
+        session.targeting_action = action
+        session.target_cursor = (session.party.x, session.party.y)
+        session.command_prompt = prompt
+
+    def _end_targeting(self, session: GameSession) -> None:
+        session.targeting_action = None
+        session.target_cursor = None
+        session.command_prompt = "Command> (H help, F10 options)"
+
+    def _handle_targeting_action(self, session: GameSession, action: str) -> None:
+        if action in {"move_n", "move_s", "move_w", "move_e"}:
+            dx, dy = {
+                "move_n": (0, -1),
+                "move_s": (0, 1),
+                "move_w": (-1, 0),
+                "move_e": (1, 0),
+            }[action]
+            self._move_target_cursor(session, dx, dy)
+            return
+        if action == "confirm":
+            self._confirm_target_action(session)
+            return
+        if action == "cancel":
+            self._end_targeting(session)
+            return
+
+    def _move_target_cursor(self, session: GameSession, dx: int, dy: int) -> None:
+        if session.target_cursor is None:
+            session.target_cursor = (session.party.x, session.party.y)
+        x, y = session.target_cursor
+        nx = max(0, min(session.place.width - 1, x + dx))
+        ny = max(0, min(session.place.height - 1, y + dy))
+        session.target_cursor = (nx, ny)
+
+    def _confirm_target_action(self, session: GameSession) -> None:
+        if session.targeting_action is None or session.target_cursor is None:
+            return
+        x, y = session.target_cursor
+        action = session.targeting_action
+        if action == "talk":
+            npc = session.place.npc_at(x, y)
+            if npc is None:
+                session.append_log("No one there to talk to.")
+                return
+            if self._distance_from_party(session, x, y) > 1:
+                session.append_log("Target is too far away to talk.")
+                return
+            session.mode = Mode.TALK
+            session.append_log(f"{npc.name}: {npc.keywords.get('name', 'Greetings.')}")
+            session.append_log(f"{npc.name}: {npc.keywords.get('job', 'I wander.')}")
+            session.append_log(f"{npc.name}: {npc.keywords.get('bye', 'Farewell.')}")
+            session.mode = Mode.EXPLORE
+            session.advance_turn()
+            self._end_targeting(session)
+            return
+        if action == "open":
+            chest = session.place.chest_at(x, y)
+            if chest is None:
+                session.append_log("No chest there.")
+                return
+            if self._distance_from_party(session, x, y) > 1:
+                session.append_log("You must stand next to the chest.")
+                return
+            if chest.opened:
+                session.append_log("Chest is already open.")
+                self._end_targeting(session)
+                return
+            chest.opened = True
+            if chest.items:
+                session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
+            session.append_log("You open the chest. Items spill onto the ground.")
+            session.advance_turn()
+            self._end_targeting(session)
+            return
+        if action == "attack":
+            monster = session.place.monster_at(x, y)
+            if monster is None:
+                session.append_log("No enemy there.")
+                return
+            if self._distance_from_party(session, x, y) > 1:
+                session.append_log("Target is out of melee range.")
+                return
+            self._attack(session, monster)
+            self._end_targeting(session)
+            return
+        if action == "examine":
+            self._examine(session, x, y)
+            self._end_targeting(session)
+
+    def _distance_from_party(self, session: GameSession, x: int, y: int) -> int:
+        return abs(session.party.x - x) + abs(session.party.y - y)
 
     def _check_auto_combat(self, session: GameSession) -> None:
         monster = self._adjacent_monster(session)
