@@ -74,10 +74,9 @@ class Renderer:
             return None
         tile_x = (x - map_rect.x) // DISPLAY.tile_w
         tile_y = (y - map_rect.y) // DISPLAY.tile_h
-        half_w = map_rect.width // (2 * DISPLAY.tile_w)
-        half_h = map_rect.height // (2 * DISPLAY.tile_h)
-        world_x = session.party.x - half_w + tile_x
-        world_y = session.party.y - half_h + tile_y
+        start_x, start_y, _, _ = self.map_view.compute_view_window(map_rect, session)
+        world_x = start_x + tile_x
+        world_y = start_y + tile_y
         if not session.place.in_bounds(world_x, world_y):
             return None
         return world_x, world_y

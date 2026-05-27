@@ -16,13 +16,7 @@ class MapView:
 
     def draw(self, surface: pygame.Surface, viewport: pygame.Rect, session: GameSession) -> None:
         place = session.place
-        half_w = viewport.width // (2 * self.tile_w)
-        half_h = viewport.height // (2 * self.tile_h)
-        cam_x, cam_y = session.party.x, session.party.y
-        start_x = max(0, cam_x - half_w)
-        start_y = max(0, cam_y - half_h)
-        end_x = min(place.width, start_x + viewport.width // self.tile_w)
-        end_y = min(place.height, start_y + viewport.height // self.tile_h)
+        start_x, start_y, end_x, end_y = self.compute_view_window(viewport, session)
 
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
@@ -44,6 +38,24 @@ class MapView:
         self._draw_entities(surface, viewport, start_x, start_y, session)
         if session.target_cursor is not None:
             self._draw_target_cursor(surface, viewport, start_x, start_y, session.target_cursor)
+
+    def compute_view_window(
+        self, viewport: pygame.Rect, session: GameSession
+    ) -> tuple[int, int, int, int]:
+        place = session.place
+        visible_w = max(1, viewport.width // self.tile_w)
+        visible_h = max(1, viewport.height // self.tile_h)
+        half_w = visible_w // 2
+        half_h = visible_h // 2
+        cam_x, cam_y = session.party.x, session.party.y
+
+        max_start_x = max(0, place.width - visible_w)
+        max_start_y = max(0, place.height - visible_h)
+        start_x = max(0, min(cam_x - half_w, max_start_x))
+        start_y = max(0, min(cam_y - half_h, max_start_y))
+        end_x = min(place.width, start_x + visible_w)
+        end_y = min(place.height, start_y + visible_h)
+        return start_x, start_y, end_x, end_y
 
     def _draw_entities(
         self,

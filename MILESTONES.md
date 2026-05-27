@@ -13,6 +13,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Sprite warning overlay exists (`F3`) to show terrain fallback-key counts in-game.
 - In-game options panel exists (`F10`) with scale/fullscreen/debug toggles and keybind preview.
 - Command targeting flow now exists for talk/open/attack/examine with cursor move + confirm/cancel.
+- Mouse-to-tile targeting now uses the same camera window math as map rendering (fixes cursor offset/misalignment).
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -107,6 +108,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added sprite warning overlay toggle (`F3`) for terrain fallback diagnostics.
 - Added in-game options panel (`F10`) for scale/fullscreen/debug toggles plus keybind preview.
 - Added command targeting cursor flow for `talk/open/attack/examine` (`Enter` confirm, `Esc` cancel, mouse target support).
+- Fixed mouse targeting offset by unifying renderer click conversion with map camera viewport origin/clamping.
 
 ## Suggested Delivery Sequence
 
