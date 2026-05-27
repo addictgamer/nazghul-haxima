@@ -22,3 +22,6 @@ worlds/haxima-1.002/saved-games.scm
 # coverage detritus
 *.gcda
 *.gcno
+
+.venv/
+__pycache__/

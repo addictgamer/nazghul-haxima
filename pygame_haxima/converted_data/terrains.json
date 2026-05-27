@@ -1,0 +1,22 @@
+{
+  "(terrain-effect-burn": "obj",
+  "(terrain-effect-poison": "obj",
+  "(terrain-effect-swamp": "obj",
+  "(terrain-effect-lava": "obj",
+  "(terrain-effect-torch": "obj",
+  "opq": "12",
+  "hvy": "5",
+  "dns": "3",
+  "lgt": "2",
+  "trn": "0",
+  "hill-opacity": "trn",
+  "terrains": "(list\n   ;;    tag                name            pclass           sprite               t light step-on\n   ;;    =================  ==============  =============    ==============       = ===== =======\n   (list 't_stars           \"stars\"         pclass-space     s_stars             trn 0 'chasm-fall",
+  "(mk-shore-terrain": "tag . sprites",
+  "tset_shore": "(list\n   t_shoals    ;; 0: none\n   t_shore_n   ;; 1: north\n   t_shore_w   ;; 2: west\n   t_shore_nw  ;; 3: north west\n   t_shore_e   ;; 4: east\n   t_shore_ne  ;; 5: east north\n   t_shore_we  ;; 6: east west\n   t_shore_nwe ;; 7: east west north\n   t_shore_s   ;; 8: south\n   t_shore_ns  ;; 9: south north\n   t_shore_ws  ;; 10: south west\n   t_shore_nws ;; 11: south west north\n   t_shore_es  ;; 12: south east\n   t_shore_nes ;; 13: south east north\n   t_shore_wes ;; 14: south east west\n   t_shore_c ;; 15: south east west north",
+  "tset_water": "(append tset_shore\n          (list t_shoals\n                t_shallow\n                t_deep\n                t_sunlit_deep\n                t_bridge_WE\n                t_bridge_NS",
+  "bad-terrain-list": "(list t_bog\n        t_lava\n        t_deep_lava\n        t_fire_terrain\n        t_fireplace\n        t_inv_wall\n        t_wall_torch",
+  "inflammable-terrain-list": "(list t_bog\n        t_deep\n        t_shallow\n        t_shoals\n        t_sunlit_deep\n        t_stars\n\t\tt_void\n\t\tt_chasm",
+  "(is-bad-terrain?": "kter",
+  "(is-inflammable-terrain?": "kter",
+  "(is-deck?": "kter"
+}
