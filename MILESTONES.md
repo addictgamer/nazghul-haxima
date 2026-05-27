@@ -9,6 +9,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Rendering/UI foundation exists (map viewport + HUD + console + command bar).
 - Terrain rendering now supports real sprite-sheet extraction from `sprite-sets.scm` + `sprites.scm` when art files are present, with fallback tiles otherwise.
 - Terrain debug overlay exists (`F2`) for terrain-id validation during map tuning.
+- Sprite coverage diagnostics now print at startup and write to `pygame_haxima/reports/sprite_coverage_report.txt`.
+- Sprite warning overlay exists (`F3`) to show terrain fallback-key counts in-game.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -19,8 +21,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M0 | Build + launch tooling | Completed | 100% | `pygame.sh`, `pygame.bat`, `requirements.txt`, package entrypoints working |
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
-| M3 | UX redesign pass | In Progress | 55% | Scalable display, polished UI readability, robust mouse-target command UX |
-| M4 | Content import pipeline | In Progress | 30% | Reliable converters for terrain/map/place/NPC/quest data |
+| M3 | UX redesign pass | In Progress | 60% | Scalable display, polished UI readability, robust mouse-target command UX |
+| M4 | Content import pipeline | In Progress | 35% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | Not Started | 5% | Main quest path playable with migrated content/system parity |
@@ -34,6 +36,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [ ] Improve text system (font fallback + wrapping + dialogue panel behavior).
 - [ ] Implement command targeting UX parity (cursor mode, cancel/confirm flow, prompts).
 - [x] Add terrain debug overlay toggle for visual map validation (`F2`).
+- [x] Add sprite warning overlay toggle for fallback-key monitoring (`F3`).
 - [ ] Add visual polish: selection highlights, damage feedback, encounter indicators.
 - [ ] Improve camera behavior and clamping for larger places.
 
@@ -44,7 +47,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [ ] Convert `maps/*.scm` into tile layers compatible with renderer.
 - [ ] Convert `places/*.scm` into place metadata and placements.
 - [ ] Convert `townsfolk/*.scm` keyword/dialogue content.
-- [ ] Create zone-by-zone import command and validation report.
+- [~] Create zone-by-zone import command and validation report (startup sprite coverage report added).
 
 ### M5: Save/load robustness
 
@@ -98,6 +101,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - Runtime tile extraction with safe fallback surfaces
 - Added terrain debug overlay toggle (`F2`) and control docs update.
 - Fixed startup crash caused by calling `convert_alpha()` before a display surface existed.
+- Added startup sprite coverage summary + report file output (`pygame_haxima/reports/sprite_coverage_report.txt`).
+- Added sprite warning overlay toggle (`F3`) for terrain fallback diagnostics.
 
 ## Suggested Delivery Sequence
 

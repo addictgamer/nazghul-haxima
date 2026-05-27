@@ -61,6 +61,10 @@ class TurnLoop:
                 session.debug_terrain_ids = not session.debug_terrain_ids
                 state = "ON" if session.debug_terrain_ids else "OFF"
                 session.append_log(f"Terrain debug overlay {state}.")
+            elif action == "debug_sprite_warnings":
+                session.debug_sprite_warnings = not session.debug_sprite_warnings
+                state = "ON" if session.debug_sprite_warnings else "OFF"
+                session.append_log(f"Sprite warning overlay {state}.")
 
     def _handle_mouse_move(self, session: GameSession, tile: tuple[int, int]) -> None:
         tx, ty = tile
@@ -159,7 +163,9 @@ class TurnLoop:
 
     def _help(self, session: GameSession) -> None:
         session.append_log("Move: arrows/WASD | t talk | o open | g get | f attack | x examine")
-        session.append_log("F5 save | F9 load | F11 fullscreen | F2 terrain IDs | click to move")
+        session.append_log(
+            "F5 save | F9 load | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | click to move"
+        )
 
     def _check_auto_combat(self, session: GameSession) -> None:
         monster = self._adjacent_monster(session)

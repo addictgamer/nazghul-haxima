@@ -156,6 +156,9 @@ class GameSession:
     running: bool = True
     victory: bool = False
     debug_terrain_ids: bool = False
+    debug_sprite_warnings: bool = False
+    terrain_fallback_key_count: int = 0
+    terrain_fallback_keys: list[str] = field(default_factory=list)
 
     def append_log(self, message: str) -> None:
         self.log_lines.append(message)

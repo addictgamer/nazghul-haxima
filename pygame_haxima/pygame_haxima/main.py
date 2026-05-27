@@ -30,6 +30,9 @@ def run() -> int:
     assets = AssetLoader(project_root=project_root)
     atlas = SpriteAtlas(assets, project_root=project_root)
     atlas.load()
+    report_text = atlas.format_coverage_report()
+    print(report_text, end="")
+    atlas.write_coverage_report(project_root / "reports" / "sprite_coverage_report.txt")
 
     renderer = Renderer(
         map_view=MapView(atlas),
@@ -40,6 +43,11 @@ def run() -> int:
     save_manager = SaveManager(project_root / "saves")
     loop = TurnLoop(renderer=renderer, audio=AudioManager(assets), save_manager=save_manager)
     session = ContentRegistry().make_new_session()
+    terrain_sprite_keys = {
+        terrain.sprite_key for terrain in session.place.terrain_defs.values() if terrain.sprite_key
+    }
+    session.terrain_fallback_keys = sorted(key for key in terrain_sprite_keys if atlas.is_fallback(key))
+    session.terrain_fallback_key_count = len(session.terrain_fallback_keys)
 
     while session.running:
         events = input_controller.poll(session)

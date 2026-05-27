@@ -18,4 +18,9 @@ python -m pygame_haxima
 - Attack: `f`
 - Examine: `x`
 - Terrain debug overlay: `F2`
+- Sprite warning overlay: `F3`
 - Save/load: `F5` / `F9`
+
+On startup, the game prints a sprite coverage summary and writes:
+
+- `pygame_haxima/reports/sprite_coverage_report.txt`

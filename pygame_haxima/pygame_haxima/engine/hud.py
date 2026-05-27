@@ -19,3 +19,9 @@ class HudPane:
             f"Food {session.party.food}  Gold {session.party.gold}  Mode {mode}"
         )
         surface.blit(self.font.render(text, True, (220, 220, 230)), (rect.x + 10, rect.y + 8))
+        if session.debug_sprite_warnings:
+            warn = (
+                f"Terrain fallback keys: {session.terrain_fallback_key_count} "
+                f"({', '.join(session.terrain_fallback_keys[:3])})"
+            )
+            surface.blit(self.font.render(warn, True, (255, 180, 120)), (rect.x + 10, rect.y + 30))
