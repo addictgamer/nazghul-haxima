@@ -32,6 +32,8 @@ python -m pygame_haxima
 - Terrain debug overlay: `F2`
 - Sprite warning overlay: `F3`
 - Save/load: `F5` / `F9`
+- Target confirm: `Enter` (or `Space`)
+- Target cancel: `Esc`
 
 On startup, the game prints a sprite coverage summary and writes:
 
