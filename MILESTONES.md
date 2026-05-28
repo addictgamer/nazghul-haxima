@@ -185,6 +185,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added converted-content sprite profile loading (townsfolk + places JSON) and wired tutorial NPC/monster/chest sprite assignment through profile-based resolution instead of direct hardcoded keys.
 - Combat feedback popup now merges same-exchange player/enemy outcomes into a multi-line banner so both actions are visible at once.
 - Combat feedback lines now include actor prefixes (`You:` / `<Enemy>:`) for faster scanability in multi-line exchange popups.
+- Combat banner now resets at the start of each new attack exchange so prior-round lines never linger into subsequent rounds.
 
 ## Suggested Delivery Sequence
 

@@ -199,3 +199,23 @@ def test_combat_feedback_merges_player_and_enemy_messages(tmp_path, monkeypatch)
     assert "wolf:" in session.combat_feedback_text.lower()
     assert "\n" in session.combat_feedback_text
     assert len(session.combat_feedback_lines) == 2
+
+
+def test_new_attack_round_clears_previous_banner_text(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 13
+    session.party.y = 9
+    session.party.members[0].x = 13
+    session.party.members[0].y = 9
+
+    # Round 1: player hit, wolf miss. Round 2: player miss, wolf hit.
+    rolls = iter([6, 1, 1, 6, 1, 6, 6, 1])
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: next(rolls))
+
+    loop.process_events(session, [_action("attack"), _action("confirm")])
+    assert session.combat_feedback_text == "You: Hit 8\nWolf: Misses"
+
+    loop.process_events(session, [_action("attack"), _action("confirm")])
+    assert session.combat_feedback_text == "You: Miss\nWolf: Hit 6"
+    assert len(session.combat_feedback_lines) == 2

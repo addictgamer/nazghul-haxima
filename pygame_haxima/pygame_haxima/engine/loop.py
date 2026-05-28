@@ -134,6 +134,7 @@ class TurnLoop:
         session.advance_turn()
 
     def _attack(self, session: GameSession, monster: Entity) -> None:
+        self._clear_combat_feedback(session)
         session.mode = Mode.COMBAT
         session.combat.active = True
         session.combat.enemy_ids = [monster.entity_id]
@@ -540,9 +541,13 @@ class TurnLoop:
             return
         session.combat_feedback_ticks -= 1
         if session.combat_feedback_ticks == 0:
-            session.combat_feedback_text = None
-            session.combat_feedback_world_pos = None
-            session.combat_feedback_lines = []
+            self._clear_combat_feedback(session)
+
+    def _clear_combat_feedback(self, session: GameSession) -> None:
+        session.combat_feedback_text = None
+        session.combat_feedback_ticks = 0
+        session.combat_feedback_world_pos = None
+        session.combat_feedback_lines = []
 
     def _npc_turn(self, session: GameSession) -> None:
         # Tiny movement jitter emulates non-player turns in place_exec.
