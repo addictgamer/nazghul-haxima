@@ -9,6 +9,7 @@ from pygame_haxima.data.asset_loader import AssetLoader
 from pygame_haxima.data.content_registry import ContentRegistry
 from pygame_haxima.data.save_manager import SaveManager
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
+from pygame_haxima.domain.models import GameSession
 from pygame_haxima.engine.audio import AudioManager
 from pygame_haxima.engine.events import ANIMATION_EVENT
 from pygame_haxima.engine.hud import HudPane
@@ -17,6 +18,7 @@ from pygame_haxima.engine.keymap import KeyMap
 from pygame_haxima.engine.loop import TurnLoop
 from pygame_haxima.engine.map_view import MapView
 from pygame_haxima.engine.renderer import Renderer
+from pygame_haxima.engine.item_sprites import item_sprite_key
 from pygame_haxima.engine.text_ui import TextUi
 
 
@@ -31,8 +33,6 @@ def run() -> int:
     atlas = SpriteAtlas(assets, project_root=project_root)
     atlas.load()
     report_text = atlas.format_coverage_report()
-    print(report_text, end="")
-    atlas.write_coverage_report(project_root / "reports" / "sprite_coverage_report.txt")
 
     renderer = Renderer(
         map_view=MapView(atlas),
@@ -44,6 +44,15 @@ def run() -> int:
     save_manager = SaveManager(project_root / "saves")
     loop = TurnLoop(renderer=renderer, audio=AudioManager(assets), save_manager=save_manager)
     session = ContentRegistry().make_new_session()
+    runtime_sprite_keys = _runtime_sprite_keys(session)
+    runtime_report_text = atlas.format_runtime_coverage_report(runtime_sprite_keys)
+    print(report_text, end="")
+    print(runtime_report_text, end="")
+    coverage_path = project_root / "reports" / "sprite_coverage_report.txt"
+    atlas.write_coverage_report(coverage_path)
+    with coverage_path.open("a", encoding="utf-8") as handle:
+        handle.write("\n")
+        handle.write(runtime_report_text)
     terrain_sprite_keys = {
         terrain.sprite_key for terrain in session.place.terrain_defs.values() if terrain.sprite_key
     }
@@ -78,3 +87,21 @@ def run() -> int:
 
     pygame.quit()
     return 0
+
+
+def _runtime_sprite_keys(session: GameSession) -> set[str]:
+    keys: set[str] = set()
+    if session.party.members:
+        keys.add(session.party.lead().sprite_key)
+    for npc in session.place.npcs:
+        keys.add(npc.sprite_key)
+    for monster in session.place.monsters:
+        keys.add(monster.sprite_key)
+    for chest in session.place.chests:
+        keys.add(chest.sprite_key)
+    for items in session.place.ground_items.values():
+        for item in items:
+            keys.add(item_sprite_key(item))
+    for item in session.party.inventory:
+        keys.add(item_sprite_key(item))
+    return {key for key in keys if key}

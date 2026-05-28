@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterable
 
 import pygame
 
@@ -198,6 +199,60 @@ class SpriteAtlas:
             "out_of_bounds_keys": sorted(self.out_of_bounds_keys),
         }
 
+    def runtime_coverage_report(self, runtime_keys: Iterable[str]) -> dict[str, object]:
+        keys = sorted({key for key in runtime_keys if key})
+        direct_resolved: list[str] = []
+        alias_resolved: dict[str, str] = {}
+        unresolved_aliases: dict[str, str] = {}
+        fallback_runtime_keys: list[str] = []
+        missing_runtime_keys: list[str] = []
+        for key in keys:
+            if self._has_sprite_key(key):
+                direct_resolved.append(key)
+                if self.is_fallback(key):
+                    fallback_runtime_keys.append(key)
+                continue
+            alias_target = self._alias_target(key)
+            if alias_target is None:
+                missing_runtime_keys.append(key)
+                continue
+            if self._has_sprite_key(alias_target):
+                alias_resolved[key] = alias_target
+                if self.is_fallback(alias_target):
+                    fallback_runtime_keys.append(key)
+                continue
+            unresolved_aliases[key] = alias_target
+        return {
+            "runtime_keys": keys,
+            "direct_resolved": direct_resolved,
+            "alias_resolved": alias_resolved,
+            "unresolved_aliases": unresolved_aliases,
+            "fallback_runtime_keys": sorted(set(fallback_runtime_keys)),
+            "missing_runtime_keys": missing_runtime_keys,
+        }
+
+    def format_runtime_coverage_report(self, runtime_keys: Iterable[str]) -> str:
+        report = self.runtime_coverage_report(runtime_keys)
+        lines = [
+            "Runtime Sprite Coverage",
+            f"- runtime_keys: {len(report['runtime_keys'])}",
+            f"- direct_resolved: {len(report['direct_resolved'])}",
+            f"- alias_resolved: {len(report['alias_resolved'])}",
+            f"- unresolved_aliases: {len(report['unresolved_aliases'])}",
+            f"- fallback_runtime_keys: {len(report['fallback_runtime_keys'])}",
+            f"- missing_runtime_keys: {len(report['missing_runtime_keys'])}",
+        ]
+        unresolved_aliases = report["unresolved_aliases"]
+        if unresolved_aliases:
+            preview = ", ".join(
+                f"{src}->{dst}" for src, dst in list(unresolved_aliases.items())[:6]
+            )
+            lines.append(f"- unresolved_alias_preview: {preview}")
+        missing_keys = report["missing_runtime_keys"]
+        if missing_keys:
+            lines.append(f"- missing_runtime_preview: {', '.join(missing_keys[:6])}")
+        return "\n".join(lines) + "\n"
+
     def format_coverage_report(self) -> str:
         report = self.coverage_report()
         lines = [
@@ -221,3 +276,18 @@ class SpriteAtlas:
     def write_coverage_report(self, output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(self.format_coverage_report(), encoding="utf-8")
+
+    def _has_sprite_key(self, key: str) -> bool:
+        return key in self.refs or key in self.surfaces
+
+    def _alias_target(self, key: str) -> str | None:
+        if "-" in key:
+            candidate = key.replace("-", "_")
+            if candidate != key:
+                return candidate
+        for suffix in ("_n", "_s", "_e", "_w", "_ne", "_nw", "_se", "_sw", "_asleep"):
+            if key.endswith(suffix):
+                candidate = key[: -len(suffix)]
+                if candidate:
+                    return candidate
+        return None
