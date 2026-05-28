@@ -212,6 +212,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added spellbook tabs (`All`, per-context tabs, `Missing Reagents`) with keyboard (`Left/Right`) and mouse tab switching, plus tab-aware spell list filtering/selection.
 - Added `Tab` as spellbook tab-cycle shortcut, tuned blocked-header rendering to fit without overflow with context-colored `context` text, and made spellbook wheel scrolling anchor from hovered entry when hovering the list.
 - Renamed spellbook `Any` context label to `Anywhere` in tab and context display text.
+- Sidebar spell mini-list now rotates relative to active selection (`selected` + next spells) so `V` cycling updates the visible 3-item window, not a fixed first-three list.
+- Sidebar spell mini-list now excludes the currently selected spell, shows the next three spells only, and renders the list with a tab-like visual indent.
 
 ## Suggested Delivery Sequence
 

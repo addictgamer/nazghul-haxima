@@ -185,17 +185,24 @@ class TextUi:
             selected_y += self.small_font.get_height() + 1
 
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        visible_spell_ids: list[str] = []
+        if known:
+            start_idx = known.index(selected_id) if selected_id in known else 0
+            visible_count = min(3, max(0, len(known) - 1))
+            visible_spell_ids = [
+                known[(start_idx + 1 + offset) % len(known)] for offset in range(visible_count)
+            ]
         spell_y = selected_y + 2
         max_spell_rows = 6
         used_rows = 0
-        for spell_id in known[:3]:
+        list_indent_x = rect.x + 28
+        for spell_id in visible_spell_ids:
             if used_rows >= max_spell_rows:
                 break
             spell = get_spell(spell_id)
             if spell is None:
                 continue
-            marker = ">" if spell_id == selected_id else " "
-            wrapped = self._wrap_text(self.small_font, f"{marker} {spell.name}", rect.width - 16)
+            wrapped = self._wrap_text(self.small_font, spell.name, rect.width - 36)
             context_ok = spell_context_available(spell.context, getattr(session.place, "spell_context", "context-town"))
             reagent_ok = all(
                 session.party.reagents.get(reagent, 0) >= qty for reagent, qty in spell.reagents.items()
@@ -210,7 +217,7 @@ class TextUi:
                 if used_rows >= max_spell_rows:
                     break
                 line = self.small_font.render(line_text, True, color)
-                surface.blit(line, (rect.x + 8, spell_y))
+                surface.blit(line, (list_indent_x, spell_y))
                 spell_y += self.small_font.get_height() + 1
                 used_rows += 1
 
