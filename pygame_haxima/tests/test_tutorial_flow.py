@@ -178,3 +178,24 @@ def test_nonlethal_attack_round_resets_to_explore_and_advances_turn(tmp_path, mo
     assert session.mode.value == "explore"
     assert session.combat.active is False
     assert session.party.turn_count == 1
+
+
+def test_combat_feedback_merges_player_and_enemy_messages(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 13
+    session.party.y = 9
+    session.party.members[0].x = 13
+    session.party.members[0].y = 9
+
+    # Player miss, then wolf miss so feedback should render as a stacked multi-line popup.
+    rolls = iter([1, 6, 1, 6])
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: next(rolls))
+
+    loop.process_events(session, [_action("attack"), _action("confirm")])
+
+    assert session.combat_feedback_text is not None
+    assert "you:" in session.combat_feedback_text.lower()
+    assert "wolf:" in session.combat_feedback_text.lower()
+    assert "\n" in session.combat_feedback_text
+    assert len(session.combat_feedback_lines) == 2

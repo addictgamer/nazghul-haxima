@@ -249,16 +249,31 @@ class MapView:
     ) -> None:
         if session.combat_feedback_ticks <= 0 or not session.combat_feedback_text:
             return
+        feedback_lines = session.combat_feedback_lines or [
+            (session.combat_feedback_text, session.combat_feedback_color)
+        ]
         alpha = min(210, max(140, session.combat_feedback_ticks * 5))
-        banner = pygame.Surface((420, 54), pygame.SRCALPHA)
+        rendered = [
+            (
+                self.feedback_font.render(text, True, color),
+                self.feedback_font.render(text, True, (0, 0, 0)),
+            )
+            for text, color in feedback_lines
+            if text
+        ]
+        if not rendered:
+            return
+        max_text_width = max(text.get_width() for text, _shadow in rendered)
+        text_block_height = sum(text.get_height() for text, _shadow in rendered) + 4 * (len(rendered) - 1)
+        banner = pygame.Surface((max(420, max_text_width + 32), max(54, text_block_height + 20)), pygame.SRCALPHA)
         banner.fill((10, 10, 14, alpha))
         pygame.draw.rect(banner, (240, 240, 240, min(255, alpha)), banner.get_rect(), 2)
-        text_shadow = self.feedback_font.render(session.combat_feedback_text, True, (0, 0, 0))
-        text = self.feedback_font.render(session.combat_feedback_text, True, session.combat_feedback_color)
         text_x = 16
-        text_y = (banner.get_height() - text.get_height()) // 2
-        banner.blit(text_shadow, (text_x + 2, text_y + 2))
-        banner.blit(text, (text_x, text_y))
+        text_y = (banner.get_height() - text_block_height) // 2
+        for text, shadow in rendered:
+            banner.blit(shadow, (text_x + 2, text_y + 2))
+            banner.blit(text, (text_x, text_y))
+            text_y += text.get_height() + 4
 
         pos_x = viewport.centerx - banner.get_width() // 2
         pos_y = viewport.y + 10

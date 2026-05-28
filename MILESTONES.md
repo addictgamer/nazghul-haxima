@@ -183,6 +183,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added GitHub Actions CI workflow to run Ruff + pytest on pushes and pull requests affecting the Pygame port.
 - Expanded tutorial/domain test coverage for blocked wall movement, no-target action rejection, and non-lethal combat resolution; local suite now passes at 15 tests.
 - Added converted-content sprite profile loading (townsfolk + places JSON) and wired tutorial NPC/monster/chest sprite assignment through profile-based resolution instead of direct hardcoded keys.
+- Combat feedback popup now merges same-exchange player/enemy outcomes into a multi-line banner so both actions are visible at once.
+- Combat feedback lines now include actor prefixes (`You:` / `<Enemy>:`) for faster scanability in multi-line exchange popups.
 
 ## Suggested Delivery Sequence
 

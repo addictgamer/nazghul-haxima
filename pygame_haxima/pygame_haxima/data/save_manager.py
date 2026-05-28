@@ -300,6 +300,7 @@ class SaveManager:
         session.combat_feedback_text = None
         session.combat_feedback_ticks = 0
         session.combat_feedback_world_pos = None
+        session.combat_feedback_lines = []
         session.camera_start_x = None
         session.camera_start_y = None
 
