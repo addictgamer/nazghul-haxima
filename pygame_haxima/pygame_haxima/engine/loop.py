@@ -912,6 +912,10 @@ class TurnLoop:
             self._consume_reagents(session, spell.spell_id)
             self._cast_unlock(session, spell.name)
             return
+        if spell.effect_kind == "quickness":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_quickness(session, spell.name, spell.circle)
+            return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
         self._clear_combat_feedback(session)
@@ -968,6 +972,20 @@ class TurnLoop:
         self._clear_combat_feedback(session)
         self._set_feedback(
             session, f"You: {spell_name}", (210, 230, 255), world_pos=(chest.x, chest.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_quickness(self, session: GameSession, spell_name: str, circle: int) -> None:
+        duration = max(8, min(24, circle * 3))
+        # Add one extra step so the immediate end-of-action advance lands on the displayed duration.
+        session.quest_flags["buff:quickness_turns"] = duration + 1
+        session.append_log(f"You cast {spell_name}. Your reflexes sharpen ({duration} turns).")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (200, 235, 255), world_pos=(session.party.x, session.party.y)
         )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
@@ -1065,7 +1083,9 @@ class TurnLoop:
             return
         target = session.party.lead()
         attack_roll = random.randint(1, 6) + monster.attack
-        defense_roll = random.randint(1, 6) + target.defense
+        quickness_turns = session.quest_flags.get("buff:quickness_turns")
+        quickness_bonus = 2 if isinstance(quickness_turns, int) and quickness_turns > 0 else 0
+        defense_roll = random.randint(1, 6) + target.defense + quickness_bonus
         if attack_roll <= defense_roll:
             session.append_log(f"{monster.name} misses.")
             self._set_feedback(

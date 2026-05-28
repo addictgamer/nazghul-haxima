@@ -42,6 +42,9 @@ class HudPane:
         light_turns = session.quest_flags.get("buff:light_turns")
         if isinstance(light_turns, int) and light_turns > 0:
             effects.append(f"Light({light_turns})")
+        quickness_turns = session.quest_flags.get("buff:quickness_turns")
+        if isinstance(quickness_turns, int) and quickness_turns > 0:
+            effects.append(f"Quick({quickness_turns})")
         if effects:
             status_parts.append(f"Effects: {', '.join(effects)}")
         if status_parts:

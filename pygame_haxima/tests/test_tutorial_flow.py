@@ -328,6 +328,47 @@ def test_cast_magic_unlock_without_chest_still_spends_turn(tmp_path) -> None:
     assert "no locked chest is nearby" in session.log_lines[-1].lower()
 
 
+def test_cast_quickness_sets_duration_and_ticks_down(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "rel_tym"
+    session.party.reagents["sulphurous_ash"] = 1
+    session.party.reagents["blood_moss"] = 1
+    session.party.reagents["mandrake"] = 1
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["sulphurous_ash"] == 0
+    assert session.party.reagents["blood_moss"] == 0
+    assert session.party.reagents["mandrake"] == 0
+    assert session.quest_flags.get("buff:quickness_turns") == 15
+
+    session.advance_turn()
+    assert session.quest_flags.get("buff:quickness_turns") == 14
+
+
+def test_cast_quickness_reduces_incoming_counterattack_damage(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 13
+    session.party.y = 9
+    session.party.members[0].x = 13
+    session.party.members[0].y = 9
+    session.party.selected_spell = "rel_tym"
+    session.party.reagents["sulphurous_ash"] = 1
+    session.party.reagents["blood_moss"] = 1
+    session.party.reagents["mandrake"] = 1
+
+    # Counterattack roll: base 6 damage becomes 4 with quickness defense bonus.
+    rolls = iter([6, 1])
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: next(rolls))
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.lead().hp == 16
+    assert session.quest_flags.get("buff:quickness_turns") == 15
+
+
 def test_reagents_modal_toggle_updates_prompt(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()
