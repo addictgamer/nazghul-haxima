@@ -112,5 +112,6 @@ def build_tutorial_place(sprite_profile: SpriteProfile | None = None) -> tuple[P
         npcs=[npc],
         monsters=[wolf],
         chests=[chest],
+        spell_context="context-world",
     )
     return place, party

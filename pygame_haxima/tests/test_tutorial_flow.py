@@ -190,6 +190,19 @@ def test_cycle_spell_skips_missing_reagent_spells(tmp_path) -> None:
     assert session.party.selected_spell == "heal"
 
 
+def test_cast_rejects_spell_in_wrong_context(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "grav_por"  # town-only spell
+    session.party.reagents["sulphurous_ash"] = 5
+    session.party.reagents["black_pearl"] = 5
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.targeting_action is None
+    assert "cannot be cast in this area" in session.log_lines[-1].lower()
+
+
 def test_cast_heal_consumes_ginseng_and_restores_hp(tmp_path, monkeypatch) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

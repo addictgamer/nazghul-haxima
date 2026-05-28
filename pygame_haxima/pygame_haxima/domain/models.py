@@ -109,6 +109,7 @@ class Place:
     monsters: list[Entity] = field(default_factory=list)
     chests: list[Chest] = field(default_factory=list)
     ground_items: dict[tuple[int, int], list[Item]] = field(default_factory=dict)
+    spell_context: str = "context-town"
 
     def in_bounds(self, x: int, y: int) -> bool:
         return 0 <= x < self.width and 0 <= y < self.height

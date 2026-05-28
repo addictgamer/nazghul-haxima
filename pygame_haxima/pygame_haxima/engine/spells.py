@@ -164,3 +164,20 @@ def known_spell_ids() -> list[str]:
     if _SPELLS_CACHE is None:
         _SPELLS_CACHE = _build_spell_registry()
     return list(_SPELLS_CACHE.keys())
+
+
+def normalize_context(context: str) -> str:
+    normalized = context.strip().lower()
+    if not normalized.startswith("context-"):
+        normalized = f"context-{normalized}"
+    if normalized not in {"context-any", "context-town", "context-world"}:
+        return "context-any"
+    return normalized
+
+
+def spell_context_available(spell_context: str, current_context: str) -> bool:
+    required = normalize_context(spell_context)
+    current = normalize_context(current_context)
+    if required == "context-any":
+        return True
+    return required == current

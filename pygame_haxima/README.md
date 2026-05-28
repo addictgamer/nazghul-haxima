@@ -35,6 +35,8 @@ Spell notes:
 - `B` opens a spellbook modal with keyboard/mouse/wheel selection and spell details.
 - Inside Spellbook: `C` casts selected spell, `Enter` sets active spell, and on-screen buttons mirror these shortcuts.
 - `V` now cycles only through currently castable spells (based on available reagents).
+- Spell casting now enforces `context-town` / `context-world` / `context-any` restrictions at cast time.
+- Spellbook colors now distinguish reagent-blocked vs context-blocked spells.
 - Sidebar now shows selected spell + reagent counts.
 - HUD shows selected spell cast count, required reagents (missing required shown in red as `(0)`), and active effects.
 

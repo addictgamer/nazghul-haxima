@@ -7,7 +7,11 @@ from pygame_haxima.domain.models import Entity, GameSession, Mode
 from pygame_haxima.engine.audio import AudioManager
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.renderer import Renderer
-from pygame_haxima.engine.spells import get_spell
+from pygame_haxima.engine.spells import get_spell, spell_context_available
+
+HEAL_SPELL_IDS = {"heal", "mani", "vas_mani", "in_mani_corp"}
+WARD_SPELL_IDS = {"ward", "sanct_nox", "vas_sanct_nox", "in_flam_sanct", "in_sanct"}
+LIGHT_SPELL_IDS = {"in_lor", "vas_lor"}
 
 
 class TurnLoop:
@@ -356,6 +360,9 @@ class TurnLoop:
         spell = get_spell(session.party.selected_spell)
         if spell is None:
             return
+        if not self._is_spell_context_available(session, spell.spell_id):
+            session.append_log(f"{spell.name} cannot be cast in this area.")
+            return
         if not self._has_reagents_for_spell(session, spell.spell_id):
             reagent_text = ", ".join(f"{name} x{qty}" for name, qty in sorted(spell.reagents.items()))
             session.append_log(f"You lack reagents for {spell.name} ({reagent_text}).")
@@ -499,6 +506,9 @@ class TurnLoop:
         if spell is None:
             session.append_log("No spell is currently selected.")
             return
+        if not self._is_spell_context_available(session, spell.spell_id):
+            session.append_log(f"{spell.name} cannot be cast in this area.")
+            return
         if not self._has_reagents_for_spell(session, spell.spell_id):
             reagent_text = ", ".join(
                 f"{name} x{qty}" for name, qty in sorted(spell.reagents.items())
@@ -519,7 +529,7 @@ class TurnLoop:
     def _cycle_spell(self, session: GameSession) -> None:
         known = self._castable_spell_ids(session)
         if not known:
-            session.append_log("No castable spells with current reagents.")
+            session.append_log("No castable spells in current context/reagents.")
             return
         if session.party.selected_spell not in known:
             session.party.selected_spell = known[0]
@@ -536,14 +546,26 @@ class TurnLoop:
 
     def _castable_spell_ids(self, session: GameSession) -> list[str]:
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
-        return [spell_id for spell_id in known if self._has_reagents_for_spell(session, spell_id)]
+        return [spell_id for spell_id in known if self._is_spell_castable_now(session, spell_id)]
 
     def _spellbook_ordered_spell_ids(self, session: GameSession) -> list[str]:
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
-        available = [spell_id for spell_id in known if self._has_reagents_for_spell(session, spell_id)]
+        available = [spell_id for spell_id in known if self._is_spell_castable_now(session, spell_id)]
         available_set = set(available)
         missing = [spell_id for spell_id in known if spell_id not in available_set]
         return available + missing
+
+    def _is_spell_context_available(self, session: GameSession, spell_id: str) -> bool:
+        spell = get_spell(spell_id)
+        if spell is None:
+            return False
+        current_context = getattr(session.place, "spell_context", "context-town")
+        return spell_context_available(spell.context, current_context)
+
+    def _is_spell_castable_now(self, session: GameSession, spell_id: str) -> bool:
+        return self._is_spell_context_available(session, spell_id) and self._has_reagents_for_spell(
+            session, spell_id
+        )
 
     def _end_targeting(self, session: GameSession) -> None:
         session.targeting_action = None
@@ -796,7 +818,7 @@ class TurnLoop:
         session.advance_turn()
 
     def _cast_non_targeted_spell(self, session: GameSession, spell) -> None:
-        if spell.effect_kind == "heal":
+        if spell.spell_id in HEAL_SPELL_IDS or spell.effect_kind == "heal":
             self._cast_heal(
                 session,
                 spell_id=spell.spell_id,
@@ -805,8 +827,8 @@ class TurnLoop:
                 max_heal=max(6, spell.circle * 2 + 2),
             )
             return
-        if spell.effect_kind == "ward":
-            charges = 2 if spell.spell_id == "ward" else max(1, min(4, spell.circle // 2 + 1))
+        if spell.spell_id in WARD_SPELL_IDS or spell.effect_kind == "ward":
+            charges = 2 if spell.spell_id == "ward" else max(1, min(5, spell.circle // 2 + 1))
             self._cast_ward(
                 session,
                 spell_id=spell.spell_id,
@@ -814,6 +836,20 @@ class TurnLoop:
                 added_charges=charges,
                 max_charges=8,
             )
+            return
+        if spell.spell_id in LIGHT_SPELL_IDS:
+            self._consume_reagents(session, spell.spell_id)
+            light_turns = 10 if spell.spell_id == "in_lor" else 24
+            session.quest_flags["buff:light_turns"] = light_turns
+            session.append_log(f"You cast {spell.name}. The area brightens ({light_turns} turns).")
+            self._clear_combat_feedback(session)
+            self._set_feedback(
+                session, f"You: {spell.name}", (235, 235, 150), world_pos=(session.party.x, session.party.y)
+            )
+            adjacent = self._adjacent_monster(session)
+            if adjacent is not None:
+                self._enemy_counterattack(session, adjacent)
+            session.advance_turn()
             return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
