@@ -1,1 +1,2 @@
 -e ./pygame_haxima
+pytest
