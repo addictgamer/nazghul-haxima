@@ -13,6 +13,9 @@ from pygame_haxima.data.asset_loader import AssetLoader
 SPRITE_RE = re.compile(
     r"\(kern-mk-sprite\s+'(?P<name>[^\s]+)\s+(?P<set>[^\s]+)\s+(?P<frames>\d+)\s+(?P<index>\d+)\s+[#tf]+\s+\d+\s*\)"
 )
+SPELL_MK_SPRITE_RE = re.compile(
+    r"\(mk-sprite\s+'(?P<name>[^\s]+)\s+(?P<index>\d+)\s*\)"
+)
 SPRITE_SET_RE = re.compile(
     r'\(kern-mk-sprite-set\s+\'(?P<name>[^\s]+)\s+'
     r"(?P<tile_w>\d+)\s+(?P<tile_h>\d+)\s+"
@@ -132,15 +135,24 @@ class SpriteAtlas:
         for scm_path in self._iter_world_scm_paths():
             for line in self._active_lines(scm_path):
                 match = SPRITE_RE.match(line)
-                if not match:
+                if match:
+                    key = match.group("name")
+                    self.refs[key] = SpriteRef(
+                        key=key,
+                        sprite_set=match.group("set"),
+                        frame_count=max(1, int(match.group("frames"))),
+                        tile_index=int(match.group("index")),
+                    )
                     continue
-                key = match.group("name")
-                self.refs[key] = SpriteRef(
-                    key=key,
-                    sprite_set=match.group("set"),
-                    frame_count=max(1, int(match.group("frames"))),
-                    tile_index=int(match.group("index")),
-                )
+                spell_match = SPELL_MK_SPRITE_RE.match(line)
+                if spell_match and scm_path.name == "spells.scm":
+                    key = spell_match.group("name")
+                    self.refs[key] = SpriteRef(
+                        key=key,
+                        sprite_set="ss_spells",
+                        frame_count=1,
+                        tile_index=int(spell_match.group("index")),
+                    )
 
     def _iter_world_scm_paths(self) -> list[Path]:
         world_dir = self.project_root.parent / "worlds" / "haxima-1.002"

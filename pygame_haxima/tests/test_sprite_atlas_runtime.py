@@ -51,3 +51,23 @@ def test_get_for_tick_uses_multiframe_variants_and_caches(tmp_path, monkeypatch)
     cached_surface = atlas.get_for_tick("s_wolf", tick=10, frame_stride=8)
     assert frame_surface is cached_surface
     assert calls == [1]
+
+
+def test_parse_sprite_refs_supports_spell_macro_lines(tmp_path, monkeypatch) -> None:
+    atlas = SpriteAtlas(asset_loader=AssetLoader(tmp_path), project_root=Path(tmp_path))
+    fake_path = Path(tmp_path) / "worlds" / "haxima-1.002" / "spells.scm"
+    monkeypatch.setattr(atlas, "_iter_world_scm_paths", lambda: [fake_path])
+    monkeypatch.setattr(
+        atlas,
+        "_active_lines",
+        lambda _path: [
+            "(mk-sprite 's_grav_por          2)",
+            "(mk-sprite 's_mani              4)",
+        ],
+    )
+
+    atlas._parse_sprite_refs()
+
+    assert atlas.refs["s_grav_por"].sprite_set == "ss_spells"
+    assert atlas.refs["s_grav_por"].tile_index == 2
+    assert atlas.refs["s_mani"].tile_index == 4

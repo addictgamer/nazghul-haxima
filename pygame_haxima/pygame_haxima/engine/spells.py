@@ -125,6 +125,7 @@ def _build_spell_registry() -> dict[str, SpellDef]:
             range_tiles=2,
             reagents={"sulphurous_ash": 1},
             circle=1,
+            icon_sprite="s_grav_por",
             effect_kind="attack",
         ),
         "heal": SpellDef(
@@ -134,6 +135,7 @@ def _build_spell_registry() -> dict[str, SpellDef]:
             range_tiles=0,
             reagents={"ginseng": 1},
             circle=1,
+            icon_sprite="s_mani",
             effect_kind="heal",
         ),
         "ward": SpellDef(
@@ -143,6 +145,7 @@ def _build_spell_registry() -> dict[str, SpellDef]:
             range_tiles=0,
             reagents={"garlic": 1},
             circle=1,
+            icon_sprite="s_in_sanct",
             effect_kind="ward",
         ),
     }
