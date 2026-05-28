@@ -141,7 +141,13 @@ class TurnLoop:
         session.combat.message = f"Engaged {monster.name}"
         self._resolve_combat_round(session, monster)
         if not monster.is_alive():
-            session.append_log(f"{monster.name} falls.")
+            session.append_log(f"{monster.name} falls in combat.")
+            self._set_feedback(
+                session,
+                f"{monster.name}: Falls in combat",
+                (170, 255, 170),
+                world_pos=(monster.x, monster.y),
+            )
             session.quest_flags[f"defeated:{monster.entity_id}"] = True
             session.victory = True
             session.mode = Mode.EXPLORE

@@ -112,6 +112,9 @@ def test_attack_flow_can_defeat_wolf_and_set_victory(tmp_path, monkeypatch) -> N
     assert session.victory is True
     assert session.mode.value == "explore"
     assert session.combat.active is False
+    assert session.combat_feedback_text is not None
+    assert "you: hit" in session.combat_feedback_text.lower()
+    assert "wolf: falls" in session.combat_feedback_text.lower()
 
 
 def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:

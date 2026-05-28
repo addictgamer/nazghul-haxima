@@ -186,6 +186,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Combat feedback popup now merges same-exchange player/enemy outcomes into a multi-line banner so both actions are visible at once.
 - Combat feedback lines now include actor prefixes (`You:` / `<Enemy>:`) for faster scanability in multi-line exchange popups.
 - Combat banner now resets at the start of each new attack exchange so prior-round lines never linger into subsequent rounds.
+- Enemy death outcomes are now included in the combat banner (`<Enemy>: Falls`) so kill confirmations appear in-banner, not only in the log.
 
 ## Suggested Delivery Sequence
 
