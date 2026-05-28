@@ -1,0 +1,12 @@
+[
+  {
+    "source": "cloviskeep.scm",
+    "output": "cloviskeep.place.json",
+    "place_count": 1
+  },
+  {
+    "source": "init.scm",
+    "output": "init.place.json",
+    "place_count": 0
+  }
+]

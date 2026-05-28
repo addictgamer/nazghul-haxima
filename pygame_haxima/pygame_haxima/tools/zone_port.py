@@ -37,6 +37,18 @@ def main() -> int:
         print(f"converted {map_file.name}: {count} map(s) -> maps/{out_file.name}")
     (maps_out_dir / "index.json").write_text(json.dumps(map_index, indent=2), encoding="utf-8")
     print(f"wrote maps index: maps/index.json ({len(map_index)} files)")
+
+    places_dir = world / "places"
+    places_out_dir = output / "places"
+    place_files = sorted(places_dir.glob("*.scm"))
+    place_index: list[dict[str, object]] = []
+    for place_file in place_files:
+        out_file = places_out_dir / f"{place_file.stem}.place.json"
+        count = converter.convert_place_file(place_file, out_file)
+        place_index.append({"source": place_file.name, "output": out_file.name, "place_count": count})
+        print(f"converted {place_file.name}: {count} place(s) -> places/{out_file.name}")
+    (places_out_dir / "index.json").write_text(json.dumps(place_index, indent=2), encoding="utf-8")
+    print(f"wrote places index: places/index.json ({len(place_index)} files)")
     return 0
 
 

@@ -1,0 +1,24 @@
+{
+  "source": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/worlds/haxima-1.002/places/cloviskeep.scm",
+  "place_count": 1,
+  "places": [
+    {
+      "id": "p_cloviskeep",
+      "name": "Cloviskeep",
+      "sprite": "s_castle",
+      "map": "m_cloviskeep",
+      "wraps": false,
+      "underground": false,
+      "wilderness": false,
+      "tmp_combat": false,
+      "subplaces": [],
+      "neighbors": [],
+      "objects_count": 4,
+      "on_entry_hooks": [
+        "on-entry-to-dungeon-room"
+      ],
+      "entrances_count": 0,
+      "source_file": "cloviskeep.scm"
+    }
+  ]
+}

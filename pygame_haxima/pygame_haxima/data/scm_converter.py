@@ -88,6 +88,27 @@ class ScmConverter:
         dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return len(maps)
 
+    def convert_place_file(self, src: Path, dst: Path) -> int:
+        text = src.read_text(encoding="utf-8", errors="ignore")
+        expressions = self.parser.parse_file(text)
+        places: list[dict[str, object]] = []
+        for expr in expressions:
+            if not isinstance(expr, list) or not expr:
+                continue
+            if self._symbol_name(expr[0]) != "kern-mk-place":
+                continue
+            parsed = self._convert_kern_mk_place(expr, src)
+            if parsed is not None:
+                places.append(parsed)
+        payload = {
+            "source": str(src),
+            "place_count": len(places),
+            "places": places,
+        }
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return len(places)
+
     def _build_constant_env(self, expressions: list[Expr]) -> dict[str, int | float | bool | None]:
         env: dict[str, int | float | bool | None] = {}
         for expr in expressions:
@@ -182,6 +203,46 @@ class ScmConverter:
             "source_file": src.name,
         }
 
+    def _convert_kern_mk_place(self, expr: list[Expr], src: Path) -> dict[str, object] | None:
+        # (kern-mk-place tag name sprite map wraps underground wilderness tmpcombat subplaces neighbors objects hooks entrances)
+        if len(expr) < 11:
+            return None
+        place_id = self._resolve_to_symbol_string(expr[1], {})
+        name = self._resolve_to_string(expr[2], {})
+        sprite = self._resolve_to_symbol_string(expr[3], {})
+        map_id = self._resolve_to_symbol_string(expr[4], {})
+        wraps = self._resolve_to_bool(expr[5], {})
+        underground = self._resolve_to_bool(expr[6], {})
+        wilderness = self._resolve_to_bool(expr[7], {})
+        tmp_combat = self._resolve_to_bool(expr[8], {})
+        subplaces = self._extract_place_subplaces(expr[9] if len(expr) > 9 else None)
+        neighbors = self._extract_symbol_list(expr[10] if len(expr) > 10 else None)
+        objects_expr = expr[11] if len(expr) > 11 else None
+        hooks_expr = expr[12] if len(expr) > 12 else None
+        entrances_expr = expr[13] if len(expr) > 13 else None
+
+        if place_id is None or name is None:
+            return None
+        objects_count = self._count_list_items(objects_expr)
+        hooks = self._extract_symbol_list(hooks_expr)
+        entrances_count = self._count_list_items(entrances_expr)
+        return {
+            "id": place_id,
+            "name": name,
+            "sprite": sprite,
+            "map": map_id,
+            "wraps": wraps,
+            "underground": underground,
+            "wilderness": wilderness,
+            "tmp_combat": tmp_combat,
+            "subplaces": subplaces,
+            "neighbors": neighbors,
+            "objects_count": objects_count,
+            "on_entry_hooks": hooks,
+            "entrances_count": entrances_count,
+            "source_file": src.name,
+        }
+
     def _extract_map_rows(self, rows_expr: Expr) -> list[str]:
         if not isinstance(rows_expr, list) or not rows_expr:
             return []
@@ -195,6 +256,40 @@ class ScmConverter:
 
     def _tokenize_map_row(self, row: str) -> list[str]:
         return [token for token in row.strip().split() if token]
+
+    def _count_list_items(self, expr: Expr | None) -> int:
+        if not isinstance(expr, list) or not expr:
+            return 0
+        if self._symbol_name(expr[0]) != "list":
+            return 0
+        return len(expr) - 1
+
+    def _extract_place_subplaces(self, expr: Expr | None) -> list[dict[str, object]]:
+        if not isinstance(expr, list) or not expr or self._symbol_name(expr[0]) != "list":
+            return []
+        out: list[dict[str, object]] = []
+        for item in expr[1:]:
+            if not isinstance(item, list) or len(item) < 3:
+                continue
+            if self._symbol_name(item[0]) != "list":
+                continue
+            place_id = self._resolve_to_symbol_string(item[1], {})
+            x = self._resolve_to_number(item[2], {})
+            y = self._resolve_to_number(item[3], {}) if len(item) > 3 else None
+            out.append({"place": place_id, "x": x, "y": y})
+        return out
+
+    def _extract_symbol_list(self, expr: Expr | None) -> list[str]:
+        if not isinstance(expr, list) or not expr:
+            return []
+        if self._symbol_name(expr[0]) != "list":
+            return []
+        out: list[str] = []
+        for item in expr[1:]:
+            sym = self._resolve_to_symbol_string(item, {})
+            if sym is not None:
+                out.append(sym)
+        return out
 
     def _is_define(self, expr: Expr) -> bool:
         if not isinstance(expr, list) or len(expr) < 3:
@@ -245,6 +340,12 @@ class ScmConverter:
         if isinstance(value, bool):
             return int(value)
         if isinstance(value, (int, float)):
+            return value
+        return None
+
+    def _resolve_to_bool(self, expr: Expr, env: dict[str, int | float | bool | None]) -> bool | None:
+        value = self._resolve_value(expr, env)
+        if isinstance(value, bool):
             return value
         return None
 

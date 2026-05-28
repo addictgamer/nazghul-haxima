@@ -23,6 +23,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Selection highlight polish now includes pulsing target cursor, valid-target overlays, and a target trail from party to cursor.
 - M4 kickoff complete: nested Scheme parser added, and `terrains.scm` now converts into a runtime terrain registry JSON.
 - Parser-backed map converter now exports `maps/*.scm` into structured tile-layer JSON files plus an index.
+- Parser-backed place converter now exports `places/*.scm` into structured place metadata JSON with hooks/subplace/object summaries.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -34,7 +35,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
-| M4 | Content import pipeline | In Progress | 66% | Reliable converters for terrain/map/place/NPC/quest data |
+| M4 | Content import pipeline | In Progress | 76% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | Not Started | 5% | Main quest path playable with migrated content/system parity |
@@ -57,9 +58,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [x] Replace regex converter with parser that can handle nested list structures from `.scm`.
 - [x] Convert `terrains.scm` into runtime terrain registry with passability + visual mapping.
 - [x] Convert `maps/*.scm` into tile layers compatible with renderer.
-- [ ] Convert `places/*.scm` into place metadata and placements.
+- [x] Convert `places/*.scm` into place metadata and placements.
 - [ ] Convert `townsfolk/*.scm` keyword/dialogue content.
-- [~] Create zone-by-zone import command and validation report (sprite coverage + terrains/maps exports + maps index added).
+- [~] Create zone-by-zone import command and validation report (sprite coverage + terrains/maps/places exports + indexes added).
 
 ### M5: Save/load robustness
 
@@ -128,6 +129,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Kicked off M4: implemented a real S-expression parser and parser-backed conversion pipeline.
 - Added parser-driven terrain export: `converted_data/terrains.runtime.json` now contains structured terrain definitions.
 - Added parser-driven map export: `converted_data/maps/*.map.json` with row/tile layer data plus `converted_data/maps/index.json`.
+- Added parser-driven place export: `converted_data/places/*.place.json` with place flags, hooks, and object/subplace summaries.
 
 ## Suggested Delivery Sequence
 
