@@ -16,6 +16,7 @@ class TextUi:
         self.console_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
         self.cmd_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 22, bold=True)
         self.menu_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
+        self.small_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 16)
 
     def _choose_font(self, candidates: list[str], size: int, bold: bool = False) -> pygame.font.Font:
         for name in candidates:
@@ -174,20 +175,30 @@ class TextUi:
             line = self.menu_font.render(f"{marker} {spell.name}", True, (175, 195, 230))
             surface.blit(line, (rect.x + 8, rect.y + 58 + idx * 18))
 
-        reagent_y = rect.y + 116
+        reagent_y = rect.y + 58 + min(3, len(known)) * 18 + 4
+        reag_title = self.small_font.render("Reagents:", True, (170, 210, 180))
+        surface.blit(reag_title, (rect.x + 8, reagent_y))
+        reagent_y += reag_title.get_height() + 2
         reagents = sorted(session.party.reagents.items())
         if not reagents:
-            text = self.menu_font.render("Reagents: none", True, (150, 160, 185))
+            text = self.small_font.render("none", True, (150, 160, 185))
             surface.blit(text, (rect.x + 8, reagent_y))
         else:
-            summary = ", ".join(f"{name}:{qty}" for name, qty in reagents)
-            reagent_text = f"Reagents: {summary}"
-            max_width = rect.width - 16
-            wrapped = self._wrap_text(self.menu_font, reagent_text, max_width)
-            max_lines = max(1, (rect.bottom - reagent_y - 4) // 18)
-            for idx, line in enumerate(wrapped[:max_lines]):
-                text = self.menu_font.render(line, True, (170, 210, 180))
-                surface.blit(text, (rect.x + 8, reagent_y + idx * 18))
+            selected_spell = get_spell(selected_id)
+            priority = set(selected_spell.reagents.keys()) if selected_spell is not None else set()
+            ordered = sorted(
+                reagents,
+                key=lambda pair: (pair[0] not in priority, pair[0]),
+            )
+            line_h = self.small_font.get_height() + 1
+            max_rows = max(1, (rect.bottom - reagent_y - 4) // line_h)
+            for idx, (name, qty) in enumerate(ordered[:max_rows]):
+                prefix = "*" if name in priority else "-"
+                line = self.small_font.render(f"{prefix} {name}: {qty}", True, (170, 210, 180))
+                surface.blit(line, (rect.x + 8, reagent_y + idx * line_h))
+            if len(ordered) > max_rows:
+                more = self.small_font.render(f"+{len(ordered) - max_rows} more", True, (140, 155, 180))
+                surface.blit(more, (rect.x + 8, rect.bottom - self.small_font.get_height() - 4))
 
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)
