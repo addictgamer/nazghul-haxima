@@ -29,6 +29,7 @@ def test_save_load_round_trip_persists_runtime_state(tmp_path) -> None:
     session.place.npcs[0].x = 11
     session.place.npcs[0].y = 8
     session.place.ground_items[(5, 11)] = [Item("t_heal_potion", "Healing Potion", 18)]
+    session.party.reagents["sulphurous_ash"] = 7
 
     manager.save_slot(1, session)
 
@@ -49,6 +50,7 @@ def test_save_load_round_trip_persists_runtime_state(tmp_path) -> None:
     assert loaded.place.npcs[0].x == 11
     assert loaded.place.npcs[0].y == 8
     assert loaded.place.ground_items[(5, 11)][0].item_id == "t_heal_potion"
+    assert loaded.party.reagents["sulphurous_ash"] == 7
     # Combat state should deterministically restore when living enemies still match saved enemy_ids.
     assert loaded.mode == Mode.COMBAT
     assert loaded.combat.active is True
@@ -88,3 +90,4 @@ def test_load_v0_payload_migrates_with_defaults(tmp_path) -> None:
     assert loaded.option_scale == 1
     assert loaded.option_fullscreen is False
     assert loaded.camera_deadzone_tiles == 4
+    assert loaded.party.reagents.get("sulphurous_ash") == 2

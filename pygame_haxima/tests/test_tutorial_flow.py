@@ -117,6 +117,42 @@ def test_attack_flow_can_defeat_wolf_and_set_victory(tmp_path, monkeypatch) -> N
     assert "wolf: falls" in session.combat_feedback_text.lower()
 
 
+def test_cast_spark_consumes_reagent_and_damages_target(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    wolf = session.place.monsters[0]
+    wolf.hp = 9
+    session.party.reagents["sulphurous_ash"] = 2
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 4)
+
+    loop.process_events(session, [_action("cast"), _action("confirm")])
+
+    assert wolf.hp == 5
+    assert session.party.reagents["sulphurous_ash"] == 1
+    assert session.party.turn_count == 1
+    assert session.combat_feedback_text is not None
+    assert "spark 4" in session.combat_feedback_text.lower()
+
+
+def test_cast_spark_requires_reagent(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.reagents["sulphurous_ash"] = 0
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.targeting_action is None
+    assert session.log_lines[-1] == "You lack sulphurous ash to cast Spark."
+
+
 def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

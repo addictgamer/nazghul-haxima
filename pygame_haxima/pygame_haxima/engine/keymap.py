@@ -14,6 +14,7 @@ class KeyMap:
             "open": [pygame.K_o],
             "get": [pygame.K_g],
             "attack": [pygame.K_f],
+            "cast": [pygame.K_c],
             "examine": [pygame.K_x],
             "save": [pygame.K_F5],
             "load": [pygame.K_F9],

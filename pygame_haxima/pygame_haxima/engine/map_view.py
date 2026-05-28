@@ -191,7 +191,7 @@ class MapView:
         session: GameSession,
     ) -> None:
         action = session.targeting_action
-        if action not in {"talk", "open", "attack"}:
+        if action not in {"talk", "open", "attack", "cast_spark"}:
             return
         candidates = [
             (session.party.x, session.party.y),
@@ -200,6 +200,15 @@ class MapView:
             (session.party.x, session.party.y + 1),
             (session.party.x, session.party.y - 1),
         ]
+        if action == "cast_spark":
+            candidates.extend(
+                [
+                    (session.party.x + 2, session.party.y),
+                    (session.party.x - 2, session.party.y),
+                    (session.party.x, session.party.y + 2),
+                    (session.party.x, session.party.y - 2),
+                ]
+            )
         alpha = 55 + (session.ui_anim_tick % 5) * 10
         for x, y in candidates:
             if x < start_x or y < start_y:
@@ -230,6 +239,11 @@ class MapView:
             chest = session.place.chest_at(x, y)
             return (140, 255, 160) if chest is not None and not chest.opened else (255, 120, 120)
         if action == "attack":
+            return (140, 255, 160) if session.place.monster_at(x, y) is not None else (255, 120, 120)
+        if action == "cast_spark":
+            in_range = abs(session.party.x - x) + abs(session.party.y - y) <= 2
+            if not in_range:
+                return (255, 120, 120)
             return (140, 255, 160) if session.place.monster_at(x, y) is not None else (255, 120, 120)
         return (255, 245, 120)
 

@@ -63,6 +63,8 @@ class TurnLoop:
                 self._get_items(session)
             elif action == "attack":
                 self._start_targeting(session, "attack", "Attack-<target>(Enter confirm, Esc cancel)")
+            elif action == "cast":
+                self._start_cast(session)
             elif action == "examine":
                 self._start_targeting(session, "examine", "Xamine-<target>(Enter confirm, Esc cancel)")
             elif action == "save":
@@ -185,7 +187,7 @@ class TurnLoop:
             session.append_log("Inventory is empty.")
 
     def _help(self, session: GameSession) -> None:
-        session.append_log("Move: arrows/WASD | t talk | o open | g get | f attack | x examine")
+        session.append_log("Move: arrows/WASD | t talk | o open | g get | f attack | c cast | x examine")
         session.append_log(
             "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | F4 runtime state"
         )
@@ -335,6 +337,18 @@ class TurnLoop:
         session.target_cursor = self._default_target_for_action(session, action)
         session.command_prompt = prompt
 
+    def _start_cast(self, session: GameSession) -> None:
+        available = session.party.reagents.get("sulphurous_ash", 0)
+        if available <= 0:
+            session.append_log("You lack sulphurous ash to cast Spark.")
+            return
+        if not self._has_action_target_in_range(session, "cast_spark"):
+            session.append_log("No valid spell target in range.")
+            return
+        session.targeting_action = "cast_spark"
+        session.target_cursor = self._default_target_for_action(session, "cast_spark")
+        session.command_prompt = "Cast Spark-<target>(Enter confirm, Esc cancel)"
+
     def _end_targeting(self, session: GameSession) -> None:
         session.targeting_action = None
         session.target_cursor = None
@@ -431,6 +445,21 @@ class TurnLoop:
             self._attack(session, monster)
             self._end_targeting(session)
             return
+        if action == "cast_spark":
+            monster = session.place.monster_at(x, y)
+            if monster is None:
+                session.append_log("No enemy there to cast at.")
+                return
+            if self._distance_from_party(session, x, y) > 2:
+                session.append_log("You can't cast that far.")
+                return
+            if session.party.reagents.get("sulphurous_ash", 0) <= 0:
+                session.append_log("You lack sulphurous ash to cast Spark.")
+                self._end_targeting(session)
+                return
+            self._cast_spark(session, monster)
+            self._end_targeting(session)
+            return
         if action == "examine":
             self._examine(session, x, y)
             self._end_targeting(session)
@@ -441,6 +470,8 @@ class TurnLoop:
     def _is_tile_in_target_range(self, session: GameSession, x: int, y: int) -> bool:
         if session.targeting_action in {"talk", "open", "attack"}:
             return self._distance_from_party(session, x, y) <= 1
+        if session.targeting_action == "cast_spark":
+            return self._distance_from_party(session, x, y) <= 2
         return True
 
     def _has_action_target_in_range(self, session: GameSession, action: str) -> bool:
@@ -452,6 +483,19 @@ class TurnLoop:
             return any(session.place.chest_at(x, y) is not None for x, y in candidates)
         if action == "attack":
             return any(session.place.monster_at(x, y) is not None for x, y in candidates)
+        if action == "cast_spark":
+            extended = (
+                (px, py),
+                (px + 1, py),
+                (px - 1, py),
+                (px, py + 1),
+                (px, py - 1),
+                (px + 2, py),
+                (px - 2, py),
+                (px, py + 2),
+                (px, py - 2),
+            )
+            return any(session.place.monster_at(x, y) is not None for x, y in extended)
         return True
 
     def _default_target_for_action(self, session: GameSession, action: str) -> tuple[int, int]:
@@ -466,7 +510,33 @@ class TurnLoop:
         if action == "attack":
             matches = [(x, y) for x, y in candidates if session.place.monster_at(x, y) is not None]
             return matches[0] if matches else (px, py)
+        if action == "cast_spark":
+            extended = candidates + [(px + 2, py), (px - 2, py), (px, py + 2), (px, py - 2)]
+            matches = [(x, y) for x, y in extended if session.place.monster_at(x, y) is not None]
+            return matches[0] if matches else (px, py)
         return px, py
+
+    def _cast_spark(self, session: GameSession, monster: Entity) -> None:
+        session.party.reagents["sulphurous_ash"] = max(
+            0, int(session.party.reagents.get("sulphurous_ash", 0)) - 1
+        )
+        damage = random.randint(2, 5)
+        monster.hp = max(0, monster.hp - damage)
+        session.append_log(f"You cast Spark on {monster.name} for {damage} damage.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(session, f"You: Spark {damage}", (170, 210, 255), world_pos=(monster.x, monster.y))
+        if not monster.is_alive():
+            session.append_log(f"{monster.name} is incinerated.")
+            self._set_feedback(
+                session, f"{monster.name}: Incinerated", (200, 255, 180), world_pos=(monster.x, monster.y)
+            )
+            session.quest_flags[f"defeated:{monster.entity_id}"] = True
+            session.victory = True
+            session.advance_turn()
+            return
+        if self._distance_from_party(session, monster.x, monster.y) <= 1:
+            self._enemy_counterattack(session, monster)
+        session.advance_turn()
 
     def _check_auto_combat(self, session: GameSession) -> None:
         monster = self._adjacent_monster(session)

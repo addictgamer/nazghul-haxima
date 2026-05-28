@@ -62,6 +62,11 @@ class Party:
     gold: int = 20
     food: int = 100
     turn_count: int = 0
+    reagents: dict[str, int] = field(
+        default_factory=lambda: {
+            "sulphurous_ash": 2,
+        }
+    )
 
     def lead(self) -> Entity:
         return self.members[0]

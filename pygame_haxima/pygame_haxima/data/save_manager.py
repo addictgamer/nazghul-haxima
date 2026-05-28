@@ -32,6 +32,7 @@ class SaveManager:
                 "turn_count": session.party.turn_count,
                 "inventory": [asdict(item) for item in session.party.inventory],
                 "members": [asdict(member) for member in session.party.members],
+                "reagents": dict(session.party.reagents),
             },
             "mode": session.mode.value,
             "victory": session.victory,
@@ -111,6 +112,14 @@ class SaveManager:
             session.party.food = party_payload["food"]
             session.party.turn_count = party_payload["turn_count"]
             session.party.inventory = [Item(**item) for item in party_payload.get("inventory", [])]
+            reagents_payload = party_payload.get("reagents", {})
+            if isinstance(reagents_payload, dict):
+                cleaned: dict[str, int] = {}
+                for key, value in reagents_payload.items():
+                    if isinstance(key, str) and isinstance(value, int):
+                        cleaned[key] = max(0, value)
+                if cleaned:
+                    session.party.reagents = cleaned
             if session.party.members:
                 session.party.members[0].x = session.party.x
                 session.party.members[0].y = session.party.y
@@ -275,6 +284,7 @@ class SaveManager:
         if isinstance(party, dict):
             party.setdefault("members", [])
             party.setdefault("inventory", [])
+            party.setdefault("reagents", {"sulphurous_ash": 2})
         migrated.setdefault("log_lines", [])
         return migrated
 

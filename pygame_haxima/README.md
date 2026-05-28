@@ -16,6 +16,7 @@ python -m pygame_haxima
 - Open chest: `o`
 - Get items: `g`
 - Attack: `f`
+- Cast Spark: `c` (uses `sulphurous_ash`)
 - Examine: `x`
 - Options panel: `F10`
 - Terrain debug overlay: `F2`
@@ -24,6 +25,10 @@ python -m pygame_haxima
 - Save/load: `F5` / `F9`
 - Target confirm: `Enter` (or `Space`)
 - Target cancel: `Esc`
+
+Spell notes:
+
+- `Spark` is currently available on `c` (range 2), consumes `sulphurous_ash`.
 
 On startup, the game prints a sprite coverage summary and writes:
 
