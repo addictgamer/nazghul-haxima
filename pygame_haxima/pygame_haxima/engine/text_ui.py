@@ -146,7 +146,10 @@ class TextUi:
             surface.blit(empty, (inv_panel.x + 10, y))
         else:
             for item in items:
-                icon = pygame.transform.scale(self.atlas.get(item_sprite_key(item)), (icon_size, icon_size))
+                icon = pygame.transform.scale(
+                    self.atlas.get(item_sprite_key(item, self.atlas.has_key)),
+                    (icon_size, icon_size),
+                )
                 surface.blit(icon, (inv_panel.x + 8, y))
                 label = self.menu_font.render(item.name, True, (210, 220, 238))
                 surface.blit(label, (inv_panel.x + 38, y + 3))

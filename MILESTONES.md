@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 46% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 48% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -99,7 +99,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [~] Sprite parity pass (entity/object visuals beyond terrain):
   - [x] Pass 1: tutorial critical keys switched from placeholders to canonical keys (`s_wanderer`, `s_old_townsman`, `s_wolf`, `s_chest`).
   - [~] Pass 2: pull NPC/monster/object sprite keys from converted place/townsfolk content instead of hardcoded defaults *(runtime sprite profile now sourced from converted place/townsfolk outputs; broader zone-wide adoption pending)*.
-  - [~] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
+  - [~] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings *(expanded category-aware resolver now maps weapon/armor/shield/helm/boots/potion/scroll/ring/amulet/food/reagent/currency with atlas-aware fallback selection; full converted-item ID coverage still pending)*.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
@@ -198,6 +198,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Refined top HUD status rendering to combine encounter + active effects into one wrapped status block so both remain visible simultaneously.
 - Updated spell/reagent UX policy: HUD now shows selected-spell cast capacity + required reagents (missing required shown in red with `(0)`), and `R` opens a separate full reagent inventory modal.
 - Rebalanced sidebar lower layout to dedicate most vertical space to Spellbook and keep Inventory as a compact list.
+- Expanded item icon parity mapping with category-aware canonical sprite candidates and atlas-aware fallback selection, then wired both ground-item and sidebar inventory rendering through the same resolver path.
 
 ## Suggested Delivery Sequence
 

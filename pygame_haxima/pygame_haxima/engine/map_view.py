@@ -118,7 +118,7 @@ class MapView:
             (chest.sprite_key, chest.x, chest.y) for chest in session.place.chests if not chest.opened
         )
         drawables.extend(
-            (item_sprite_key(items[0]), x, y)
+            (item_sprite_key(items[0], self.atlas.has_key), x, y)
             for (x, y), items in session.place.ground_items.items()
             if items
         )
