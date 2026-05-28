@@ -321,6 +321,7 @@ class SaveManager:
         # Normalize transient runtime/UI state for deterministic post-load behavior.
         session.show_options_menu = False
         session.show_save_load_menu = False
+        session.show_reagents_menu = False
         session.save_load_mode = None
         session.save_load_selected_slot = 0
         session.target_cursor = None

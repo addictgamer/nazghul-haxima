@@ -196,6 +196,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added persistent spell UI visibility: sidebar spellbook/reagent panel and HUD active-effects line for ward charges.
 - Fixed spellbook reagent text wrapping and top HUD overflow by adding wrapped/clamped rendering for reagent/status lines.
 - Refined top HUD status rendering to combine encounter + active effects into one wrapped status block so both remain visible simultaneously.
+- Updated spell/reagent UX policy: HUD now shows selected-spell cast capacity + required reagents (missing required shown in red with `(0)`), and `R` opens a separate full reagent inventory modal.
 
 ## Suggested Delivery Sequence
 

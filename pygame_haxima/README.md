@@ -18,6 +18,7 @@ python -m pygame_haxima
 - Attack: `f`
 - Cast selected spell: `c`
 - Cycle spell: `v`
+- Reagent inventory modal: `r`
 - Examine: `x`
 - Options panel: `F10`
 - Terrain debug overlay: `F2`
@@ -33,7 +34,7 @@ Spell notes:
 - `Heal`: self-cast restore, consumes `ginseng`.
 - `Ward`: self-cast protective charges, consumes `garlic`.
 - Sidebar now shows selected spell + reagent counts.
-- HUD shows active effect state (currently Ward charges) when present.
+- HUD shows selected spell cast count, required reagents (missing required shown in red as `(0)`), and active effects.
 
 On startup, the game prints a sprite coverage summary and writes:
 

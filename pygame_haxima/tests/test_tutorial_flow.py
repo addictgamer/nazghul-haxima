@@ -208,6 +208,19 @@ def test_cast_ward_reduces_next_enemy_hit(tmp_path, monkeypatch) -> None:
     assert session.party.turn_count == 1
 
 
+def test_reagents_modal_toggle_updates_prompt(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+
+    loop.process_events(session, [_action("reagents_menu")])
+    assert session.show_reagents_menu is True
+    assert "Reagents>" in session.command_prompt
+
+    loop.process_events(session, [_action("reagents_menu")])
+    assert session.show_reagents_menu is False
+    assert session.command_prompt == "Command> (H help, F10 options)"
+
+
 def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

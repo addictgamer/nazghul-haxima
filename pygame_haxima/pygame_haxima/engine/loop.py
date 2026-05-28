@@ -39,8 +39,15 @@ class TurnLoop:
             if session.show_save_load_menu:
                 self._handle_save_load_menu_action(session, action)
                 continue
+            if session.show_reagents_menu:
+                if action in {"cancel", "reagents_menu"}:
+                    self._toggle_reagents_menu(session)
+                continue
             if action == "options_menu":
                 self._toggle_options_menu(session)
+                continue
+            if action == "reagents_menu":
+                self._toggle_reagents_menu(session)
                 continue
             if session.show_options_menu:
                 self._handle_options_menu_action(session, action)
@@ -194,7 +201,7 @@ class TurnLoop:
             "Move: arrows/WASD | t talk | o open | g get | f attack | c cast | v cycle spell | x examine"
         )
         session.append_log(
-            "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | F4 runtime state"
+            "F5 save | F9 load | R reagents | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | F4 runtime state"
         )
         session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
 
@@ -210,6 +217,19 @@ class TurnLoop:
         else:
             session.command_prompt = "Command> (H help, F10 options)"
             session.append_log("Closed options menu.")
+
+    def _toggle_reagents_menu(self, session: GameSession) -> None:
+        if session.show_save_load_menu:
+            return
+        if session.show_options_menu:
+            self._toggle_options_menu(session)
+        session.show_reagents_menu = not session.show_reagents_menu
+        if session.show_reagents_menu:
+            session.command_prompt = "Reagents> R/Esc close"
+            session.append_log("Opened reagents list.")
+        else:
+            session.command_prompt = "Command> (H help, F10 options)"
+            session.append_log("Closed reagents list.")
 
     def _handle_options_menu_action(self, session: GameSession, action: str) -> None:
         option_count = 4

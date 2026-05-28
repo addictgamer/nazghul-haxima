@@ -210,6 +210,8 @@ class TextUi:
             return
         if session.show_options_menu:
             self.draw_options_menu(surface, session)
+        if session.show_reagents_menu:
+            self.draw_reagents_menu(surface, session)
 
     def draw_options_menu(self, surface: pygame.Surface, session: GameSession) -> None:
         panel = pygame.Rect(170, 170, 940, 520)
@@ -291,6 +293,31 @@ class TextUi:
             tx = button_rect.x + (button_rect.width - txt.get_width()) // 2
             ty = button_rect.y + (button_rect.height - txt.get_height()) // 2
             surface.blit(txt, (tx, ty))
+
+    def draw_reagents_menu(self, surface: pygame.Surface, session: GameSession) -> None:
+        panel = pygame.Rect(260, 170, 760, 520)
+        pygame.draw.rect(surface, (18, 20, 32), panel)
+        pygame.draw.rect(surface, (170, 185, 225), panel, 2)
+
+        title = self.cmd_font.render("REAGENT INVENTORY", True, (245, 235, 180))
+        surface.blit(title, (panel.x + 16, panel.y + 12))
+        hint = self.menu_font.render("Press R or Esc to close", True, (200, 210, 225))
+        surface.blit(hint, (panel.x + 16, panel.y + 46))
+
+        reagents = sorted(session.party.reagents.items())
+        if not reagents:
+            empty = self.menu_font.render("(none)", True, (160, 170, 190))
+            surface.blit(empty, (panel.x + 20, panel.y + 88))
+            return
+
+        row_h = 28
+        y = panel.y + 86
+        max_rows = max(1, (panel.height - 106) // row_h)
+        for name, qty in reagents[:max_rows]:
+            color = (170, 210, 180) if qty > 0 else (255, 110, 110)
+            row = self.menu_font.render(f"{name}: {qty}", True, color)
+            surface.blit(row, (panel.x + 20, y))
+            y += row_h
 
     def save_load_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:
         panel = self.SAVE_LOAD_PANEL

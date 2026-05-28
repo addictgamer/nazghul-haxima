@@ -3,11 +3,12 @@ from __future__ import annotations
 import pygame
 
 from pygame_haxima.domain.models import GameSession, Mode
+from pygame_haxima.engine.spells import get_spell
 
 
 class HudPane:
     def __init__(self) -> None:
-        self.font = pygame.font.SysFont("consolas", 22)
+        self.font = pygame.font.SysFont("consolas", 20)
         self.sub_font = pygame.font.SysFont("consolas", 16)
 
     def draw(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
@@ -49,6 +50,7 @@ class HudPane:
                 max_width,
                 rect.bottom - 4,
             )
+        self._draw_spell_status(surface, rect, session, max(y, rect.y + 50))
         if session.debug_sprite_warnings:
             warn = (
                 f"Terrain fallback keys: {session.terrain_fallback_key_count} "
@@ -109,3 +111,46 @@ class HudPane:
             surface.blit(rendered, (x, y))
             y += rendered.get_height() + 1
         return y
+
+    def _draw_spell_status(
+        self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession, y: int
+    ) -> None:
+        spell = get_spell(session.party.selected_spell)
+        if spell is None:
+            return
+        casts = self._casts_available(session)
+        cast_text = f"Spell {spell.name} | Casts: {casts}"
+        cast_render = self.sub_font.render(cast_text, True, (190, 215, 245))
+        if y + cast_render.get_height() > rect.bottom - 3:
+            return
+        surface.blit(cast_render, (rect.x + 10, y))
+
+        rx = rect.x + 280
+        for reagent, required in sorted(spell.reagents.items()):
+            available = int(session.party.reagents.get(reagent, 0))
+            label = f"{reagent}({available})"
+            if available <= 0:
+                color = (255, 110, 110)
+            elif available < required:
+                color = (255, 190, 120)
+            else:
+                color = (170, 210, 180)
+            reagent_render = self.sub_font.render(label, True, color)
+            if rx + reagent_render.get_width() > rect.right - 8:
+                break
+            surface.blit(reagent_render, (rx, y))
+            rx += reagent_render.get_width() + 14
+
+    def _casts_available(self, session: GameSession) -> int:
+        spell = get_spell(session.party.selected_spell)
+        if spell is None:
+            return 0
+        caps: list[int] = []
+        for reagent, qty in spell.reagents.items():
+            if qty <= 0:
+                continue
+            available = int(session.party.reagents.get(reagent, 0))
+            caps.append(available // qty)
+        if not caps:
+            return 0
+        return min(caps)
