@@ -214,6 +214,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Renamed spellbook `Any` context label to `Anywhere` in tab and context display text.
 - Spell icons now render in spellbook UIs (sidebar selected/next-spell rows plus modal list/details) using `icon_sprite` when available, with fallback icon rendering when absent.
 - Fixed spell icon fallback issue by teaching `SpriteAtlas` to parse `mk-sprite` spell icon declarations in `spells.scm` (mapped to `ss_spells`), so spellbook entries resolve distinct per-spell icons instead of generic fallback.
+- Added spellbook Down-arrow key repeat behavior after threshold timeout (spellbook-only), and refined wheel behavior to snap selection to hovered entry before incremental scrolling.
 - Sidebar spell mini-list now rotates relative to active selection (`selected` + next spells) so `V` cycling updates the visible 3-item window, not a fixed first-three list.
 - Sidebar spell mini-list now excludes the currently selected spell, shows the next three spells only, and renders the list with a tab-like visual indent.
 

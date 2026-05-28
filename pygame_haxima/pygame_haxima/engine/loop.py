@@ -351,10 +351,16 @@ class TurnLoop:
         known = self._spellbook_ordered_spell_ids(session)
         if not known or delta_y == 0:
             return
+        hover_index = session.spellbook_hover_index
+        if hover_index is not None and 0 <= hover_index < len(known):
+            # First wheel tick over an entry snaps the cursor there.
+            if hover_index != session.spellbook_selected_index:
+                session.spellbook_selected_index = hover_index
+                return
         direction = -1 if delta_y > 0 else 1
         base_index = (
-            session.spellbook_hover_index
-            if session.spellbook_hover_index is not None and 0 <= session.spellbook_hover_index < len(known)
+            hover_index
+            if hover_index is not None and 0 <= hover_index < len(known)
             else session.spellbook_selected_index
         )
         session.spellbook_selected_index = (base_index + direction) % len(known)

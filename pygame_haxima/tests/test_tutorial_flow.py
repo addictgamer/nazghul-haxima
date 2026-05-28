@@ -283,6 +283,18 @@ def test_spellbook_mousewheel_scroll_changes_selection(tmp_path) -> None:
     assert session.spellbook_selected_index != start_idx
 
 
+def test_spellbook_mousewheel_first_snaps_to_hovered_entry(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    loop.process_events(session, [_action("spellbook_menu")])
+    session.spellbook_selected_index = 0
+    session.spellbook_hover_index = 2
+
+    loop.process_events(session, [_wheel(-1)])
+
+    assert session.spellbook_selected_index == 2
+
+
 def test_spellbook_tabs_cycle_with_left_right(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()
