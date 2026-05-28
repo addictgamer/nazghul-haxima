@@ -53,7 +53,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         name="The Wanderer",
         x=3,
         y=9,
-        sprite_key="s_party",
+        sprite_key="s_wanderer",
         hp=20,
         max_hp=20,
         ap=50,

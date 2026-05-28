@@ -100,7 +100,8 @@ class MapView:
         start_y: int,
         session: GameSession,
     ) -> None:
-        drawables: list[tuple[str, int, int]] = [("s_party", session.party.x, session.party.y)]
+        party_sprite = session.party.lead().sprite_key if session.party.members else "s_wanderer"
+        drawables: list[tuple[str, int, int]] = [(party_sprite, session.party.x, session.party.y)]
         drawables.extend((npc.sprite_key, npc.x, npc.y) for npc in session.place.npcs)
         drawables.extend(
             (monster.sprite_key, monster.x, monster.y)

@@ -21,6 +21,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Targeting now auto-focuses a valid in-range target tile for short-range actions instead of defaulting to the player tile.
 - Camera now uses clamped deadzone-follow behavior for larger maps, reducing constant recentering while preserving edge clamping.
 - Selection highlight polish now includes pulsing target cursor, valid-target overlays, and a target trail from party to cursor.
+- Party rendering now uses the lead member sprite key (`s_wanderer` in tutorial) instead of a hardcoded placeholder key.
 - M4 kickoff complete: nested Scheme parser added, and `terrains.scm` now converts into a runtime terrain registry JSON.
 - Parser-backed map converter now exports `maps/*.scm` into structured tile-layer JSON files plus an index.
 - Parser-backed place converter now exports `places/*.scm` into structured place metadata JSON with hooks/subplace/object summaries.
@@ -137,6 +138,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added parser-driven townsfolk export: `converted_data/townsfolk.runtime.json` with conversation keyword sets, schedules, and factory metadata (including `mk-abe` and `sch_abe` extraction).
 - Added generated import validation report: `converted_data/import_validation_report.json` with coverage counters and conversion warnings.
 - Added parser-driven quest exports: `converted_data/quests/*.quests.json` + `converted_data/quests/index.json` with `qst-mk` quest records and quest-data update references.
+- Fixed missing player art by switching tutorial/player rendering from placeholder `s_party` to actual sprite key usage (`s_wanderer` / party lead sprite).
 
 ## Suggested Delivery Sequence
 
