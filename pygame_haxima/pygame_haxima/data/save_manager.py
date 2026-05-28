@@ -143,6 +143,7 @@ class SaveManager:
                     if not isinstance(items, list):
                         continue
                     session.place.ground_items[xy] = [Item(**item) for item in items if isinstance(item, dict)]
+            self._normalize_loaded_session(session)
             return True
         except (KeyError, TypeError, ValueError):
             self.last_error = "invalid_schema"
@@ -209,3 +210,22 @@ class SaveManager:
     def _slot_path(self, slot_index: int) -> Path:
         clamped = max(0, min(SAVE_SLOT_COUNT - 1, slot_index))
         return self.save_dir / f"slot{clamped + 1}-save.json"
+
+    def _normalize_loaded_session(self, session: GameSession) -> None:
+        # Normalize transient runtime/UI state for deterministic post-load behavior.
+        session.show_options_menu = False
+        session.show_save_load_menu = False
+        session.save_load_mode = None
+        session.save_load_selected_slot = 0
+        session.target_cursor = None
+        session.targeting_action = None
+        session.selected_npc_id = None
+        session.command_prompt = "Command> (H help, F10 options)"
+        session.combat_feedback_text = None
+        session.combat_feedback_ticks = 0
+        session.combat_feedback_world_pos = None
+        session.camera_start_x = None
+        session.camera_start_y = None
+
+        if not any(monster.is_alive() for monster in session.place.monsters) and session.mode == Mode.COMBAT:
+            session.mode = Mode.EXPLORE

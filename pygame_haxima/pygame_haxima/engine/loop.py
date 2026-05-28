@@ -266,6 +266,7 @@ class TurnLoop:
 
         loaded = self.save_manager.load_slot(slot, session)
         if loaded:
+            self._post_load_sync(session)
             session.append_log("Loaded saved game.")
             self._close_save_load_menu(session)
             return
@@ -275,6 +276,11 @@ class TurnLoop:
             session.append_log("Save file schema is invalid for this build.")
         else:
             session.append_log("No saved game found in that slot.")
+
+    def _post_load_sync(self, session: GameSession) -> None:
+        session.option_scale = self.renderer.scale
+        session.option_fullscreen = self.renderer.is_fullscreen
+        session.save_slot_labels = self.save_manager.list_slots()
 
     def _handle_save_load_menu_click(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
         hit = self.renderer.text_ui.save_load_hit_test(ui_pos, session)

@@ -51,7 +51,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
-| M5 | Save/load robustness | In Progress | 61% | Stable schema versioning + full world state restore |
+| M5 | Save/load robustness | In Progress | 67% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | In Progress | 12% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
@@ -171,6 +171,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added save/load slot modal UI (keyboard-driven) with slot metadata labels and explicit per-slot save/load actions.
 - Added mouse support for save/load modal selection/actions and visually distinct slot rows with dedicated action buttons.
 - Fixed render order so modal UI layers (save/load/options) draw above sidebar panels.
+- Added post-load normalization to reset transient UI/combat states (menus, targeting, popup feedback, camera) for deterministic resumes.
 
 ## Suggested Delivery Sequence
 
