@@ -27,9 +27,25 @@ class TurnLoop:
             if event.kind == EngineEventType.MOUSE_CLICK:
                 if session.show_save_load_menu:
                     self._handle_save_load_menu_click(session, event.payload["ui_pos"])
+                    continue
+                if session.show_spellbook_menu:
+                    self._handle_spellbook_menu_click(session, event.payload["ui_pos"])
+                continue
+            if event.kind == EngineEventType.MOUSE_MOVE:
+                if session.show_spellbook_menu:
+                    self._handle_spellbook_menu_hover(session, event.payload["ui_pos"])
+                continue
+            if event.kind == EngineEventType.MOUSE_WHEEL:
+                if session.show_spellbook_menu:
+                    self._handle_spellbook_menu_scroll(session, int(event.payload.get("y", 0)))
                 continue
             if event.kind == EngineEventType.MOUSE_TILE:
-                if session.show_save_load_menu:
+                if (
+                    session.show_save_load_menu
+                    or session.show_options_menu
+                    or session.show_reagents_menu
+                    or session.show_spellbook_menu
+                ):
                     continue
                 self._handle_mouse_move(session, event.payload["tile"])
                 continue
@@ -42,12 +58,21 @@ class TurnLoop:
             if session.show_reagents_menu:
                 if action in {"cancel", "reagents_menu"}:
                     self._toggle_reagents_menu(session)
+                elif action == "spellbook_menu":
+                    self._toggle_reagents_menu(session)
+                    self._toggle_spellbook_menu(session)
+                continue
+            if session.show_spellbook_menu:
+                self._handle_spellbook_menu_action(session, action)
                 continue
             if action == "options_menu":
                 self._toggle_options_menu(session)
                 continue
             if action == "reagents_menu":
                 self._toggle_reagents_menu(session)
+                continue
+            if action == "spellbook_menu":
+                self._toggle_spellbook_menu(session)
                 continue
             if session.show_options_menu:
                 self._handle_options_menu_action(session, action)
@@ -198,7 +223,7 @@ class TurnLoop:
 
     def _help(self, session: GameSession) -> None:
         session.append_log(
-            "Move: arrows/WASD | t talk | o open | g get | f attack | c cast | v cycle spell | x examine"
+            "Move: arrows/WASD | t talk | o open | g get | f attack | c cast | v cycle spell | b spellbook | x examine"
         )
         session.append_log(
             "F5 save | F9 load | R reagents | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | F4 runtime state"
@@ -223,6 +248,8 @@ class TurnLoop:
             return
         if session.show_options_menu:
             self._toggle_options_menu(session)
+        if session.show_spellbook_menu:
+            self._toggle_spellbook_menu(session)
         session.show_reagents_menu = not session.show_reagents_menu
         if session.show_reagents_menu:
             session.command_prompt = "Reagents> R/Esc close"
@@ -230,6 +257,111 @@ class TurnLoop:
         else:
             session.command_prompt = "Command> (H help, F10 options)"
             session.append_log("Closed reagents list.")
+
+    def _toggle_spellbook_menu(self, session: GameSession) -> None:
+        if session.show_save_load_menu:
+            return
+        if session.show_options_menu:
+            self._toggle_options_menu(session)
+        if session.show_reagents_menu:
+            self._toggle_reagents_menu(session)
+        session.show_spellbook_menu = not session.show_spellbook_menu
+        if session.show_spellbook_menu:
+            known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+            if session.party.selected_spell in known:
+                session.spellbook_selected_index = known.index(session.party.selected_spell)
+            else:
+                session.spellbook_selected_index = 0
+            session.spellbook_hover_index = None
+            session.command_prompt = "Spellbook> wheel/Up/Down select, Enter set, C cast, B/Esc close"
+            session.append_log("Opened spellbook.")
+        else:
+            session.spellbook_hover_index = None
+            session.command_prompt = "Command> (H help, F10 options)"
+            session.append_log("Closed spellbook.")
+
+    def _handle_spellbook_menu_action(self, session: GameSession, action: str) -> None:
+        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        if action in {"cancel", "spellbook_menu"}:
+            self._toggle_spellbook_menu(session)
+            return
+        if not known:
+            return
+        if action == "move_n":
+            session.spellbook_selected_index = (session.spellbook_selected_index - 1) % len(known)
+            session.spellbook_hover_index = None
+            return
+        if action == "move_s":
+            session.spellbook_selected_index = (session.spellbook_selected_index + 1) % len(known)
+            session.spellbook_hover_index = None
+            return
+        if action == "confirm":
+            self._set_selected_spell_from_spellbook(session, session.spellbook_selected_index)
+            return
+        if action == "cast":
+            self._cast_from_spellbook(session)
+            return
+
+    def _handle_spellbook_menu_click(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
+        hit = self.renderer.text_ui.spellbook_hit_test(ui_pos, session)
+        if hit is None:
+            return
+        target, index = hit
+        if target == "spell" and index is not None:
+            session.spellbook_selected_index = index
+            session.spellbook_hover_index = index
+            self._set_selected_spell_from_spellbook(session, index)
+            return
+        if target == "cast":
+            self._cast_from_spellbook(session)
+            return
+        if target == "set":
+            self._set_selected_spell_from_spellbook(session, session.spellbook_selected_index)
+            return
+        if target == "close":
+            self._toggle_spellbook_menu(session)
+
+    def _handle_spellbook_menu_hover(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
+        hit = self.renderer.text_ui.spellbook_hit_test(ui_pos, session)
+        if hit is None:
+            session.spellbook_hover_index = None
+            return
+        target, index = hit
+        if target == "spell":
+            session.spellbook_hover_index = index
+            return
+        session.spellbook_hover_index = None
+
+    def _handle_spellbook_menu_scroll(self, session: GameSession, delta_y: int) -> None:
+        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        if not known or delta_y == 0:
+            return
+        direction = -1 if delta_y > 0 else 1
+        session.spellbook_selected_index = (session.spellbook_selected_index + direction) % len(known)
+        session.spellbook_hover_index = None
+
+    def _set_selected_spell_from_spellbook(self, session: GameSession, index: int) -> None:
+        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        if not known:
+            return
+        clamped = max(0, min(index, len(known) - 1))
+        session.spellbook_selected_index = clamped
+        session.party.selected_spell = known[clamped]
+        spell = get_spell(session.party.selected_spell)
+        if spell is not None:
+            session.append_log(f"Prepared spell: {spell.name}.")
+
+    def _cast_from_spellbook(self, session: GameSession) -> None:
+        self._set_selected_spell_from_spellbook(session, session.spellbook_selected_index)
+        spell = get_spell(session.party.selected_spell)
+        if spell is None:
+            return
+        if not self._has_reagents_for_spell(session, spell.spell_id):
+            reagent_text = ", ".join(f"{name} x{qty}" for name, qty in sorted(spell.reagents.items()))
+            session.append_log(f"You lack reagents for {spell.name} ({reagent_text}).")
+            return
+        self._toggle_spellbook_menu(session)
+        self._start_cast(session)
 
     def _handle_options_menu_action(self, session: GameSession, action: str) -> None:
         option_count = 4

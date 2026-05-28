@@ -202,6 +202,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added data-driven spellbook loading from `worlds/haxima-1.002/spells.scm` (retaining `spark/heal/ward` tutorial aliases), and generalized cast targeting/range handling for all targeted spell IDs.
 - Added reagent-specific icon rendering (`s_sulphorous_ash`, `s_ginseng`, `s_garlic`, `s_nightshade`, `s_mandrake`, etc.) in shared item sprite resolution so inventory and ground pickups show reagent art when available.
 - Fixed reagent UI rendering so sidebar spellbook reagent rows and the `R` reagent modal both draw reagent icons alongside text counts.
+- Added `B` spellbook modal with keyboard/mouse spell selection and hover/focus details (description, context/targeting, and reagent required-vs-available counts).
+- Added spellbook wheel scrolling, direct in-modal cast shortcut (`C`), and clickable Spellbook action buttons (`Cast`, `Set Active`, `Close`) that mirror keyboard shortcuts.
+- Adjusted spellbook modal/detail layout to reduce description overflow (wider modal, wrapped description text) and split context into a two-line block (`Context:` + indented value list).
 
 ## Suggested Delivery Sequence
 

@@ -10,6 +10,7 @@ from pygame_haxima.engine.spells import get_spell
 
 class TextUi:
     SAVE_LOAD_PANEL = pygame.Rect(220, 180, 840, 480)
+    SPELLBOOK_PANEL = pygame.Rect(150, 120, 980, 620)
 
     def __init__(self, atlas: SpriteAtlas) -> None:
         self.atlas = atlas
@@ -226,6 +227,8 @@ class TextUi:
             self.draw_options_menu(surface, session)
         if session.show_reagents_menu:
             self.draw_reagents_menu(surface, session)
+        if session.show_spellbook_menu:
+            self.draw_spellbook_menu(surface, session)
 
     def draw_options_menu(self, surface: pygame.Surface, session: GameSession) -> None:
         panel = pygame.Rect(170, 170, 940, 520)
@@ -338,6 +341,223 @@ class TextUi:
             surface.blit(icon, (panel.x + 20, y + 1))
             surface.blit(row, (panel.x + 20 + icon_size + 8, y))
             y += row_h
+
+    def draw_spellbook_menu(self, surface: pygame.Surface, session: GameSession) -> None:
+        panel = self.SPELLBOOK_PANEL
+        pygame.draw.rect(surface, (18, 20, 32), panel)
+        pygame.draw.rect(surface, (170, 185, 225), panel, 2)
+
+        title = self.cmd_font.render("SPELLBOOK", True, (245, 235, 180))
+        surface.blit(title, (panel.x + 16, panel.y + 12))
+        hint = self.menu_font.render(
+            "Wheel/Up/Down scroll | Enter set active | C cast | B/Esc close",
+            True,
+            (200, 210, 225),
+        )
+        surface.blit(hint, (panel.x + 16, panel.y + 46))
+
+        spells = self._known_spells(session)
+        list_rect = self._spellbook_list_rect()
+        detail_rect = self._spellbook_detail_rect()
+        pygame.draw.rect(surface, (24, 28, 40), list_rect)
+        pygame.draw.rect(surface, (110, 125, 165), list_rect, 1)
+        pygame.draw.rect(surface, (24, 28, 40), detail_rect)
+        pygame.draw.rect(surface, (110, 125, 165), detail_rect, 1)
+
+        if not spells:
+            empty = self.menu_font.render("(No known spells)", True, (180, 190, 210))
+            surface.blit(empty, (list_rect.x + 10, list_rect.y + 12))
+            for button, button_rect in self._spellbook_button_rects().items():
+                label = {"cast": "Cast (C)", "set": "Set Active (Enter)", "close": "Close (B/Esc)"}[button]
+                fill = (58, 66, 96) if button != "close" else (96, 62, 62)
+                pygame.draw.rect(surface, fill, button_rect)
+                pygame.draw.rect(surface, (225, 230, 245), button_rect, 2)
+                txt = self.small_font.render(label, True, (240, 245, 255))
+                tx = button_rect.x + (button_rect.width - txt.get_width()) // 2
+                ty = button_rect.y + (button_rect.height - txt.get_height()) // 2
+                surface.blit(txt, (tx, ty))
+            return
+
+        selected_idx = max(0, min(session.spellbook_selected_index, len(spells) - 1))
+        row_h = 28
+        visible_rows = max(1, list_rect.height // row_h)
+        start_idx = self._spellbook_start_index(len(spells), selected_idx, visible_rows)
+        visible = spells[start_idx : start_idx + visible_rows]
+        for offset, spell in enumerate(visible):
+            idx = start_idx + offset
+            row_rect = pygame.Rect(list_rect.x + 4, list_rect.y + offset * row_h + 4, list_rect.width - 8, row_h - 2)
+            hovered = session.spellbook_hover_index == idx
+            selected = idx == selected_idx
+            active = spell.spell_id == session.party.selected_spell
+            bg = (70, 88, 128) if hovered else (56, 72, 108) if selected else (30, 38, 60)
+            pygame.draw.rect(surface, bg, row_rect)
+            if active:
+                pygame.draw.rect(surface, (210, 220, 255), row_rect, 2)
+            marker = ">" if selected else " "
+            active_marker = "*" if active else " "
+            text = self.menu_font.render(
+                f"{marker}{active_marker} C{spell.circle} {spell.name}",
+                True,
+                (240, 245, 255) if selected or hovered else (180, 195, 220),
+            )
+            surface.blit(text, (row_rect.x + 8, row_rect.y + 4))
+
+        focus_idx = session.spellbook_hover_index
+        if focus_idx is None or focus_idx < 0 or focus_idx >= len(spells):
+            focus_idx = selected_idx
+        focus_spell = spells[focus_idx]
+        self._draw_spellbook_details(surface, detail_rect, session, focus_spell)
+        can_cast = self._can_cast_spell(session, focus_spell)
+        for button, button_rect in self._spellbook_button_rects().items():
+            label = {"cast": "Cast (C)", "set": "Set Active (Enter)", "close": "Close (B/Esc)"}[button]
+            if button == "cast":
+                fill = (70, 105, 78) if can_cast else (70, 70, 70)
+            elif button == "close":
+                fill = (96, 62, 62)
+            else:
+                fill = (58, 66, 96)
+            pygame.draw.rect(surface, fill, button_rect)
+            pygame.draw.rect(surface, (225, 230, 245), button_rect, 2)
+            txt = self.small_font.render(label, True, (240, 245, 255))
+            tx = button_rect.x + (button_rect.width - txt.get_width()) // 2
+            ty = button_rect.y + (button_rect.height - txt.get_height()) // 2
+            surface.blit(txt, (tx, ty))
+
+    def _draw_spellbook_details(
+        self,
+        surface: pygame.Surface,
+        rect: pygame.Rect,
+        session: GameSession,
+        spell,
+    ) -> None:
+        y = rect.y + 10
+        title = self.cmd_font.render(spell.name, True, (220, 235, 255))
+        surface.blit(title, (rect.x + 10, y))
+        y += title.get_height() + 4
+        desc_width = rect.width - 20
+        for line in self._wrap_text(self.small_font, self._spell_summary_text(spell), desc_width):
+            summary = self.small_font.render(line, True, (190, 210, 235))
+            surface.blit(summary, (rect.x + 10, y))
+            y += summary.get_height() + 2
+        y += 6
+        context_label = self.small_font.render("Context:", True, (170, 190, 220))
+        surface.blit(context_label, (rect.x + 10, y))
+        y += context_label.get_height() + 2
+        context_value = self.small_font.render(
+            f"  {self._spell_context_list(spell.context)}",
+            True,
+            (170, 190, 220),
+        )
+        surface.blit(context_value, (rect.x + 10, y))
+        y += context_value.get_height() + 4
+        target_line = self.small_font.render(
+            f"Target: {'Enemy' if spell.targeted else 'Self/Utility'} | Range: {spell.range_tiles}",
+            True,
+            (170, 190, 220),
+        )
+        surface.blit(target_line, (rect.x + 10, y))
+        y += target_line.get_height() + 8
+        castable = self._can_cast_spell(session, spell)
+        cast_line = self.menu_font.render(
+            "Can cast now" if castable else "Missing reagents",
+            True,
+            (170, 235, 170) if castable else (255, 140, 140),
+        )
+        surface.blit(cast_line, (rect.x + 10, y))
+        y += cast_line.get_height() + 8
+
+        reag_title = self.menu_font.render("Required Reagents", True, (200, 220, 240))
+        surface.blit(reag_title, (rect.x + 10, y))
+        y += reag_title.get_height() + 4
+        icon_size = 20
+        row_h = 26
+        if not spell.reagents:
+            none = self.small_font.render("None", True, (170, 180, 200))
+            surface.blit(none, (rect.x + 10, y))
+            return
+        for reagent, required in sorted(spell.reagents.items()):
+            if y + row_h > rect.bottom - 10:
+                break
+            available = session.party.reagents.get(reagent, 0)
+            color = (170, 220, 180) if available >= required else (255, 125, 125)
+            icon = pygame.transform.scale(
+                self.atlas.get(self._reagent_sprite_key(reagent)),
+                (icon_size, icon_size),
+            )
+            surface.blit(icon, (rect.x + 10, y + 2))
+            text = self.small_font.render(
+                f"{self._pretty_reagent_name(reagent)}: {required} ({available})",
+                True,
+                color,
+            )
+            surface.blit(text, (rect.x + 10 + icon_size + 8, y + 3))
+            y += row_h
+
+    def spellbook_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:
+        panel = self.SPELLBOOK_PANEL
+        if not panel.collidepoint(ui_pos):
+            return None
+        for key, rect in self._spellbook_button_rects().items():
+            if rect.collidepoint(ui_pos):
+                return (key, None)
+        list_rect = self._spellbook_list_rect()
+        if not list_rect.collidepoint(ui_pos):
+            return ("panel", None)
+        spells = self._known_spells(session)
+        if not spells:
+            return ("panel", None)
+        row_h = 28
+        selected_idx = max(0, min(session.spellbook_selected_index, len(spells) - 1))
+        visible_rows = max(1, list_rect.height // row_h)
+        start_idx = self._spellbook_start_index(len(spells), selected_idx, visible_rows)
+        row = (ui_pos[1] - list_rect.y - 4) // row_h
+        index = start_idx + max(0, row)
+        if 0 <= row < visible_rows and index < len(spells):
+            return ("spell", index)
+        return ("panel", None)
+
+    def _spellbook_list_rect(self) -> pygame.Rect:
+        panel = self.SPELLBOOK_PANEL
+        return pygame.Rect(panel.x + 16, panel.y + 84, 380, panel.height - 160)
+
+    def _spellbook_detail_rect(self) -> pygame.Rect:
+        panel = self.SPELLBOOK_PANEL
+        return pygame.Rect(panel.x + 410, panel.y + 84, panel.width - 426, panel.height - 160)
+
+    def _spellbook_button_rects(self) -> dict[str, pygame.Rect]:
+        panel = self.SPELLBOOK_PANEL
+        y = panel.bottom - 56
+        return {
+            "cast": pygame.Rect(panel.x + 20, y, 180, 36),
+            "set": pygame.Rect(panel.x + 220, y, 220, 36),
+            "close": pygame.Rect(panel.right - 160, y, 140, 36),
+        }
+
+    def _spellbook_start_index(self, total: int, selected_idx: int, visible_rows: int) -> int:
+        return max(0, min(selected_idx - visible_rows // 2, max(0, total - visible_rows)))
+
+    def _known_spells(self, session: GameSession) -> list:
+        return [spell for spell_id in session.party.spells_known if (spell := get_spell(spell_id)) is not None]
+
+    def _can_cast_spell(self, session: GameSession, spell) -> bool:
+        return all(session.party.reagents.get(reagent, 0) >= qty for reagent, qty in spell.reagents.items())
+
+    def _spell_summary_text(self, spell) -> str:
+        if spell.effect_kind == "attack":
+            return "Offensive arcana that damages a single target."
+        if spell.effect_kind == "heal":
+            return "Restoration spell that recovers party health."
+        if spell.effect_kind == "ward":
+            return "Defensive ward that reduces incoming damage."
+        return "Utility spell with contextual world interactions."
+
+    def _spell_context_list(self, context: str) -> str:
+        normalized = context.replace("context-", "").replace("_", "-")
+        parts = [part.strip() for part in normalized.split(",") if part.strip()]
+        if not parts:
+            return "Any"
+        pretty = [part.replace("-", " ").title() for part in parts]
+        return ", ".join(pretty)
 
     def save_load_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:
         panel = self.SAVE_LOAD_PANEL

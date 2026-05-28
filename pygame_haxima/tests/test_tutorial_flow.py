@@ -12,6 +12,9 @@ class _StubTextUi:
     def save_load_hit_test(self, ui_pos: tuple[int, int], session: object) -> tuple[str, int | None] | None:
         return None
 
+    def spellbook_hit_test(self, ui_pos: tuple[int, int], session: object) -> tuple[str, int | None] | None:
+        return None
+
 
 class _StubRenderer:
     def __init__(self) -> None:
@@ -36,6 +39,10 @@ class _StubAudio:
 
 def _action(name: str) -> EngineEvent:
     return EngineEvent(kind=EngineEventType.ACTION, payload={"action": name})
+
+
+def _wheel(delta_y: int) -> EngineEvent:
+    return EngineEvent(kind=EngineEventType.MOUSE_WHEEL, payload={"y": delta_y})
 
 
 def _make_loop(tmp_path: Path) -> TurnLoop:
@@ -219,6 +226,52 @@ def test_reagents_modal_toggle_updates_prompt(tmp_path) -> None:
     loop.process_events(session, [_action("reagents_menu")])
     assert session.show_reagents_menu is False
     assert session.command_prompt == "Command> (H help, F10 options)"
+
+
+def test_spellbook_modal_toggle_and_select(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "spark"
+
+    loop.process_events(session, [_action("spellbook_menu")])
+    assert session.show_spellbook_menu is True
+    assert "Spellbook>" in session.command_prompt
+
+    loop.process_events(session, [_action("move_s"), _action("confirm")])
+    assert session.party.selected_spell != "spark"
+
+    loop.process_events(session, [_action("spellbook_menu")])
+    assert session.show_spellbook_menu is False
+    assert session.command_prompt == "Command> (H help, F10 options)"
+
+
+def test_spellbook_mousewheel_scroll_changes_selection(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    loop.process_events(session, [_action("spellbook_menu")])
+    start_idx = session.spellbook_selected_index
+
+    loop.process_events(session, [_wheel(-1)])
+
+    assert session.spellbook_selected_index != start_idx
+
+
+def test_spellbook_cast_shortcut_casts_selected_spell(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "spark"
+    session.party.reagents["sulphurous_ash"] = 2
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 4)
+
+    loop.process_events(session, [_action("spellbook_menu"), _action("cast"), _action("confirm")])
+
+    assert session.show_spellbook_menu is False
+    assert session.party.reagents["sulphurous_ash"] == 1
+    assert session.party.turn_count == 1
 
 
 def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:

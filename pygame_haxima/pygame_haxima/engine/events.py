@@ -11,6 +11,8 @@ class EngineEventType(StrEnum):
     ACTION = "action"
     MOUSE_TILE = "mouse_tile"
     MOUSE_CLICK = "mouse_click"
+    MOUSE_MOVE = "mouse_move"
+    MOUSE_WHEEL = "mouse_wheel"
     ANIMATION_TICK = "animation_tick"
 
 

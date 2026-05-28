@@ -20,6 +20,7 @@ class KeyMap:
             "save": [pygame.K_F5],
             "load": [pygame.K_F9],
             "reagents_menu": [pygame.K_r],
+            "spellbook_menu": [pygame.K_b],
             "help": [pygame.K_h],
             "cancel": [pygame.K_ESCAPE],
             "confirm": [pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE],

@@ -77,6 +77,7 @@ def run() -> int:
         ("attack", "Attack"),
         ("cast", "Cast spell"),
         ("cycle_spell", "Cycle spell"),
+        ("spellbook_menu", "Spellbook"),
         ("reagents_menu", "Reagents list"),
         ("options_menu", "Options menu"),
         ("debug_runtime_state", "Runtime state debug"),

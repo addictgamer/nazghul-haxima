@@ -30,4 +30,9 @@ class InputController:
                 tile = self.renderer.screen_to_map_tile(pg_event.pos, session)
                 if tile is not None:
                     events.append(EngineEvent(EngineEventType.MOUSE_TILE, {"tile": tile}))
+            elif pg_event.type == pygame.MOUSEMOTION:
+                ui_pos = self.renderer.window_to_virtual(pg_event.pos)
+                events.append(EngineEvent(EngineEventType.MOUSE_MOVE, {"ui_pos": ui_pos}))
+            elif pg_event.type == pygame.MOUSEWHEEL:
+                events.append(EngineEvent(EngineEventType.MOUSE_WHEEL, {"y": int(pg_event.y)}))
         return events

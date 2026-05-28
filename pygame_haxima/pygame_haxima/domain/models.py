@@ -178,6 +178,9 @@ class GameSession:
     options_selected_index: int = 0
     show_save_load_menu: bool = False
     show_reagents_menu: bool = False
+    show_spellbook_menu: bool = False
+    spellbook_selected_index: int = 0
+    spellbook_hover_index: int | None = None
     save_load_mode: str | None = None
     save_load_selected_slot: int = 0
     save_slot_labels: list[str] = field(default_factory=list)
