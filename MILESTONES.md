@@ -21,6 +21,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Targeting now auto-focuses a valid in-range target tile for short-range actions instead of defaulting to the player tile.
 - Camera now uses clamped deadzone-follow behavior for larger maps, reducing constant recentering while preserving edge clamping.
 - Selection highlight polish now includes pulsing target cursor, valid-target overlays, and a target trail from party to cursor.
+- M4 kickoff complete: nested Scheme parser added, and `terrains.scm` now converts into a runtime terrain registry JSON.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -32,7 +33,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
-| M4 | Content import pipeline | In Progress | 35% | Reliable converters for terrain/map/place/NPC/quest data |
+| M4 | Content import pipeline | In Progress | 52% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | Not Started | 5% | Main quest path playable with migrated content/system parity |
@@ -52,8 +53,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 ### M4: Content import pipeline
 
-- [ ] Replace regex converter with parser that can handle nested list structures from `.scm`.
-- [~] Convert `terrains.scm` into runtime terrain registry with passability + visual mapping (sprite-key mapping started in tutorial terrain defs).
+- [x] Replace regex converter with parser that can handle nested list structures from `.scm`.
+- [x] Convert `terrains.scm` into runtime terrain registry with passability + visual mapping.
 - [ ] Convert `maps/*.scm` into tile layers compatible with renderer.
 - [ ] Convert `places/*.scm` into place metadata and placements.
 - [ ] Convert `townsfolk/*.scm` keyword/dialogue content.
@@ -123,6 +124,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Improved target UX: when entering `talk/open/attack`, cursor now starts on a valid nearby target if one exists.
 - Improved camera UX for larger maps with deadzone-follow + strict world-edge clamping.
 - Completed final M3 selection polish with pulsing target cursor, valid-target overlays, and party-to-target trail rendering.
+- Kicked off M4: implemented a real S-expression parser and parser-backed conversion pipeline.
+- Added parser-driven terrain export: `converted_data/terrains.runtime.json` now contains structured terrain definitions.
 
 ## Suggested Delivery Sequence
 

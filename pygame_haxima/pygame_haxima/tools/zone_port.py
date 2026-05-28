@@ -11,19 +11,19 @@ def main() -> int:
     output = root / "converted_data"
     converter = ScmConverter()
 
-    targets = [
-        "terrains.scm",
-        "zones.scm",
-        "world-map.scm",
-    ]
-    for rel in targets:
+    targets = {
+        "terrains.scm": ("terrains.runtime.json", converter.convert_terrains),
+        "zones.scm": ("zones.defines.json", converter.convert_defines),
+        "world-map.scm": ("world-map.defines.json", converter.convert_defines),
+    }
+    for rel, (output_name, convert_fn) in targets.items():
         src = world / rel
         if not src.exists():
             print(f"skip: {src}")
             continue
-        dst = output / f"{src.stem}.json"
-        count = converter.convert_defines(src, dst)
-        print(f"converted {src.name}: {count} defines -> {dst.name}")
+        dst = output / output_name
+        count = convert_fn(src, dst)
+        print(f"converted {src.name}: {count} entries -> {dst.name}")
     return 0
 
 

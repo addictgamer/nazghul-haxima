@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
+
+from pygame_haxima.data.scm_parser import Expr, ScmParser, Symbol
 
 
 class ScmConverter:
@@ -13,13 +14,193 @@ class ScmConverter:
     declarations into JSON so data can be ported zone-by-zone.
     """
 
-    DEFINE_RE = re.compile(r"\(define\s+(?P<name>[^\s\)]+)\s+(?P<value>[^\)]+)\)")
+    BLOCKING_PCLASSES = {
+        "pclass-wall",
+        "pclass-repel",
+        "pclass-space",
+        "pclass-vmountains",
+        "pclass-mountains",
+        "pclass-boulder",
+        "pclass-bars",
+    }
+
+    def __init__(self) -> None:
+        self.parser = ScmParser()
 
     def convert_defines(self, src: Path, dst: Path) -> int:
         text = src.read_text(encoding="utf-8", errors="ignore")
+        expressions = self.parser.parse_file(text)
         out: dict[str, str] = {}
-        for match in self.DEFINE_RE.finditer(text):
-            out[match.group("name")] = match.group("value").strip()
+        for expr in expressions:
+            if not self._is_define(expr):
+                continue
+            define_expr = expr  # type: ignore[assignment]
+            name = self._symbol_name(define_expr[1])
+            if not name:
+                continue
+            out[name] = self._expr_to_string(define_expr[2])
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_text(json.dumps(out, indent=2), encoding="utf-8")
         return len(out)
+
+    def convert_terrains(self, src: Path, dst: Path) -> int:
+        text = src.read_text(encoding="utf-8", errors="ignore")
+        expressions = self.parser.parse_file(text)
+        env = self._build_constant_env(expressions)
+        terrains_expr = self._find_define_value(expressions, "terrains")
+        if terrains_expr is None:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(json.dumps({"terrains": []}, indent=2), encoding="utf-8")
+            return 0
+        terrain_entries = self._extract_list_entries(terrains_expr)
+        converted: list[dict[str, object]] = []
+        for entry in terrain_entries:
+            terrain = self._convert_terrain_entry(entry, env)
+            if terrain is not None:
+                converted.append(terrain)
+        payload = {
+            "source": str(src),
+            "terrain_count": len(converted),
+            "terrains": converted,
+        }
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return len(converted)
+
+    def _build_constant_env(self, expressions: list[Expr]) -> dict[str, int | float | bool | None]:
+        env: dict[str, int | float | bool | None] = {}
+        for expr in expressions:
+            if not self._is_define(expr):
+                continue
+            define_expr = expr  # type: ignore[assignment]
+            name = self._symbol_name(define_expr[1])
+            if name is None:
+                continue
+            value = self._resolve_value(define_expr[2], env)
+            if isinstance(value, (int, float, bool)) or value is None:
+                env[name] = value
+        return env
+
+    def _find_define_value(self, expressions: list[Expr], var_name: str) -> Expr | None:
+        for expr in expressions:
+            if not self._is_define(expr):
+                continue
+            define_expr = expr  # type: ignore[assignment]
+            if self._symbol_name(define_expr[1]) == var_name:
+                return define_expr[2]
+        return None
+
+    def _extract_list_entries(self, value_expr: Expr) -> list[list[Expr]]:
+        if not isinstance(value_expr, list):
+            return []
+        if not value_expr:
+            return []
+        head = self._symbol_name(value_expr[0])
+        if head != "list":
+            return []
+        entries: list[list[Expr]] = []
+        for item in value_expr[1:]:
+            if isinstance(item, list):
+                entries.append(item)
+        return entries
+
+    def _convert_terrain_entry(
+        self, entry: list[Expr], env: dict[str, int | float | bool | None]
+    ) -> dict[str, object] | None:
+        if not entry:
+            return None
+        if self._symbol_name(entry[0]) != "list":
+            return None
+        if len(entry) < 7:
+            return None
+        tag = self._resolve_to_symbol_string(entry[1], env)
+        name = self._resolve_to_string(entry[2], env)
+        pclass = self._resolve_to_symbol_string(entry[3], env)
+        sprite = self._resolve_to_symbol_string(entry[4], env)
+        opacity = self._resolve_to_number(entry[5], env)
+        light = self._resolve_to_number(entry[6], env)
+        step_on = None
+        if len(entry) > 7:
+            step_on = self._resolve_to_symbol_string(entry[7], env)
+        if tag is None or name is None or pclass is None:
+            return None
+        return {
+            "tag": tag,
+            "name": name,
+            "pclass": pclass,
+            "sprite": sprite,
+            "opacity": opacity,
+            "light": light,
+            "step_on": step_on,
+            "passable": pclass not in self.BLOCKING_PCLASSES,
+        }
+
+    def _is_define(self, expr: Expr) -> bool:
+        if not isinstance(expr, list) or len(expr) < 3:
+            return False
+        return self._symbol_name(expr[0]) == "define"
+
+    def _symbol_name(self, expr: Expr) -> str | None:
+        if isinstance(expr, Symbol):
+            return expr.name
+        return None
+
+    def _resolve_value(
+        self, expr: Expr, env: dict[str, int | float | bool | None]
+    ) -> int | float | bool | None | str:
+        if isinstance(expr, (int, float, bool)) or expr is None:
+            return expr
+        if isinstance(expr, Symbol):
+            if expr.name in env:
+                return env[expr.name]
+            return expr.name
+        if isinstance(expr, str):
+            return expr
+        if isinstance(expr, list) and len(expr) == 2 and self._symbol_name(expr[0]) == "quote":
+            inner = expr[1]
+            if isinstance(inner, Symbol):
+                return inner.name
+            return str(inner)
+        return str(expr)
+
+    def _resolve_to_symbol_string(
+        self, expr: Expr, env: dict[str, int | float | bool | None]
+    ) -> str | None:
+        value = self._resolve_value(expr, env)
+        if isinstance(value, str):
+            return value
+        return None
+
+    def _resolve_to_string(self, expr: Expr, env: dict[str, int | float | bool | None]) -> str | None:
+        value = self._resolve_value(expr, env)
+        if isinstance(value, str):
+            return value
+        return None
+
+    def _resolve_to_number(
+        self, expr: Expr, env: dict[str, int | float | bool | None]
+    ) -> int | float | None:
+        value = self._resolve_value(expr, env)
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (int, float)):
+            return value
+        return None
+
+    def _expr_to_string(self, expr: Expr) -> str:
+        if isinstance(expr, Symbol):
+            return expr.name
+        if isinstance(expr, str):
+            return expr
+        if isinstance(expr, bool):
+            return "#t" if expr else "#f"
+        if expr is None:
+            return "nil"
+        if isinstance(expr, (int, float)):
+            return str(expr)
+        if isinstance(expr, list):
+            if len(expr) == 2 and self._symbol_name(expr[0]) == "quote":
+                return "'" + self._expr_to_string(expr[1])
+            inner = " ".join(self._expr_to_string(part) for part in expr)
+            return f"({inner})"
+        return str(expr)

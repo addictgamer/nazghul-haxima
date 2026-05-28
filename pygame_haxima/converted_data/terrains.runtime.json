@@ -1,0 +1,1836 @@
+{
+  "source": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/worlds/haxima-1.002/terrains.scm",
+  "terrain_count": 183,
+  "terrains": [
+    {
+      "tag": "t_stars",
+      "name": "stars",
+      "pclass": "pclass-space",
+      "sprite": "s_stars",
+      "opacity": 0,
+      "light": 0,
+      "step_on": "chasm-fall",
+      "passable": false
+    },
+    {
+      "tag": "t_deep",
+      "name": "deep water",
+      "pclass": "pclass-deep",
+      "sprite": "s_deep",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_sunlit_deep",
+      "name": "deep water",
+      "pclass": "pclass-deep",
+      "sprite": "s_deep",
+      "opacity": 0,
+      "light": 64,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_shallow",
+      "name": "water",
+      "pclass": "pclass-deep",
+      "sprite": "s_shallow",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_blendable_shoals",
+      "name": "shallow water",
+      "pclass": "pclass-shoals",
+      "sprite": "s_shoals",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_shoals",
+      "name": "shallow water",
+      "pclass": "pclass-shoals",
+      "sprite": "s_shoals",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_sludge",
+      "name": "oily sludge",
+      "pclass": "pclass-sludge",
+      "sprite": "s_sludge",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_shallow_sludge",
+      "name": "oily sludge",
+      "pclass": "pclass-shallows",
+      "sprite": "s_shallow_sludge",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_grass",
+      "name": "grass",
+      "pclass": "pclass-grass",
+      "sprite": "s_grass",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_sunlit_grass",
+      "name": "grass",
+      "pclass": "pclass-grass",
+      "sprite": "s_grass",
+      "opacity": 0,
+      "light": 64,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_dirt",
+      "name": "dirt",
+      "pclass": "pclass-grass",
+      "sprite": "s_dirt",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_gravel",
+      "name": "gravel",
+      "pclass": "pclass-grass",
+      "sprite": "s_gravel",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trees_v",
+      "name": "trees",
+      "pclass": "pclass-trees",
+      "sprite": "s_trees",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trees",
+      "name": "trees",
+      "pclass": "pclass-trees",
+      "sprite": "s_trees",
+      "opacity": 2,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trees_d",
+      "name": "trees",
+      "pclass": "pclass-trees",
+      "sprite": "s_trees",
+      "opacity": 3,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_forest_v",
+      "name": "forest",
+      "pclass": "pclass-forest",
+      "sprite": "s_forest",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_forest",
+      "name": "forest",
+      "pclass": "pclass-forest",
+      "sprite": "s_forest",
+      "opacity": 5,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_forest_d",
+      "name": "forest",
+      "pclass": "pclass-forest",
+      "sprite": "s_forest",
+      "opacity": 7,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_forest_l",
+      "name": "forest",
+      "pclass": "pclass-forest",
+      "sprite": "s_forest",
+      "opacity": 3,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_forest_b",
+      "name": "forest",
+      "pclass": "pclass-forest",
+      "sprite": "s_forest",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_hills",
+      "name": "hills",
+      "pclass": "pclass-hills",
+      "sprite": "s_hills",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_mountains_v",
+      "name": "mountains",
+      "pclass": "pclass-vmountains",
+      "sprite": "s_mountains",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_mountains_b",
+      "name": "mountains (below)",
+      "pclass": "pclass-space",
+      "sprite": "s_mountains",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_mountains",
+      "name": "mountains",
+      "pclass": "pclass-mountains",
+      "sprite": "s_mountains",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_fake_mountains",
+      "name": "mountains",
+      "pclass": "pclass-grass",
+      "sprite": "s_mountains",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_bog",
+      "name": "bog",
+      "pclass": "pclass-hills",
+      "sprite": "s_bog",
+      "opacity": 0,
+      "light": 0,
+      "step_on": "terrain-effect-swamp",
+      "passable": true
+    },
+    {
+      "tag": "t_lava",
+      "name": "lava",
+      "pclass": "pclass-hills",
+      "sprite": "s_lava",
+      "opacity": 0,
+      "light": 128,
+      "step_on": "terrain-effect-lava",
+      "passable": true
+    },
+    {
+      "tag": "t_fake_lava",
+      "name": "lava",
+      "pclass": "pclass-grass",
+      "sprite": "s_lava",
+      "opacity": 0,
+      "light": 128,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_deep_lava",
+      "name": "deep lava",
+      "pclass": "pclass-deep",
+      "sprite": "s_deep_lava",
+      "opacity": 0,
+      "light": 16,
+      "step_on": "great-burn",
+      "passable": true
+    },
+    {
+      "tag": "t_fire_terrain",
+      "name": "fire",
+      "pclass": "pclass-grass",
+      "sprite": "s_field_fire",
+      "opacity": 0,
+      "light": 512,
+      "step_on": "burn",
+      "passable": true
+    },
+    {
+      "tag": "t_fireplace",
+      "name": "a fireplace",
+      "pclass": "pclass-grass",
+      "sprite": "s_fireplace",
+      "opacity": 0,
+      "light": 2048,
+      "step_on": "burn",
+      "passable": true
+    },
+    {
+      "tag": "t_cobblestone",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_cobblestone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_gold_cobble",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_gold_cobble",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_cyan_cobble",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_cyan_cobble",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_gray_cobble",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_gray_cobble",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_blue_cobble",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_blue_cobble",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_olive_cobble",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_olive_cobble",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_white_cobble",
+      "name": "cobblestone",
+      "pclass": "pclass-grass",
+      "sprite": "s_white_cobble",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_black_tile",
+      "name": "floor tiles",
+      "pclass": "pclass-grass",
+      "sprite": "s_black_tile",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_gold_spiral_tile",
+      "name": "floor tiles",
+      "pclass": "pclass-grass",
+      "sprite": "s_gold_spiral_tile",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_blue_spiral_tile",
+      "name": "floor tiles",
+      "pclass": "pclass-grass",
+      "sprite": "s_blue_spiral_tile",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_tombstone",
+      "name": "a tombstone",
+      "pclass": "pclass-boulder",
+      "sprite": "s_tombstone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_tombstone2",
+      "name": "a tombstone",
+      "pclass": "pclass-boulder",
+      "sprite": "s_tombstone2",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_impassable_cobblestone",
+      "name": "cobblestone",
+      "pclass": "pclass-wall",
+      "sprite": "s_cobblestone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_flagstones",
+      "name": "flagstones",
+      "pclass": "pclass-grass",
+      "sprite": "s_flagstone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_inv_wall",
+      "name": "flagstones",
+      "pclass": "pclass-repel",
+      "sprite": "s_flagstone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": "burn",
+      "passable": false
+    },
+    {
+      "tag": "t_doorway",
+      "name": "a doorway",
+      "pclass": "pclass-grass",
+      "sprite": "s_stone_arch",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_leftwing",
+      "name": "a castle wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_leftwing",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rightwing",
+      "name": "a castle wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_rightwing",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_ship_hull",
+      "name": "a ship's bulwark",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_ship_hull2",
+      "name": "a ship's hull",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sh_hull_NE",
+      "name": "a ship's hull",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_b",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sh_hull_NW",
+      "name": "a ship's hull",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_a",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sh_hull_SE",
+      "name": "a ship's hull",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_c",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sh_hull_SW",
+      "name": "a ship's hull",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_d",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_mast",
+      "name": "a mast",
+      "pclass": "pclass-wall",
+      "sprite": "s_mast",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_ships_wheel",
+      "name": "a ship's wheel",
+      "pclass": "pclass-wall",
+      "sprite": "s_ships_wheel",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_deck",
+      "name": "deck",
+      "pclass": "pclass-grass",
+      "sprite": "s_deck",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_boulder",
+      "name": "a boulder",
+      "pclass": "pclass-boulder",
+      "sprite": "s_boulder",
+      "opacity": 2,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_wall_rock_v",
+      "name": "rock wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_rock",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_wall_rock",
+      "name": "rock wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_rock",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_fake_wall_rock",
+      "name": "rock wall",
+      "pclass": "pclass-forest",
+      "sprite": "s_secret_rock",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_wall_v",
+      "name": "wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_stone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_wall",
+      "name": "wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_stone",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_fake_wall",
+      "name": "wall",
+      "pclass": "pclass-forest",
+      "sprite": "s_wall_stone",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_wall_torch",
+      "name": "a sconce",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_torch",
+      "opacity": 12,
+      "light": 1024,
+      "step_on": "terrain-effect-torch",
+      "passable": false
+    },
+    {
+      "tag": "t_unlit_wall_torch",
+      "name": "a burnt-out sconce",
+      "pclass": "pclass-wall",
+      "sprite": "s_unlit_wall_torch",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_arrow_slit",
+      "name": "an arrow slit",
+      "pclass": "pclass-bars",
+      "sprite": "s_arrow_slit",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_window_in_stone",
+      "name": "a window",
+      "pclass": "pclass-bars",
+      "sprite": "s_window_in_stone",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_window_in_rock",
+      "name": "a window",
+      "pclass": "pclass-bars",
+      "sprite": "s_window_in_rock",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_secret_door",
+      "name": "a secret door",
+      "pclass": "pclass-grass",
+      "sprite": "s_secret_door",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_sea_wall_v",
+      "name": "a sea wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sea_wall",
+      "name": "a sea wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sea_wall_NE",
+      "name": "a sea wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_b",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sea_wall_NW",
+      "name": "a sea wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_a",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sea_wall_SE",
+      "name": "a sea wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_c",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_sea_wall_SW",
+      "name": "a sea wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_wall_d",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_ankh",
+      "name": "an ankh",
+      "pclass": "pclass-wall",
+      "sprite": "s_ankh",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_statue",
+      "name": "a statue",
+      "pclass": "pclass-wall",
+      "sprite": "s_statue",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_altar",
+      "name": "an altar",
+      "pclass": "pclass-boulder",
+      "sprite": "s_altar",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_altar",
+      "name": "a rune altar",
+      "pclass": "pclass-boulder",
+      "sprite": "s_altar",
+      "opacity": 0,
+      "light": 64,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_active_altar",
+      "name": "an activated rune altar",
+      "pclass": "pclass-boulder",
+      "sprite": "s_active_altar",
+      "opacity": 0,
+      "light": 512,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_pillar",
+      "name": "a pillar",
+      "pclass": "pclass-wall",
+      "sprite": "s_pillar",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_false_pillar",
+      "name": "a pillar",
+      "pclass": "pclass-grass",
+      "sprite": "s_pillar",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_counter_2x1_w",
+      "name": "countertop",
+      "pclass": "pclass-boulder",
+      "sprite": "s_counter_2x1_w",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_counter_2x1_c",
+      "name": "countertop",
+      "pclass": "pclass-boulder",
+      "sprite": "s_counter_2x1_c",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_counter_2x1_e",
+      "name": "countertop",
+      "pclass": "pclass-boulder",
+      "sprite": "s_counter_2x1_e",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_counter_1x1",
+      "name": "countertop",
+      "pclass": "pclass-boulder",
+      "sprite": "s_counter_1x1",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_bridge_WE",
+      "name": "a bridge",
+      "pclass": "pclass-bridge",
+      "sprite": "s_ew_bridge",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_bridge_NS",
+      "name": "a bridge",
+      "pclass": "pclass-bridge",
+      "sprite": "s_ns_bridge",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_lava_bridge_NS",
+      "name": "a bridge",
+      "pclass": "pclass-bridge",
+      "sprite": "s_ns_bridge",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_chasm",
+      "name": "a chasm",
+      "pclass": "pclass-space",
+      "sprite": "s_null",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_void",
+      "name": "empty space",
+      "pclass": "pclass-space",
+      "sprite": "s_null",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_trail_0",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_0",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_1",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_1",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_2",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_2",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_3",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_3",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_4",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_4",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_5",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_5",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_6",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_6",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_7",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_7",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_8",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_8",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_9",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_9",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_a",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_a",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_b",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_b",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_c",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_c",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_d",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_d",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_e",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_e",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_f",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_f",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_trail_g",
+      "name": "a trail",
+      "pclass": "pclass-grass",
+      "sprite": "s_trail_g",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_A",
+      "name": "an A",
+      "pclass": "pclass-wall",
+      "sprite": "s_A",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_B",
+      "name": "a B",
+      "pclass": "pclass-wall",
+      "sprite": "s_B",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_fake_B",
+      "name": "a B",
+      "pclass": "pclass-forest",
+      "sprite": "s_B",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_C",
+      "name": "a C",
+      "pclass": "pclass-wall",
+      "sprite": "s_C",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_D",
+      "name": "a D",
+      "pclass": "pclass-wall",
+      "sprite": "s_D",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_E",
+      "name": "an E",
+      "pclass": "pclass-wall",
+      "sprite": "s_E",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_F",
+      "name": "an F",
+      "pclass": "pclass-wall",
+      "sprite": "s_F",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_G",
+      "name": "a G",
+      "pclass": "pclass-wall",
+      "sprite": "s_G",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_H",
+      "name": "an H",
+      "pclass": "pclass-wall",
+      "sprite": "s_H",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_I",
+      "name": "an I",
+      "pclass": "pclass-wall",
+      "sprite": "s_I",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_J",
+      "name": "a J",
+      "pclass": "pclass-wall",
+      "sprite": "s_J",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_K",
+      "name": "a K",
+      "pclass": "pclass-wall",
+      "sprite": "s_K",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_L",
+      "name": "an L",
+      "pclass": "pclass-wall",
+      "sprite": "s_L",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_M",
+      "name": "an M",
+      "pclass": "pclass-wall",
+      "sprite": "s_M",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_N",
+      "name": "an N",
+      "pclass": "pclass-wall",
+      "sprite": "s_N",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_O",
+      "name": "an O",
+      "pclass": "pclass-wall",
+      "sprite": "s_O",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_fake_O",
+      "name": "an O",
+      "pclass": "pclass-forest",
+      "sprite": "s_O",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_P",
+      "name": "a P",
+      "pclass": "pclass-wall",
+      "sprite": "s_P",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_Q",
+      "name": "a Q",
+      "pclass": "pclass-wall",
+      "sprite": "s_Q",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_R",
+      "name": "an R",
+      "pclass": "pclass-wall",
+      "sprite": "s_R",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_S",
+      "name": "an S",
+      "pclass": "pclass-wall",
+      "sprite": "s_S",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_T",
+      "name": "a T",
+      "pclass": "pclass-wall",
+      "sprite": "s_T",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_U",
+      "name": "a U",
+      "pclass": "pclass-wall",
+      "sprite": "s_U",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_V",
+      "name": "a V",
+      "pclass": "pclass-wall",
+      "sprite": "s_V",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_W",
+      "name": "a W",
+      "pclass": "pclass-wall",
+      "sprite": "s_W",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_X",
+      "name": "an X",
+      "pclass": "pclass-wall",
+      "sprite": "s_X",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_Y",
+      "name": "a Y",
+      "pclass": "pclass-wall",
+      "sprite": "s_Y",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_Z",
+      "name": "a Z",
+      "pclass": "pclass-wall",
+      "sprite": "s_Z",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_A",
+      "name": "a runic A",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_A",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_B",
+      "name": "a runic B",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_B",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_C",
+      "name": "a runic C",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_C",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_D",
+      "name": "a runic D",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_D",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_E",
+      "name": "a runic E",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_E",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_F",
+      "name": "a runic F",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_F",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_G",
+      "name": "a runic G",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_G",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_H",
+      "name": "a runic H",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_H",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_I",
+      "name": "a runic I",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_I",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_J",
+      "name": "a runic J",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_J",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_K",
+      "name": "a runic K",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_K",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_L",
+      "name": "a runic L",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_L",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_M",
+      "name": "a runic M",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_M",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_N",
+      "name": "a runic N",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_N",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_O",
+      "name": "a runic O",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_O",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_P",
+      "name": "a runic P",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_P",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_Q",
+      "name": "a runic Q",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_Q",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_R",
+      "name": "a runic R",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_R",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_S",
+      "name": "a runic S",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_S",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_T",
+      "name": "a runic T",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_T",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_U",
+      "name": "a runic U",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_U",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_V",
+      "name": "a runic V",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_V",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_W",
+      "name": "a runic W",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_W",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_X",
+      "name": "a runic X",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_X",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_Y",
+      "name": "a runic Y",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_Y",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_Z",
+      "name": "a runic Z",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_Z",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_TH",
+      "name": "a runic TH",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_TH",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_EE",
+      "name": "a runic EE",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_EE",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_NG",
+      "name": "a runic NG",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_NG",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_EA",
+      "name": "a runic EA",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_EA",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_ST",
+      "name": "a runic ST",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_ST",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_rune_DOT",
+      "name": "a runic .",
+      "pclass": "pclass-wall",
+      "sprite": "s_rune_DOTSEP",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_equip_sign",
+      "name": "an equipment shop sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_torch_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_weapon_sign",
+      "name": "an arms shop sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_shield_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_healer_sign",
+      "name": "a hospital sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_ankh_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_tavern_sign",
+      "name": "a tavern sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_beer_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_inn_sign",
+      "name": "an inn sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_bed_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_alchemy_sign",
+      "name": "an alchemy sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_potion_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_magic_sign",
+      "name": "a reagent shop sign",
+      "pclass": "pclass-wall",
+      "sprite": "s_mushroom_sign",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_str_sign",
+      "name": "a sign of strength",
+      "pclass": "pclass-wall",
+      "sprite": "s_axe_sign",
+      "opacity": 0,
+      "light": 1024,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_dex_sign",
+      "name": "a sign of dexterity",
+      "pclass": "pclass-wall",
+      "sprite": "s_key_sign",
+      "opacity": 0,
+      "light": 1024,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_wis_sign",
+      "name": "a sign of wisdom",
+      "pclass": "pclass-wall",
+      "sprite": "s_book_sign",
+      "opacity": 0,
+      "light": 1024,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_nat_rock",
+      "name": "natural stone wall",
+      "pclass": "pclass-wall",
+      "sprite": "s_nat_rock",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    },
+    {
+      "tag": "t_fake_wall_nrock",
+      "name": "natural stone wall",
+      "pclass": "pclass-forest",
+      "sprite": "s_secret_nrock",
+      "opacity": 12,
+      "light": 0,
+      "step_on": null,
+      "passable": true
+    },
+    {
+      "tag": "t_fence",
+      "name": "a fence",
+      "pclass": "pclass-boulder",
+      "sprite": "s_fence",
+      "opacity": 0,
+      "light": 0,
+      "step_on": null,
+      "passable": false
+    }
+  ]
+}

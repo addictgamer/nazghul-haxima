@@ -4,7 +4,8 @@ This project keeps Phase 4 in-tree so Haxima content can be migrated incremental
 
 ## Current tools
 
-- `pygame_haxima.data.scm_converter.ScmConverter`: extracts simple Scheme defines to JSON.
+- `pygame_haxima.data.scm_parser.ScmParser`: tokenizes and parses nested Scheme S-expressions.
+- `pygame_haxima.data.scm_converter.ScmConverter`: converts parsed Scheme into JSON outputs, including a runtime terrain registry from `terrains.scm`.
 - `pygame_haxima.data.scheme_bridge.SchemeBridge`: interface stub for a future embedded Scheme runtime.
 
 ## Suggested sequence
