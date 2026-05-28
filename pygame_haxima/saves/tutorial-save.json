@@ -1,0 +1,124 @@
+{
+  "save_version": 1,
+  "party": {
+    "x": 6,
+    "y": 11,
+    "gold": 20,
+    "food": 71,
+    "turn_count": 34,
+    "inventory": [],
+    "members": [
+      {
+        "entity_id": "wanderer",
+        "name": "The Wanderer",
+        "x": 6,
+        "y": 11,
+        "sprite_key": "s_wanderer",
+        "hp": 20,
+        "max_hp": 20,
+        "ap": 50,
+        "attack": 4,
+        "defense": 2,
+        "hostile": false
+      }
+    ]
+  },
+  "mode": "explore",
+  "victory": true,
+  "clock_hours": 9,
+  "clock_minutes": 50,
+  "log_lines": [
+    "Welcome to the Pygame Haxima redesign.",
+    "Move with arrows/WASD. Press H for help.",
+    "You can't perform that action right now.",
+    "Old Mentor: I am called the Old Mentor.",
+    "Old Mentor: I teach wanderers how to survive Nazghul.",
+    "Old Mentor: Walk in wisdom.",
+    "Move: arrows/WASD | t talk | o open | g get | f attack | x examine",
+    "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings",
+    "Target mode: arrows move cursor | Enter confirm | Esc cancel",
+    "Loaded saved game.",
+    "You hit Wolf for 2 damage.",
+    "Wolf misses.",
+    "You hit Wolf for 6 damage.",
+    "Wolf misses.",
+    "You miss the Wolf.",
+    "Wolf misses.",
+    "You hit Wolf for 3 damage.",
+    "Wolf falls.",
+    "Loaded saved game.",
+    "You open the chest. Items spill onto the ground."
+  ],
+  "target_cursor": null,
+  "targeting_action": null,
+  "selected_npc_id": null,
+  "dialogue_speaker": "Old Mentor",
+  "dialogue_lines": [
+    "I am called the Old Mentor.",
+    "I teach wanderers how to survive Nazghul.",
+    "Walk in wisdom."
+  ],
+  "chests": [
+    {
+      "chest_id": "starter_chest",
+      "opened": true,
+      "items": [
+        {
+          "item_id": "t_dagger",
+          "name": "Dagger",
+          "value": 8,
+          "sprite_key": "s_dagger"
+        },
+        {
+          "item_id": "t_armor_leather",
+          "name": "Leather Armor",
+          "value": 12,
+          "sprite_key": "s_leather_armor"
+        },
+        {
+          "item_id": "t_heal_potion",
+          "name": "Red Potion",
+          "value": 15,
+          "sprite_key": "s_healing_potion"
+        }
+      ]
+    }
+  ],
+  "monsters": [
+    {
+      "entity_id": "wolf_1",
+      "name": "Wolf",
+      "x": 11,
+      "y": 10,
+      "sprite_key": "s_wolf",
+      "hp": 0,
+      "max_hp": 10,
+      "ap": 50,
+      "attack": 3,
+      "defense": 1,
+      "hostile": true
+    }
+  ],
+  "ground_items": {
+    "5,11": [
+      {
+        "item_id": "t_dagger",
+        "name": "Dagger",
+        "value": 8,
+        "sprite_key": "s_dagger"
+      },
+      {
+        "item_id": "t_armor_leather",
+        "name": "Leather Armor",
+        "value": 12,
+        "sprite_key": "s_leather_armor"
+      },
+      {
+        "item_id": "t_heal_potion",
+        "name": "Red Potion",
+        "value": 15,
+        "sprite_key": "s_healing_potion"
+      }
+    ]
+  }
+}

@@ -61,7 +61,14 @@ class TurnLoop:
                 session.append_log(f"Saved game to {path.name}.")
             elif action == "load":
                 loaded = self.save_manager.load(session)
-                session.append_log("Loaded saved game." if loaded else "No saved game found.")
+                if loaded:
+                    session.append_log("Loaded saved game.")
+                elif self.save_manager.last_error == "corrupt_save":
+                    session.append_log("Save file was corrupted and has been quarantined.")
+                elif self.save_manager.last_error == "invalid_schema":
+                    session.append_log("Save file schema is invalid for this build.")
+                else:
+                    session.append_log("No saved game found.")
             elif action == "help":
                 self._help(session)
             elif action == "cancel":
