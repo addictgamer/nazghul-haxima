@@ -205,6 +205,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added `B` spellbook modal with keyboard/mouse spell selection and hover/focus details (description, context/targeting, and reagent required-vs-available counts).
 - Added spellbook wheel scrolling, direct in-modal cast shortcut (`C`), and clickable Spellbook action buttons (`Cast`, `Set Active`, `Close`) that mirror keyboard shortcuts.
 - Adjusted spellbook modal/detail layout to reduce description overflow (wider modal, wrapped description text) and split context into a two-line block (`Context:` + indented value list).
+- Split spellbook modal list into castable-first vs missing-reagent sections with distinct coloring, moved `Range` onto its own detail line, and updated sidebar spell list wrapping plus `V` cycling to castable-only spells.
+- Fixed sidebar selected-spell label overflow by wrapping the `Selected: <spell>` line and flowing known-spell rows below the wrapped block.
 
 ## Suggested Delivery Sequence
 

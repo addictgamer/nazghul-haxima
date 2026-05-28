@@ -267,9 +267,9 @@ class TurnLoop:
             self._toggle_reagents_menu(session)
         session.show_spellbook_menu = not session.show_spellbook_menu
         if session.show_spellbook_menu:
-            known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
-            if session.party.selected_spell in known:
-                session.spellbook_selected_index = known.index(session.party.selected_spell)
+            ordered = self._spellbook_ordered_spell_ids(session)
+            if session.party.selected_spell in ordered:
+                session.spellbook_selected_index = ordered.index(session.party.selected_spell)
             else:
                 session.spellbook_selected_index = 0
             session.spellbook_hover_index = None
@@ -281,7 +281,7 @@ class TurnLoop:
             session.append_log("Closed spellbook.")
 
     def _handle_spellbook_menu_action(self, session: GameSession, action: str) -> None:
-        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        known = self._spellbook_ordered_spell_ids(session)
         if action in {"cancel", "spellbook_menu"}:
             self._toggle_spellbook_menu(session)
             return
@@ -333,7 +333,7 @@ class TurnLoop:
         session.spellbook_hover_index = None
 
     def _handle_spellbook_menu_scroll(self, session: GameSession, delta_y: int) -> None:
-        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        known = self._spellbook_ordered_spell_ids(session)
         if not known or delta_y == 0:
             return
         direction = -1 if delta_y > 0 else 1
@@ -341,7 +341,7 @@ class TurnLoop:
         session.spellbook_hover_index = None
 
     def _set_selected_spell_from_spellbook(self, session: GameSession, index: int) -> None:
-        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        known = self._spellbook_ordered_spell_ids(session)
         if not known:
             return
         clamped = max(0, min(index, len(known) - 1))
@@ -517,9 +517,9 @@ class TurnLoop:
         self._cast_non_targeted_spell(session, spell)
 
     def _cycle_spell(self, session: GameSession) -> None:
-        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        known = self._castable_spell_ids(session)
         if not known:
-            session.append_log("You do not know any spells.")
+            session.append_log("No castable spells with current reagents.")
             return
         if session.party.selected_spell not in known:
             session.party.selected_spell = known[0]
@@ -533,6 +533,17 @@ class TurnLoop:
             f"{name}:{session.party.reagents.get(name, 0)}" for name in sorted(spell.reagents)
         )
         session.append_log(f"Selected spell: {spell.name} ({reagent_text}).")
+
+    def _castable_spell_ids(self, session: GameSession) -> list[str]:
+        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        return [spell_id for spell_id in known if self._has_reagents_for_spell(session, spell_id)]
+
+    def _spellbook_ordered_spell_ids(self, session: GameSession) -> list[str]:
+        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        available = [spell_id for spell_id in known if self._has_reagents_for_spell(session, spell_id)]
+        available_set = set(available)
+        missing = [spell_id for spell_id in known if spell_id not in available_set]
+        return available + missing
 
     def _end_targeting(self, session: GameSession) -> None:
         session.targeting_action = None

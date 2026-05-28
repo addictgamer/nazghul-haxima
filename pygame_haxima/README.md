@@ -34,6 +34,7 @@ Spell notes:
 - Spellbook now loads from `spells.scm` (with tutorial aliases for `Spark`, `Heal`, `Ward`).
 - `B` opens a spellbook modal with keyboard/mouse/wheel selection and spell details.
 - Inside Spellbook: `C` casts selected spell, `Enter` sets active spell, and on-screen buttons mirror these shortcuts.
+- `V` now cycles only through currently castable spells (based on available reagents).
 - Sidebar now shows selected spell + reagent counts.
 - HUD shows selected spell cast count, required reagents (missing required shown in red as `(0)`), and active effects.
 

@@ -176,6 +176,20 @@ def test_cycle_spell_rotates_known_spells(tmp_path) -> None:
     assert session.party.selected_spell == "spark"
 
 
+def test_cycle_spell_skips_missing_reagent_spells(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.spells_known = ["spark", "heal", "ward"]
+    session.party.selected_spell = "spark"
+    session.party.reagents["sulphurous_ash"] = 0
+    session.party.reagents["garlic"] = 0
+    session.party.reagents["ginseng"] = 1
+
+    loop.process_events(session, [_action("cycle_spell")])
+
+    assert session.party.selected_spell == "heal"
+
+
 def test_cast_heal_consumes_ginseng_and_restores_hp(tmp_path, monkeypatch) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

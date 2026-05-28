@@ -170,19 +170,34 @@ class TextUi:
         selected_id = session.party.selected_spell
         selected_spell = get_spell(selected_id)
         selected_name = selected_spell.name if selected_spell is not None else selected_id
-        selected_line = self.menu_font.render(f"Selected: {selected_name}", True, (190, 215, 245))
-        surface.blit(selected_line, (rect.x + 8, rect.y + 36))
+        selected_wrapped = self._wrap_text(self.small_font, f"Selected: {selected_name}", rect.width - 16)
+        selected_y = rect.y + 36
+        for line_text in selected_wrapped[:2]:
+            line = self.small_font.render(line_text, True, (190, 215, 245))
+            surface.blit(line, (rect.x + 8, selected_y))
+            selected_y += self.small_font.get_height() + 1
 
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
-        for idx, spell_id in enumerate(known[:3]):
+        spell_y = selected_y + 2
+        max_spell_rows = 6
+        used_rows = 0
+        for spell_id in known[:3]:
+            if used_rows >= max_spell_rows:
+                break
             spell = get_spell(spell_id)
             if spell is None:
                 continue
             marker = ">" if spell_id == selected_id else " "
-            line = self.menu_font.render(f"{marker} {spell.name}", True, (175, 195, 230))
-            surface.blit(line, (rect.x + 8, rect.y + 58 + idx * 18))
+            wrapped = self._wrap_text(self.small_font, f"{marker} {spell.name}", rect.width - 16)
+            for line_text in wrapped[:2]:
+                if used_rows >= max_spell_rows:
+                    break
+                line = self.small_font.render(line_text, True, (175, 195, 230))
+                surface.blit(line, (rect.x + 8, spell_y))
+                spell_y += self.small_font.get_height() + 1
+                used_rows += 1
 
-        reagent_y = rect.y + 58 + min(3, len(known)) * 18 + 4
+        reagent_y = spell_y + 4
         reag_title = self.small_font.render("Reagents:", True, (170, 210, 180))
         surface.blit(reag_title, (rect.x + 8, reagent_y))
         reagent_y += reag_title.get_height() + 2
@@ -356,7 +371,7 @@ class TextUi:
         )
         surface.blit(hint, (panel.x + 16, panel.y + 46))
 
-        spells = self._known_spells(session)
+        spells, available_count = self._known_spells(session)
         list_rect = self._spellbook_list_rect()
         detail_rect = self._spellbook_detail_rect()
         pygame.draw.rect(surface, (24, 28, 40), list_rect)
@@ -383,13 +398,22 @@ class TextUi:
         visible_rows = max(1, list_rect.height // row_h)
         start_idx = self._spellbook_start_index(len(spells), selected_idx, visible_rows)
         visible = spells[start_idx : start_idx + visible_rows]
+        label_ready = self.small_font.render("Ready To Cast", True, (170, 230, 170))
+        label_missing = self.small_font.render("Missing Reagents", True, (255, 150, 150))
+        surface.blit(label_ready, (list_rect.x + 8, list_rect.y + 6))
+        if available_count < len(spells):
+            surface.blit(label_missing, (list_rect.x + 210, list_rect.y + 6))
         for offset, spell in enumerate(visible):
             idx = start_idx + offset
             row_rect = pygame.Rect(list_rect.x + 4, list_rect.y + offset * row_h + 4, list_rect.width - 8, row_h - 2)
             hovered = session.spellbook_hover_index == idx
             selected = idx == selected_idx
             active = spell.spell_id == session.party.selected_spell
-            bg = (70, 88, 128) if hovered else (56, 72, 108) if selected else (30, 38, 60)
+            missing = idx >= available_count
+            if missing:
+                bg = (120, 64, 64) if hovered else (98, 52, 52) if selected else (62, 34, 34)
+            else:
+                bg = (70, 88, 128) if hovered else (56, 72, 108) if selected else (30, 38, 60)
             pygame.draw.rect(surface, bg, row_rect)
             if active:
                 pygame.draw.rect(surface, (210, 220, 255), row_rect, 2)
@@ -398,9 +422,20 @@ class TextUi:
             text = self.menu_font.render(
                 f"{marker}{active_marker} C{spell.circle} {spell.name}",
                 True,
-                (240, 245, 255) if selected or hovered else (180, 195, 220),
+                (255, 230, 230)
+                if missing and (selected or hovered)
+                else (230, 170, 170)
+                if missing
+                else (240, 245, 255)
+                if selected or hovered
+                else (180, 195, 220),
             )
             surface.blit(text, (row_rect.x + 8, row_rect.y + 4))
+            if idx == available_count - 1 and available_count < len(spells):
+                divider_y = row_rect.bottom + 1
+                pygame.draw.line(
+                    surface, (180, 120, 120), (list_rect.x + 6, divider_y), (list_rect.right - 6, divider_y), 2
+                )
 
         focus_idx = session.spellbook_hover_index
         if focus_idx is None or focus_idx < 0 or focus_idx >= len(spells):
@@ -451,12 +486,19 @@ class TextUi:
         surface.blit(context_value, (rect.x + 10, y))
         y += context_value.get_height() + 4
         target_line = self.small_font.render(
-            f"Target: {'Enemy' if spell.targeted else 'Self/Utility'} | Range: {spell.range_tiles}",
+            f"Target: {'Enemy' if spell.targeted else 'Self/Utility'}",
             True,
             (170, 190, 220),
         )
         surface.blit(target_line, (rect.x + 10, y))
-        y += target_line.get_height() + 8
+        y += target_line.get_height() + 2
+        range_line = self.small_font.render(
+            f"Range: {spell.range_tiles}",
+            True,
+            (170, 190, 220),
+        )
+        surface.blit(range_line, (rect.x + 10, y))
+        y += range_line.get_height() + 8
         castable = self._can_cast_spell(session, spell)
         cast_line = self.menu_font.render(
             "Can cast now" if castable else "Missing reagents",
@@ -503,7 +545,7 @@ class TextUi:
         list_rect = self._spellbook_list_rect()
         if not list_rect.collidepoint(ui_pos):
             return ("panel", None)
-        spells = self._known_spells(session)
+        spells, _available_count = self._known_spells(session)
         if not spells:
             return ("panel", None)
         row_h = 28
@@ -536,8 +578,11 @@ class TextUi:
     def _spellbook_start_index(self, total: int, selected_idx: int, visible_rows: int) -> int:
         return max(0, min(selected_idx - visible_rows // 2, max(0, total - visible_rows)))
 
-    def _known_spells(self, session: GameSession) -> list:
-        return [spell for spell_id in session.party.spells_known if (spell := get_spell(spell_id)) is not None]
+    def _known_spells(self, session: GameSession) -> tuple[list, int]:
+        known = [spell for spell_id in session.party.spells_known if (spell := get_spell(spell_id)) is not None]
+        available = [spell for spell in known if self._can_cast_spell(session, spell)]
+        missing = [spell for spell in known if spell.spell_id not in {entry.spell_id for entry in available}]
+        return available + missing, len(available)
 
     def _can_cast_spell(self, session: GameSession, spell) -> bool:
         return all(session.party.reagents.get(reagent, 0) >= qty for reagent, qty in spell.reagents.items())
