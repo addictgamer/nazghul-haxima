@@ -49,6 +49,14 @@ def main() -> int:
         print(f"converted {place_file.name}: {count} place(s) -> places/{out_file.name}")
     (places_out_dir / "index.json").write_text(json.dumps(place_index, indent=2), encoding="utf-8")
     print(f"wrote places index: places/index.json ({len(place_index)} files)")
+
+    townsfolk_init = world / "townsfolk" / "init.scm"
+    townsfolk_out = output / "townsfolk.runtime.json"
+    if townsfolk_init.exists():
+        count = converter.convert_townsfolk(world, townsfolk_init, townsfolk_out)
+        print(f"converted townsfolk: {count} files -> {townsfolk_out.name}")
+    else:
+        print(f"skip: {townsfolk_init}")
     return 0
 
 

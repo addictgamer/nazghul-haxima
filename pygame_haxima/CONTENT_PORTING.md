@@ -13,7 +13,7 @@ This project keeps Phase 4 in-tree so Haxima content can be migrated incremental
 1. `worlds/haxima-1.002/terrains.scm` -> terrain registry JSON
 2. `worlds/haxima-1.002/maps/*.scm` -> static map JSON chunks (`converted_data/maps/*.map.json`)
 3. `worlds/haxima-1.002/places/*.scm` -> place metadata and placement (`converted_data/places/*.place.json`)
-4. `worlds/haxima-1.002/townsfolk/*.scm` -> NPC conversation and schedule data
+4. `worlds/haxima-1.002/townsfolk/*.scm` (plus loaded files) -> NPC conversation/schedule/factory metadata (`converted_data/townsfolk.runtime.json`)
 5. `worlds/haxima-1.002/quests-*.scm` -> quest logic and state transitions
 
 ## Immediate command

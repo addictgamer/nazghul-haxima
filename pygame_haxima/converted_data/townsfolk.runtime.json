@@ -1,0 +1,107 @@
+{
+  "source_init": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/worlds/haxima-1.002/townsfolk/init.scm",
+  "loaded_files": [
+    "townsfolk/abe.scm",
+    "townsfolk/alchemist.scm"
+  ],
+  "resolved_count": 2,
+  "entries": [
+    {
+      "source_file": "abe.scm",
+      "schedules": [
+        {
+          "id": "sch_abe",
+          "entry_count": 8
+        }
+      ],
+      "conversations": [
+        {
+          "id": "abe-conv",
+          "keyword_forms": 23,
+          "keywords": [
+            "absa",
+            "accu",
+            "alch",
+            "bye",
+            "civi",
+            "clov",
+            "default",
+            "eigh",
+            "flee",
+            "gate",
+            "gobl",
+            "hail",
+            "job",
+            "join",
+            "keys",
+            "name",
+            "neig",
+            "quee",
+            "rune",
+            "sail",
+            "temp",
+            "void",
+            "wrig"
+          ]
+        }
+      ],
+      "factories": [
+        {
+          "id": "mk-abe",
+          "builder": "mk-townsman",
+          "name": "Abe",
+          "references": [
+            "abe-conv",
+            "sch_abe"
+          ]
+        }
+      ]
+    },
+    {
+      "source_file": "alchemist.scm",
+      "schedules": [
+        {
+          "id": "sch_alch",
+          "entry_count": 10
+        }
+      ],
+      "conversations": [
+        {
+          "id": "alch-conv",
+          "keyword_forms": 28,
+          "keywords": [
+            "abe",
+            "absa",
+            "accu",
+            "alch",
+            "buy",
+            "bye",
+            "default",
+            "drag",
+            "ench",
+            "engi",
+            "esca",
+            "hail",
+            "hydr",
+            "job",
+            "join",
+            "lia",
+            "lich",
+            "man",
+            "more",
+            "name",
+            "necr",
+            "poti",
+            "rune",
+            "sack",
+            "sell",
+            "trade",
+            "warr",
+            "wick"
+          ]
+        }
+      ],
+      "factories": []
+    }
+  ]
+}

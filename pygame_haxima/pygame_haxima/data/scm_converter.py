@@ -109,6 +109,36 @@ class ScmConverter:
         dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return len(places)
 
+    def convert_townsfolk(self, world_dir: Path, init_src: Path, dst: Path) -> int:
+        init_text = init_src.read_text(encoding="utf-8", errors="ignore")
+        init_exprs = self.parser.parse_file(init_text)
+        loaded_files = self._extract_load_files(init_exprs)
+        resolved_files: list[Path] = []
+        for rel in loaded_files:
+            candidate = world_dir / rel
+            if candidate.exists():
+                resolved_files.append(candidate)
+                continue
+            fallback = world_dir / Path(rel).name
+            if fallback.exists():
+                resolved_files.append(fallback)
+
+        entries: list[dict[str, object]] = []
+        for src in resolved_files:
+            text = src.read_text(encoding="utf-8", errors="ignore")
+            exprs = self.parser.parse_file(text)
+            entries.append(self._extract_townsfolk_file_data(src, exprs))
+
+        payload = {
+            "source_init": str(init_src),
+            "loaded_files": loaded_files,
+            "resolved_count": len(entries),
+            "entries": entries,
+        }
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return len(entries)
+
     def _build_constant_env(self, expressions: list[Expr]) -> dict[str, int | float | bool | None]:
         env: dict[str, int | float | bool | None] = {}
         for expr in expressions:
@@ -202,6 +232,187 @@ class ScmConverter:
             "tile_rows": token_rows,
             "source_file": src.name,
         }
+
+    def _extract_townsfolk_file_data(self, src: Path, exprs: list[Expr]) -> dict[str, object]:
+        schedules: list[dict[str, object]] = []
+        seen_schedule_ids: set[str] = set()
+        conversations: list[dict[str, object]] = []
+        factories: list[dict[str, object]] = []
+
+        for expr in exprs:
+            for sched in self._extract_schedules_recursive(expr):
+                sid = str(sched.get("id") or "")
+                if sid in seen_schedule_ids:
+                    continue
+                seen_schedule_ids.add(sid)
+                schedules.append(sched)
+            if not self._is_define(expr):
+                continue
+            define_expr = expr  # type: ignore[assignment]
+            name, value = self._define_name_and_value(define_expr)
+            if name is None:
+                continue
+            conv = self._extract_conversation(name, value)
+            if conv is not None:
+                conversations.append(conv)
+            factory = self._extract_factory(name, value)
+            if factory is not None:
+                factories.append(factory)
+
+        return {
+            "source_file": src.name,
+            "schedules": schedules,
+            "conversations": conversations,
+            "factories": factories,
+        }
+
+    def _extract_schedules_recursive(self, expr: Expr) -> list[dict[str, object]]:
+        out: list[dict[str, object]] = []
+
+        def walk(node: Expr) -> None:
+            if not isinstance(node, list) or not node:
+                return
+            if self._symbol_name(node[0]) == "kern-mk-sched":
+                sched = self._extract_schedule(node)
+                if sched is not None:
+                    out.append(sched)
+            for part in node:
+                walk(part)
+
+        walk(expr)
+        return out
+
+    def _extract_load_files(self, exprs: list[Expr]) -> list[str]:
+        out: list[str] = []
+        for expr in exprs:
+            if not isinstance(expr, list) or len(expr) < 2:
+                continue
+            if self._symbol_name(expr[0]) != "load":
+                continue
+            path = expr[1]
+            if isinstance(path, str):
+                out.append(path)
+        return out
+
+    def _extract_schedule(self, expr: list[Expr]) -> dict[str, object] | None:
+        if len(expr) < 3:
+            return None
+        schedule_id = self._resolve_to_symbol_string(expr[1], {})
+        entries = [item for item in expr[2:] if isinstance(item, list)]
+        return {
+            "id": schedule_id,
+            "entry_count": len(entries),
+        }
+
+    def _extract_conversation(self, name: str, value: Expr) -> dict[str, object] | None:
+        if not isinstance(value, list) or not value:
+            return None
+        if self._symbol_name(value[0]) != "ifc":
+            return None
+        keyword_forms = [item for item in value[1:] if isinstance(item, list)]
+        keywords: list[str] = []
+        form_count = 0
+        for item in keyword_forms:
+            if not item:
+                continue
+            form_head = self._symbol_name(item[0])
+            if form_head not in {"reply", "react", "method"}:
+                continue
+            form_count += 1
+            if len(item) < 2:
+                continue
+            keyword = self._keyword_name(item[1])
+            if keyword is not None:
+                keywords.append(keyword)
+        return {
+            "id": name,
+            "keyword_forms": form_count,
+            "keywords": sorted(set(keywords)),
+        }
+
+    def _extract_factory(self, name: str, value: Expr) -> dict[str, object] | None:
+        builder, call_expr = self._find_factory_builder(value)
+        if builder is None or call_expr is None:
+            return None
+        npc_name = self._extract_npc_name_from_factory(call_expr)
+        refs = self._extract_symbol_refs(value)
+        return {
+            "id": name,
+            "builder": builder,
+            "name": npc_name,
+            "references": refs,
+        }
+
+    def _find_factory_builder(self, expr: Expr) -> tuple[str | None, list[Expr] | None]:
+        if not isinstance(expr, list) or not expr:
+            return None, None
+        head = self._symbol_name(expr[0])
+        if head in {"mk-townsman", "mk-npc"}:
+            return head, expr
+        for part in expr:
+            if isinstance(part, list):
+                builder, found = self._find_factory_builder(part)
+                if builder is not None and found is not None:
+                    return builder, found
+        return None, None
+
+    def _extract_npc_name_from_factory(self, value: list[Expr]) -> str | None:
+        # mk-townsman '((name . "Abe") ...)
+        if len(value) < 2:
+            return None
+        quoted = value[1]
+        if not isinstance(quoted, list) or len(quoted) != 2 or self._symbol_name(quoted[0]) != "quote":
+            return None
+        alist = quoted[1]
+        if not isinstance(alist, list):
+            return None
+        for entry in alist:
+            if not isinstance(entry, list) or len(entry) < 3:
+                continue
+            key = self._symbol_name(entry[0])
+            dot = self._symbol_name(entry[1])
+            if key == "name" and dot == "." and isinstance(entry[2], str):
+                return entry[2]
+        return None
+
+    def _extract_symbol_refs(self, expr: Expr) -> list[str]:
+        refs: set[str] = set()
+
+        def walk(node: Expr) -> None:
+            if isinstance(node, Symbol):
+                name = node.name
+                if name.startswith("sch_") or name.endswith("-conv") or name.endswith("_conv"):
+                    refs.add(name)
+                return
+            if isinstance(node, list):
+                for part in node:
+                    walk(part)
+
+        walk(expr)
+        return sorted(refs)
+
+    def _keyword_name(self, expr: Expr) -> str | None:
+        if isinstance(expr, Symbol):
+            return expr.name
+        if isinstance(expr, list) and len(expr) == 2 and self._symbol_name(expr[0]) == "quote":
+            q = expr[1]
+            if isinstance(q, Symbol):
+                return q.name
+        return None
+
+    def _define_name_and_value(self, define_expr: list[Expr]) -> tuple[str | None, Expr]:
+        # (define symbol value)
+        target = define_expr[1]
+        if isinstance(target, Symbol):
+            return target.name, define_expr[2]
+        # (define (fn args...) body...)
+        if isinstance(target, list) and target and isinstance(target[0], Symbol):
+            name = target[0].name
+            bodies = define_expr[2:]
+            if len(bodies) == 1:
+                return name, bodies[0]
+            return name, [Symbol("begin"), *bodies]
+        return None, define_expr[2]
 
     def _convert_kern_mk_place(self, expr: list[Expr], src: Path) -> dict[str, object] | None:
         # (kern-mk-place tag name sprite map wraps underground wilderness tmpcombat subplaces neighbors objects hooks entrances)
