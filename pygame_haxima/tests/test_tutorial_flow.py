@@ -242,6 +242,50 @@ def test_cast_ward_reduces_next_enemy_hit(tmp_path, monkeypatch) -> None:
     assert session.party.turn_count == 1
 
 
+def test_cast_light_sets_duration_and_ticks_down_with_turns(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "in_lor"
+    session.party.reagents["sulphurous_ash"] = 2
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["sulphurous_ash"] == 1
+    assert session.quest_flags.get("buff:light_turns") == 10
+
+    session.advance_turn()
+    assert session.quest_flags.get("buff:light_turns") == 9
+
+
+def test_light_effect_expires_after_last_turn(tmp_path) -> None:
+    session = ContentRegistry().make_new_session()
+    session.quest_flags["buff:light_turns"] = 1
+
+    session.advance_turn()
+
+    assert "buff:light_turns" not in session.quest_flags
+
+
+def test_cast_locate_reports_direction_to_nearest_hostile(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "in_wis"
+    session.party.reagents["nightshade"] = 1
+    session.party.x = 10
+    session.party.y = 10
+    session.party.members[0].x = 10
+    session.party.members[0].y = 10
+    wolf = session.place.monsters[0]
+    wolf.x = 13
+    wolf.y = 8
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["nightshade"] == 0
+    assert session.party.turn_count == 1
+    assert any("north-east (5 tiles)" in line.lower() for line in session.log_lines)
+
+
 def test_reagents_modal_toggle_updates_prompt(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

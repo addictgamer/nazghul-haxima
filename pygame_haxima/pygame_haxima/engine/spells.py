@@ -44,6 +44,8 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "heal", False, 0
     if spell_id == "ward" or "ward" in token or "protection" in token:
         return "ward", False, 0
+    if "locate" in token:
+        return "locate", False, 0
     attack_terms = (
         "bolt",
         "ball",

@@ -36,8 +36,14 @@ class HudPane:
         adjacent = self._adjacent_hostile_names(session)
         if adjacent:
             status_parts.append(f"Encounter: {', '.join(adjacent[:2])}")
+        effects: list[str] = []
         if session.party.ward_charges > 0:
-            status_parts.append(f"Effects: Ward({session.party.ward_charges})")
+            effects.append(f"Ward({session.party.ward_charges})")
+        light_turns = session.quest_flags.get("buff:light_turns")
+        if isinstance(light_turns, int) and light_turns > 0:
+            effects.append(f"Light({light_turns})")
+        if effects:
+            status_parts.append(f"Effects: {', '.join(effects)}")
         if status_parts:
             status_text = " | ".join(status_parts)
             y = self._blit_wrapped_line(

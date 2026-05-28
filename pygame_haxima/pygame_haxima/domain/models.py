@@ -208,6 +208,13 @@ class GameSession:
         self.log_lines = self.log_lines[-100:]
 
     def advance_turn(self, minutes: int = 5) -> None:
+        light_turns = self.quest_flags.get("buff:light_turns")
+        if isinstance(light_turns, int) and not isinstance(light_turns, bool):
+            remaining = max(0, light_turns - 1)
+            if remaining > 0:
+                self.quest_flags["buff:light_turns"] = remaining
+            else:
+                self.quest_flags.pop("buff:light_turns", None)
         self.party.turn_count += 1
         total = self.clock_hours * 60 + self.clock_minutes + minutes
         self.clock_hours = (total // 60) % 24

@@ -892,7 +892,8 @@ class TurnLoop:
         if spell.spell_id in LIGHT_SPELL_IDS:
             self._consume_reagents(session, spell.spell_id)
             light_turns = 10 if spell.spell_id == "in_lor" else 24
-            session.quest_flags["buff:light_turns"] = light_turns
+            # Add one extra step so the immediate end-of-action advance lands on the displayed duration.
+            session.quest_flags["buff:light_turns"] = light_turns + 1
             session.append_log(f"You cast {spell.name}. The area brightens ({light_turns} turns).")
             self._clear_combat_feedback(session)
             self._set_feedback(
@@ -903,11 +904,39 @@ class TurnLoop:
                 self._enemy_counterattack(session, adjacent)
             session.advance_turn()
             return
+        if spell.effect_kind == "locate":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_locate(session, spell.name)
+            return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
         self._clear_combat_feedback(session)
         self._set_feedback(
             session, f"You: {spell.name}", (175, 220, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_locate(self, session: GameSession, spell_name: str) -> None:
+        nearest = self._nearest_alive_monster(session)
+        if nearest is None:
+            session.append_log(f"You cast {spell_name}. You sense no hostile presence.")
+            self._clear_combat_feedback(session)
+            self._set_feedback(
+                session, f"You: {spell_name}", (200, 210, 255), world_pos=(session.party.x, session.party.y)
+            )
+            session.advance_turn()
+            return
+        distance = self._distance_from_party(session, nearest.x, nearest.y)
+        direction = self._direction_to(session, nearest.x, nearest.y)
+        session.append_log(
+            f"You cast {spell_name}. Nearest hostile is {nearest.name} to the {direction} ({distance} tiles)."
+        )
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name} {direction}", (200, 210, 255), world_pos=(session.party.x, session.party.y)
         )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
@@ -950,6 +979,31 @@ class TurnLoop:
             if monster is not None:
                 return monster
         return None
+
+    def _nearest_alive_monster(self, session: GameSession) -> Entity | None:
+        nearest: Entity | None = None
+        nearest_distance: int | None = None
+        for monster in session.place.monsters:
+            if not monster.is_alive():
+                continue
+            distance = self._distance_from_party(session, monster.x, monster.y)
+            if nearest_distance is None or distance < nearest_distance:
+                nearest = monster
+                nearest_distance = distance
+        return nearest
+
+    def _direction_to(self, session: GameSession, x: int, y: int) -> str:
+        dx = x - session.party.x
+        dy = y - session.party.y
+        vertical = "north" if dy < 0 else "south" if dy > 0 else ""
+        horizontal = "east" if dx > 0 else "west" if dx < 0 else ""
+        if vertical and horizontal:
+            return f"{vertical}-{horizontal}"
+        if vertical:
+            return vertical
+        if horizontal:
+            return horizontal
+        return "here"
 
     def _resolve_combat_round(self, session: GameSession, monster: Entity) -> None:
         attacker = session.party.lead()
