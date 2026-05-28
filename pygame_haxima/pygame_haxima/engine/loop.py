@@ -134,6 +134,7 @@ class TurnLoop:
         self._resolve_combat_round(session, monster)
         if not monster.is_alive():
             session.append_log(f"{monster.name} falls.")
+            session.quest_flags[f"defeated:{monster.entity_id}"] = True
             session.victory = True
             session.mode = Mode.EXPLORE
             return
@@ -356,9 +357,16 @@ class TurnLoop:
                 session.append_log("You can't perform that action there.")
                 return
             session.mode = Mode.TALK
+            npc_state = session.npc_states.setdefault(npc.npc_id, {})
+            talk_count = int(npc_state.get("talk_count", 0)) + 1
+            npc_state["talk_count"] = talk_count
+            npc_state["last_turn"] = session.party.turn_count
+            session.quest_flags[f"talked:{npc.npc_id}"] = True
             line_name = npc.keywords.get("name", "Greetings.")
             line_job = npc.keywords.get("job", "I wander.")
             line_bye = npc.keywords.get("bye", "Farewell.")
+            if talk_count > 1:
+                line_name = f"Welcome back. {line_name}"
             session.dialogue_speaker = npc.name
             session.dialogue_lines = [line_name, line_job, line_bye]
             session.append_log(f"{npc.name}: {line_name}")
@@ -383,6 +391,7 @@ class TurnLoop:
             chest.opened = True
             if chest.items:
                 session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
+            session.quest_flags[f"opened:{chest.chest_id}"] = True
             session.append_log("You open the chest. Items spill onto the ground.")
             session.advance_turn()
             self._end_targeting(session)

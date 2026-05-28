@@ -43,6 +43,8 @@ class SaveManager:
             "selected_npc_id": session.selected_npc_id,
             "dialogue_speaker": session.dialogue_speaker,
             "dialogue_lines": list(session.dialogue_lines),
+            "npc_states": session.npc_states,
+            "quest_flags": session.quest_flags,
             "chests": [
                 {
                     "chest_id": chest.chest_id,
@@ -113,6 +115,10 @@ class SaveManager:
                 session.dialogue_lines = [line for line in dialogue_lines if isinstance(line, str)]
             else:
                 session.dialogue_lines = []
+            npc_states = payload.get("npc_states", {})
+            session.npc_states = self._sanitize_nested_state(npc_states)
+            quest_flags = payload.get("quest_flags", {})
+            session.quest_flags = self._sanitize_flat_state(quest_flags)
             chests_by_id = {ch.chest_id: ch for ch in session.place.chests}
             for chest_payload in payload.get("chests", []):
                 chest = chests_by_id.get(chest_payload["chest_id"])
@@ -192,6 +198,8 @@ class SaveManager:
         migrated.setdefault("selected_npc_id", None)
         migrated.setdefault("dialogue_speaker", None)
         migrated.setdefault("dialogue_lines", [])
+        migrated.setdefault("npc_states", {})
+        migrated.setdefault("quest_flags", {})
         party = migrated.get("party")
         if isinstance(party, dict):
             party.setdefault("members", [])
@@ -229,3 +237,24 @@ class SaveManager:
 
         if not any(monster.is_alive() for monster in session.place.monsters) and session.mode == Mode.COMBAT:
             session.mode = Mode.EXPLORE
+
+    def _sanitize_flat_state(self, value: object) -> dict[str, object]:
+        if not isinstance(value, dict):
+            return {}
+        out: dict[str, object] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                continue
+            if isinstance(item, (str, int, float, bool)) or item is None:
+                out[key] = item
+        return out
+
+    def _sanitize_nested_state(self, value: object) -> dict[str, dict[str, object]]:
+        if not isinstance(value, dict):
+            return {}
+        out: dict[str, dict[str, object]] = {}
+        for key, state in value.items():
+            if not isinstance(key, str):
+                continue
+            out[key] = self._sanitize_flat_state(state)
+        return out

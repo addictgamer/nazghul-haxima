@@ -172,6 +172,8 @@ class GameSession:
     keybind_preview: list[str] = field(default_factory=list)
     dialogue_speaker: str | None = None
     dialogue_lines: list[str] = field(default_factory=list)
+    npc_states: dict[str, dict[str, object]] = field(default_factory=dict)
+    quest_flags: dict[str, object] = field(default_factory=dict)
     combat_feedback_text: str | None = None
     combat_feedback_ticks: int = 0
     combat_feedback_color: tuple[int, int, int] = (240, 220, 150)
