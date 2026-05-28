@@ -52,7 +52,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
-| M5 | Save/load robustness | In Progress | 79% | Stable schema versioning + full world state restore |
+| M5 | Save/load robustness | In Progress | 88% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | In Progress | 12% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
@@ -82,7 +82,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 ### M5: Save/load robustness
 
 - [x] Add save schema version field and migration hooks.
-- [~] Persist/restore all mutable state (opened containers, NPC states, quest flags, time).
+- [x] Persist/restore all mutable state (opened containers, NPC states, quest flags, time).
 - [x] Ensure deterministic reload of combat/non-combat state.
 - [x] Add corruption handling and recovery messages.
 
@@ -175,15 +175,14 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Fixed render order so modal UI layers (save/load/options) draw above sidebar panels.
 - Added post-load normalization to reset transient UI/combat states (menus, targeting, popup feedback, camera) for deterministic resumes.
 - Added NPC mutable-state + quest-flag scaffolding to runtime session and save payload, including state updates from talk/chest/combat events.
+- Added persistence for NPC positions and runtime UI settings (scale/fullscreen/debug toggles/camera deadzone), plus post-load renderer sync to apply saved display state.
 
 ## Suggested Delivery Sequence
 
 1. Continue M7 sprite parity pass so entity/object visuals are data-driven and fallback-safe.
-2. Start M5 schema/versioning so converted-state saves are robust across updates.
-3. Expand M5 persistence coverage for mutable world/NPC/quest runtime state.
-4. Build M6 test/CI gates before larger compatibility work.
-5. Iterate M7 zone-by-zone until main quest path is reachable.
-6. Close with M8 release packaging and release process docs.
+2. Build M6 test/CI gates before larger compatibility work.
+3. Iterate M7 zone-by-zone until main quest path is reachable.
+4. Close with M8 release packaging and release process docs.
 
 ## Practical Definition of “Playable Alpha”
 

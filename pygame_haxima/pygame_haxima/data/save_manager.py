@@ -38,6 +38,14 @@ class SaveManager:
             "clock_hours": session.clock_hours,
             "clock_minutes": session.clock_minutes,
             "log_lines": session.log_lines[-30:],
+            "settings": {
+                "option_scale": session.option_scale,
+                "option_fullscreen": session.option_fullscreen,
+                "debug_terrain_ids": session.debug_terrain_ids,
+                "debug_sprite_warnings": session.debug_sprite_warnings,
+                "debug_runtime_state": session.debug_runtime_state,
+                "camera_deadzone_tiles": session.camera_deadzone_tiles,
+            },
             "target_cursor": list(session.target_cursor) if session.target_cursor else None,
             "targeting_action": session.targeting_action,
             "selected_npc_id": session.selected_npc_id,
@@ -57,6 +65,14 @@ class SaveManager:
                     "items": [asdict(item) for item in chest.items],
                 }
                 for chest in session.place.chests
+            ],
+            "npcs": [
+                {
+                    "npc_id": npc.npc_id,
+                    "x": npc.x,
+                    "y": npc.y,
+                }
+                for npc in session.place.npcs
             ],
             "monsters": [asdict(monster) for monster in session.place.monsters],
             "ground_items": {
@@ -103,6 +119,26 @@ class SaveManager:
             session.clock_hours = payload["clock_hours"]
             session.clock_minutes = payload["clock_minutes"]
             session.log_lines = payload["log_lines"]
+            settings_payload = payload.get("settings", {})
+            if isinstance(settings_payload, dict):
+                scale = settings_payload.get("option_scale", session.option_scale)
+                if isinstance(scale, int):
+                    session.option_scale = max(1, min(4, scale))
+                session.option_fullscreen = bool(
+                    settings_payload.get("option_fullscreen", session.option_fullscreen)
+                )
+                session.debug_terrain_ids = bool(
+                    settings_payload.get("debug_terrain_ids", session.debug_terrain_ids)
+                )
+                session.debug_sprite_warnings = bool(
+                    settings_payload.get("debug_sprite_warnings", session.debug_sprite_warnings)
+                )
+                session.debug_runtime_state = bool(
+                    settings_payload.get("debug_runtime_state", session.debug_runtime_state)
+                )
+                deadzone = settings_payload.get("camera_deadzone_tiles", session.camera_deadzone_tiles)
+                if isinstance(deadzone, int):
+                    session.camera_deadzone_tiles = max(1, min(12, deadzone))
             target_cursor = payload.get("target_cursor")
             if isinstance(target_cursor, list) and len(target_cursor) == 2:
                 session.target_cursor = (int(target_cursor[0]), int(target_cursor[1]))
@@ -133,6 +169,18 @@ class SaveManager:
                     continue
                 chest.opened = chest_payload["opened"]
                 chest.items = [Item(**item) for item in chest_payload.get("items", [])]
+            npcs_by_id = {n.npc_id: n for n in session.place.npcs}
+            for npc_payload in payload.get("npcs", []):
+                if not isinstance(npc_payload, dict):
+                    continue
+                npc = npcs_by_id.get(npc_payload.get("npc_id"))
+                if npc is None:
+                    continue
+                x = npc_payload.get("x", npc.x)
+                y = npc_payload.get("y", npc.y)
+                if isinstance(x, int) and isinstance(y, int) and session.place.in_bounds(x, y):
+                    npc.x = x
+                    npc.y = y
             monsters_by_id = {m.entity_id: m for m in session.place.monsters}
             for monster_payload in payload.get("monsters", []):
                 monster = monsters_by_id.get(monster_payload["entity_id"])
@@ -208,6 +256,18 @@ class SaveManager:
         migrated.setdefault("npc_states", {})
         migrated.setdefault("quest_flags", {})
         migrated.setdefault("combat", {"active": False, "message": "", "enemy_ids": []})
+        migrated.setdefault("npcs", [])
+        migrated.setdefault(
+            "settings",
+            {
+                "option_scale": 1,
+                "option_fullscreen": False,
+                "debug_terrain_ids": False,
+                "debug_sprite_warnings": False,
+                "debug_runtime_state": False,
+                "camera_deadzone_tiles": 4,
+            },
+        )
         party = migrated.get("party")
         if isinstance(party, dict):
             party.setdefault("members", [])

@@ -292,6 +292,9 @@ class TurnLoop:
             session.append_log("No saved game found in that slot.")
 
     def _post_load_sync(self, session: GameSession) -> None:
+        self.renderer.set_scale(max(1, min(4, session.option_scale)))
+        if session.option_fullscreen != self.renderer.is_fullscreen:
+            self.renderer.toggle_fullscreen()
         session.option_scale = self.renderer.scale
         session.option_fullscreen = self.renderer.is_fullscreen
         session.save_slot_labels = self.save_manager.list_slots()
