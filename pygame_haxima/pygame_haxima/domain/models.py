@@ -167,6 +167,9 @@ class GameSession:
     keybind_preview: list[str] = field(default_factory=list)
     dialogue_speaker: str | None = None
     dialogue_lines: list[str] = field(default_factory=list)
+    combat_feedback_text: str | None = None
+    combat_feedback_ticks: int = 0
+    combat_feedback_color: tuple[int, int, int] = (240, 220, 150)
 
     def append_log(self, message: str) -> None:
         self.log_lines.append(message)

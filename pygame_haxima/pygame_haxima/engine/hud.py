@@ -19,9 +19,24 @@ class HudPane:
             f"Food {session.party.food}  Gold {session.party.gold}  Mode {mode}"
         )
         surface.blit(self.font.render(text, True, (220, 220, 230)), (rect.x + 10, rect.y + 8))
+        y = rect.y + 30
+        adjacent = self._adjacent_hostile_names(session)
+        if adjacent:
+            encounter = f"Encounter nearby: {', '.join(adjacent[:2])}"
+            surface.blit(self.font.render(encounter, True, (255, 145, 120)), (rect.x + 10, y))
+            y += 22
         if session.debug_sprite_warnings:
             warn = (
                 f"Terrain fallback keys: {session.terrain_fallback_key_count} "
                 f"({', '.join(session.terrain_fallback_keys[:3])})"
             )
-            surface.blit(self.font.render(warn, True, (255, 180, 120)), (rect.x + 10, rect.y + 30))
+            surface.blit(self.font.render(warn, True, (255, 180, 120)), (rect.x + 10, y))
+
+    def _adjacent_hostile_names(self, session: GameSession) -> list[str]:
+        names: list[str] = []
+        for monster in session.place.monsters:
+            if not monster.is_alive():
+                continue
+            if abs(monster.x - session.party.x) + abs(monster.y - session.party.y) <= 1:
+                names.append(monster.name)
+        return names

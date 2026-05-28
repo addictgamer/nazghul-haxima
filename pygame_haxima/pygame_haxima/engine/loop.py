@@ -20,6 +20,9 @@ class TurnLoop:
             if event.kind == EngineEventType.QUIT:
                 session.running = False
                 return
+            if event.kind == EngineEventType.ANIMATION_TICK:
+                self._tick_feedback(session)
+                continue
             if event.kind == EngineEventType.MOUSE_TILE:
                 self._handle_mouse_move(session, event.payload["tile"])
                 continue
@@ -212,7 +215,7 @@ class TurnLoop:
             session.append_log("You can't perform that action right now.")
             return
         session.targeting_action = action
-        session.target_cursor = (session.party.x, session.party.y)
+        session.target_cursor = self._default_target_for_action(session, action)
         session.command_prompt = prompt
 
     def _end_targeting(self, session: GameSession) -> None:
@@ -326,6 +329,20 @@ class TurnLoop:
             return any(session.place.monster_at(x, y) is not None for x, y in candidates)
         return True
 
+    def _default_target_for_action(self, session: GameSession, action: str) -> tuple[int, int]:
+        px, py = session.party.x, session.party.y
+        candidates = [(px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)]
+        if action == "talk":
+            matches = [(x, y) for x, y in candidates if session.place.npc_at(x, y) is not None]
+            return matches[0] if matches else (px, py)
+        if action == "open":
+            matches = [(x, y) for x, y in candidates if session.place.chest_at(x, y) is not None]
+            return matches[0] if matches else (px, py)
+        if action == "attack":
+            matches = [(x, y) for x, y in candidates if session.place.monster_at(x, y) is not None]
+            return matches[0] if matches else (px, py)
+        return px, py
+
     def _check_auto_combat(self, session: GameSession) -> None:
         monster = self._adjacent_monster(session)
         if monster is not None:
@@ -344,10 +361,12 @@ class TurnLoop:
         defense_roll = random.randint(1, 6) + monster.defense
         if attack_roll <= defense_roll:
             session.append_log(f"You miss the {monster.name}.")
+            self._set_feedback(session, "Miss", (230, 220, 120))
             return
         damage = max(1, attack_roll - defense_roll)
         monster.hp = max(0, monster.hp - damage)
         session.append_log(f"You hit {monster.name} for {damage} damage.")
+        self._set_feedback(session, f"Hit {damage}", (255, 170, 140))
         self.audio.play_effect("sounds/hit.wav")
 
     def _enemy_counterattack(self, session: GameSession, monster: Entity) -> None:
@@ -358,10 +377,26 @@ class TurnLoop:
         defense_roll = random.randint(1, 6) + target.defense
         if attack_roll <= defense_roll:
             session.append_log(f"{monster.name} misses.")
+            self._set_feedback(session, f"{monster.name} misses", (220, 210, 120))
             return
         damage = max(1, attack_roll - defense_roll)
         target.hp = max(0, target.hp - damage)
         session.append_log(f"{monster.name} hits you for {damage}. HP: {target.hp}/{target.max_hp}")
+        self._set_feedback(session, f"You take {damage}", (255, 120, 120))
+
+    def _set_feedback(
+        self, session: GameSession, text: str, color: tuple[int, int, int], ticks: int = 35
+    ) -> None:
+        session.combat_feedback_text = text
+        session.combat_feedback_color = color
+        session.combat_feedback_ticks = ticks
+
+    def _tick_feedback(self, session: GameSession) -> None:
+        if session.combat_feedback_ticks <= 0:
+            return
+        session.combat_feedback_ticks -= 1
+        if session.combat_feedback_ticks == 0:
+            session.combat_feedback_text = None
 
     def _npc_turn(self, session: GameSession) -> None:
         # Tiny movement jitter emulates non-player turns in place_exec.

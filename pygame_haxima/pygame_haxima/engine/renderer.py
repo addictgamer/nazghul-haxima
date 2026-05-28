@@ -36,7 +36,7 @@ class Renderer:
         self.window = self._create_window(self.is_fullscreen)
 
     def _layout_rects(self) -> dict[str, pygame.Rect]:
-        hud_h = 44
+        hud_h = 70
         cmd_h = 38
         console_h = 200
         map_h = DISPLAY.base_height - (hud_h + console_h + cmd_h)

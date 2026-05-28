@@ -36,8 +36,10 @@ class MapView:
                     self._draw_terrain_debug(surface, cell, terrain.terrain_id)
 
         self._draw_entities(surface, viewport, start_x, start_y, session)
+        self._draw_encounter_indicators(surface, viewport, start_x, start_y, session)
         if session.target_cursor is not None:
-            self._draw_target_cursor(surface, viewport, start_x, start_y, session.target_cursor)
+            self._draw_target_cursor(surface, viewport, start_x, start_y, session)
+        self._draw_combat_feedback(surface, viewport, session)
 
     def compute_view_window(
         self, viewport: pygame.Rect, session: GameSession
@@ -88,16 +90,69 @@ class MapView:
         viewport: pygame.Rect,
         start_x: int,
         start_y: int,
-        target: tuple[int, int],
+        session: GameSession,
     ) -> None:
+        target = session.target_cursor
+        if target is None:
+            return
         x, y = target
         px = viewport.x + (x - start_x) * self.tile_w
         py = viewport.y + (y - start_y) * self.tile_h
         rect = pygame.Rect(px, py, self.tile_w, self.tile_h)
-        pygame.draw.rect(surface, (255, 245, 120), rect, 2)
+        color = self._target_color(session, x, y)
+        pygame.draw.rect(surface, color, rect, 2)
+        pygame.draw.rect(surface, (20, 20, 20), rect, 1)
 
     def _draw_terrain_debug(self, surface: pygame.Surface, cell: pygame.Rect, terrain_id: str) -> None:
         tag = self.debug_font.render(terrain_id[:5], True, (240, 245, 200))
         shadow = self.debug_font.render(terrain_id[:5], True, (20, 20, 20))
         surface.blit(shadow, (cell.x + 2, cell.y + 2))
         surface.blit(tag, (cell.x + 1, cell.y + 1))
+
+    def _target_color(self, session: GameSession, x: int, y: int) -> tuple[int, int, int]:
+        action = session.targeting_action
+        if action is None:
+            return (255, 245, 120)
+        if action == "examine":
+            return (120, 220, 255)
+        in_range = abs(session.party.x - x) + abs(session.party.y - y) <= 1
+        if not in_range:
+            return (255, 120, 120)
+        if action == "talk":
+            return (140, 255, 160) if session.place.npc_at(x, y) is not None else (255, 120, 120)
+        if action == "open":
+            chest = session.place.chest_at(x, y)
+            return (140, 255, 160) if chest is not None and not chest.opened else (255, 120, 120)
+        if action == "attack":
+            return (140, 255, 160) if session.place.monster_at(x, y) is not None else (255, 120, 120)
+        return (255, 245, 120)
+
+    def _draw_encounter_indicators(
+        self,
+        surface: pygame.Surface,
+        viewport: pygame.Rect,
+        start_x: int,
+        start_y: int,
+        session: GameSession,
+    ) -> None:
+        for monster in session.place.monsters:
+            if not monster.is_alive():
+                continue
+            if abs(monster.x - session.party.x) + abs(monster.y - session.party.y) > 1:
+                continue
+            px = viewport.x + (monster.x - start_x) * self.tile_w
+            py = viewport.y + (monster.y - start_y) * self.tile_h
+            rect = pygame.Rect(px, py, self.tile_w, self.tile_h)
+            pygame.draw.rect(surface, (255, 80, 80), rect, 2)
+
+    def _draw_combat_feedback(
+        self, surface: pygame.Surface, viewport: pygame.Rect, session: GameSession
+    ) -> None:
+        if session.combat_feedback_ticks <= 0 or not session.combat_feedback_text:
+            return
+        alpha = min(255, max(0, session.combat_feedback_ticks * 7))
+        banner = pygame.Surface((300, 32), pygame.SRCALPHA)
+        banner.fill((20, 20, 28, alpha // 2))
+        text = self.debug_font.render(session.combat_feedback_text, True, session.combat_feedback_color)
+        banner.blit(text, (8, 8))
+        surface.blit(banner, (viewport.centerx - 150, viewport.y + 12))
