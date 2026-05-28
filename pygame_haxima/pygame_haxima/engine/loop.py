@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from pygame_haxima.data.save_manager import SaveManager
-from pygame_haxima.domain.models import Entity, GameSession, Mode
+from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode
 from pygame_haxima.engine.audio import AudioManager
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.renderer import Renderer
@@ -908,6 +908,10 @@ class TurnLoop:
             self._consume_reagents(session, spell.spell_id)
             self._cast_locate(session, spell.name)
             return
+        if spell.effect_kind == "unlock":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_unlock(session, spell.name)
+            return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
         self._clear_combat_feedback(session)
@@ -937,6 +941,33 @@ class TurnLoop:
         self._clear_combat_feedback(session)
         self._set_feedback(
             session, f"You: {spell_name} {direction}", (200, 210, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_unlock(self, session: GameSession, spell_name: str) -> None:
+        chest = self._adjacent_closed_chest(session)
+        if chest is None:
+            session.append_log(f"You cast {spell_name}. No locked chest is nearby.")
+            self._clear_combat_feedback(session)
+            self._set_feedback(
+                session, f"You: {spell_name}", (210, 210, 255), world_pos=(session.party.x, session.party.y)
+            )
+            adjacent = self._adjacent_monster(session)
+            if adjacent is not None:
+                self._enemy_counterattack(session, adjacent)
+            session.advance_turn()
+            return
+        chest.opened = True
+        if chest.items:
+            session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
+        session.quest_flags[f"opened:{chest.chest_id}"] = True
+        session.append_log(f"You cast {spell_name}. The chest clicks open.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (210, 230, 255), world_pos=(chest.x, chest.y)
         )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
@@ -978,6 +1009,14 @@ class TurnLoop:
             monster = session.place.monster_at(session.party.x + dx, session.party.y + dy)
             if monster is not None:
                 return monster
+        return None
+
+    def _adjacent_closed_chest(self, session: GameSession) -> Chest | None:
+        px, py = session.party.x, session.party.y
+        for x, y in ((px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)):
+            chest = session.place.chest_at(x, y)
+            if chest is not None and not chest.opened:
+                return chest
         return None
 
     def _nearest_alive_monster(self, session: GameSession) -> Entity | None:

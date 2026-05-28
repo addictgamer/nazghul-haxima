@@ -103,7 +103,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
-- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry is now loaded from `spells.scm` (plus tutorial aliases), with data-driven circles/reagents/context and generic targeted/self-cast resolution wired into cast/cycle/targeting; cast-time context restrictions plus scripted heal/ward/light/locate handling are active (including turn-based light duration tracking and HUD effect visibility); broader source-authentic scripted spell families still pending)*.
+- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry is now loaded from `spells.scm` (plus tutorial aliases), with data-driven circles/reagents/context and generic targeted/self-cast resolution wired into cast/cycle/targeting; cast-time context restrictions plus scripted heal/ward/light/locate/unlock handling are active (including turn-based light duration tracking and HUD effect visibility); broader source-authentic scripted spell families still pending)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
 - [ ] Implement quest engine and scripted world events.
@@ -218,6 +218,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Sidebar spell mini-list now rotates relative to active selection (`selected` + next spells) so `V` cycling updates the visible 3-item window, not a fixed first-three list.
 - Sidebar spell mini-list now excludes the currently selected spell, shows the next three spells only, and renders the list with a tab-like visual indent.
 - Added turn-based light-buff countdown (`buff:light_turns`) on each turn advance, removed expired light buffs automatically, surfaced active `Light(n)` alongside `Ward(n)` in top HUD effects text, and added scripted `Locate <In Wis>` behavior that reports nearest-hostile direction/distance.
+- Added scripted unlock behavior for `Unlock` spells (`An Sanct`/`In Ex Por` effect-kind), allowing non-targeted casts to open an adjacent closed chest, spill its items to ground, and set corresponding chest-open quest flags.
 
 ## Suggested Delivery Sequence
 

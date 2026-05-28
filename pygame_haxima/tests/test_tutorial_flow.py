@@ -286,6 +286,48 @@ def test_cast_locate_reports_direction_to_nearest_hostile(tmp_path) -> None:
     assert any("north-east (5 tiles)" in line.lower() for line in session.log_lines)
 
 
+def test_cast_magic_unlock_opens_adjacent_chest(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "in_ex_por"
+    session.party.x = 5
+    session.party.y = 10
+    session.party.members[0].x = 5
+    session.party.members[0].y = 10
+    session.party.reagents["sulphurous_ash"] = 2
+    session.party.reagents["blood_moss"] = 1
+    chest = session.place.chests[0]
+    chest.opened = False
+    session.place.ground_items[(chest.x, chest.y)] = []
+
+    loop.process_events(session, [_action("cast")])
+
+    assert chest.opened is True
+    assert session.party.reagents["sulphurous_ash"] == 1
+    assert session.party.reagents["blood_moss"] == 0
+    assert session.place.ground_items[(chest.x, chest.y)]
+    assert session.quest_flags["opened:starter_chest"] is True
+
+
+def test_cast_magic_unlock_without_chest_still_spends_turn(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "in_ex_por"
+    session.party.x = 1
+    session.party.y = 1
+    session.party.members[0].x = 1
+    session.party.members[0].y = 1
+    session.party.reagents["sulphurous_ash"] = 1
+    session.party.reagents["blood_moss"] = 1
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.turn_count == 1
+    assert session.party.reagents["sulphurous_ash"] == 0
+    assert session.party.reagents["blood_moss"] == 0
+    assert "no locked chest is nearby" in session.log_lines[-1].lower()
+
+
 def test_reagents_modal_toggle_updates_prompt(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()
