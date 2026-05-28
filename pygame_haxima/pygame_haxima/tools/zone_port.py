@@ -92,6 +92,37 @@ def main() -> int:
         print(f"skip: {townsfolk_init}")
 
     report_sections["townsfolk"] = townsfolk_summary
+
+    quests_dir = world
+    quests_out_dir = output / "quests"
+    quest_files = sorted(quests_dir.glob("quests-*.scm"))
+    quest_index: list[dict[str, object]] = []
+    for quest_file in quest_files:
+        out_file = quests_out_dir / f"{quest_file.stem}.quests.json"
+        count = converter.convert_quest_file(quest_file, out_file)
+        quest_payload = json.loads(out_file.read_text(encoding="utf-8"))
+        update_refs = quest_payload.get("quest_update_refs", [])
+        update_ref_count = len(update_refs) if isinstance(update_refs, list) else 0
+        quest_index.append(
+            {
+                "source": quest_file.name,
+                "output": out_file.name,
+                "quest_count": count,
+                "update_ref_count": update_ref_count,
+            }
+        )
+        if count == 0 and update_ref_count == 0:
+            validation_warnings.append(
+                f"quests/{quest_file.name}: no qst-mk quest entries or quest-data updates converted"
+            )
+        print(f"converted {quest_file.name}: {count} quest(s) -> quests/{out_file.name}")
+    (quests_out_dir / "index.json").write_text(json.dumps(quest_index, indent=2), encoding="utf-8")
+    print(f"wrote quests index: quests/index.json ({len(quest_index)} files)")
+    report_sections["quests"] = {
+        "files_seen": len(quest_files),
+        "index_count": len(quest_index),
+        "index": quest_index,
+    }
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "world_dir": str(world),

@@ -1,0 +1,20 @@
+[
+  {
+    "source": "quests-data-static.scm",
+    "output": "quests-data-static.quests.json",
+    "quest_count": 0,
+    "update_ref_count": 9
+  },
+  {
+    "source": "quests-data.scm",
+    "output": "quests-data.quests.json",
+    "quest_count": 28,
+    "update_ref_count": 0
+  },
+  {
+    "source": "quests-mech.scm",
+    "output": "quests-mech.quests.json",
+    "quest_count": 0,
+    "update_ref_count": 0
+  }
+]

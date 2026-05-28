@@ -1,0 +1,52 @@
+{
+  "source": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/worlds/haxima-1.002/quests-data-static.scm",
+  "quest_count": 0,
+  "quests": [],
+  "quest_update_refs": [
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-calltoarms",
+      "key": "tower"
+    },
+    {
+      "api": "quest-data-update",
+      "quest_id": "questentry-thiefrune",
+      "key": "tower"
+    },
+    {
+      "api": "quest-data-update",
+      "quest_id": "questentry-thiefrune",
+      "key": "bole"
+    },
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-thiefrune",
+      "key": "den1"
+    },
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-thiefrune",
+      "key": "den2"
+    },
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-thiefrune",
+      "key": "den3"
+    },
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-thiefrune",
+      "key": "den4"
+    },
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-thiefrune",
+      "key": "den5"
+    },
+    {
+      "api": "quest-data-update-with",
+      "quest_id": "questentry-rune-f",
+      "key": "angrisslair"
+    }
+  ]
+}

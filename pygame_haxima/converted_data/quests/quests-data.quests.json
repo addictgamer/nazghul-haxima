@@ -1,0 +1,439 @@
+{
+  "source": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/worlds/haxima-1.002/quests-data.scm",
+  "quest_count": 28,
+  "quests": [
+    {
+      "id": "questentry-charcreate",
+      "title": "Character Creation",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_quest_start",
+      "description_line_count": 3,
+      "description_preview": "Move to the moongate at the north side of the room to begin the game.",
+      "payload_keys": [],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-whereami",
+      "title": "Where am I?",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_quest_start",
+      "description_line_count": 5,
+      "description_preview": "You have found yourself in a world you have no knowledge of, with barest impressions of what might have gone before.",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-calltoarms",
+      "title": "A Call to Arms",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_enchanter",
+      "description_line_count": 3,
+      "description_preview": "You have recieved an urgent message to contact someone called the Enchanter as soon as possible.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-thiefrune",
+      "title": "To Catch a Thief",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_brigand",
+      "description_line_count": 3,
+      "description_preview": "The Enchanter has asked you to investigate a theft from his tower.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-runeinfo",
+      "title": "The Secret of the Runes",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_k",
+      "description_line_count": 3,
+      "description_preview": "The stolen rune that you recovered must have great significance to prompt it's theft. The Enchanter has given you the task of seeking out this reason.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-allrunes",
+      "title": "The Search for the Runes",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_group",
+      "description_line_count": 1,
+      "description_preview": "The Enchanter believes that the Accursed are seeking the runes for nefarious purposes. It is up to you to collect them first.",
+      "payload_keys": [
+        "bonus-xp"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-k",
+      "title": "A Rune in Hand",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_k",
+      "description_line_count": 1,
+      "description_preview": "The Rune of Knowledge belongs to the Enchanter. You may be able to convince him to turn it over to you.",
+      "payload_keys": [
+        "bonus-xp",
+        "ench-should-have-rune",
+        "entrusted-with-rune",
+        "on-update",
+        "player-got-rune"
+      ],
+      "payload_flags": [
+        "bonus-xp",
+        "ench-should-have-rune",
+        "entrusted-with-rune",
+        "player-got-rune"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-p",
+      "title": "A Rune in the Deeps",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "The Alchemist provided you with information on a rune buried in the deeps of Kurpolis.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-l",
+      "title": "A Soldier's Rune",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "One of the Runes is carried by the Warritrix.",
+      "payload_keys": [
+        "approx-hall",
+        "bonus-xp",
+        "know-hall",
+        "located",
+        "on-update"
+      ],
+      "payload_flags": [
+        "approx-hall",
+        "bonus-xp",
+        "know-hall",
+        "located"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-f",
+      "title": "A Lost Rune",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "King Clovis once possessed a rune, but he fell during the Goblin Wars.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-d",
+      "title": "A Rune in the Void",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "Legends tell of a temple in the void, which housed a rune.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-w",
+      "title": "A Rune in Fire",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "A rune was found amongst the hoard of a dragon lairing in the Fire Sea.",
+      "payload_keys": [
+        "bonus-xp"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-s",
+      "title": "A Rune in the Ruins",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "A rune can be found in Old Absalot, beneath the ruins.",
+      "payload_keys": [
+        "bonus-xp"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-rune-c",
+      "title": "A Rune in the Sea",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_runestone_r",
+      "description_line_count": 1,
+      "description_preview": "A rune once belonged to the pirate Ghertie.",
+      "payload_keys": [
+        "bonus-xp",
+        "on-update"
+      ],
+      "payload_flags": [
+        "bonus-xp"
+      ],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-wise",
+      "title": "The Wise",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_quest_wise",
+      "description_line_count": 1,
+      "description_preview": "The Wise have great influence over affairs in the Shard. Seeking them out may be critical to your success.",
+      "payload_keys": [],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-enchanter",
+      "title": "The Enchanter",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_enchanter",
+      "description_line_count": 1,
+      "description_preview": "The Enchanter is a great and knowledgable Wizard, one of the Wise of the present age.",
+      "payload_keys": [
+        "qparent"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-alchemist",
+      "title": "The Alchemist",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_companion_tinker",
+      "description_line_count": 1,
+      "description_preview": "The Alchemist is one of the wise.",
+      "payload_keys": [
+        "qparent"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-the-man",
+      "title": "The MAN",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_companion_bard",
+      "description_line_count": 1,
+      "description_preview": "The MAN is one of the wise.",
+      "payload_keys": [
+        "qparent"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-engineer",
+      "title": "The Engineer",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_companion_tinker",
+      "description_line_count": 1,
+      "description_preview": "The Engineer is one of the wise.",
+      "payload_keys": [
+        "qparent"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-necromancer",
+      "title": "The Necromancer",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_black_mage",
+      "description_line_count": 1,
+      "description_preview": "The Necromancer is one of the wise.",
+      "payload_keys": [
+        "qparent"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-warritrix",
+      "title": "The Warritrix",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_avatar",
+      "description_line_count": 1,
+      "description_preview": "The Warritrix is one of the wise.",
+      "payload_keys": [
+        "on-update",
+        "qparent"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-ghertie",
+      "title": "A Haunted Inn",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_ghost",
+      "description_line_count": 1,
+      "description_preview": "A ghost haunts the inn at Oparine. Why does it linger in undeath?",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-dragon",
+      "title": "Blood Price: Dragon",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-dragon-update",
+      "icon": "s_dragon_party",
+      "description_line_count": 1,
+      "description_preview": "The Alchemist has offered to trade you information on the wherabouts of a Rune, in exchange for the blood of a dragon.",
+      "payload_keys": [],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-warrjustice",
+      "title": "A Soldiers Justice",
+      "assign_callback": "quest-assign-subquest",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_ghost",
+      "description_line_count": 1,
+      "description_preview": "The Warritrix has been slain by treachery. Will this crime go unpunished?",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-bandits",
+      "title": "Bandit Troubles",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_brigand",
+      "description_line_count": 3,
+      "description_preview": "Gregor, an old charcoal burner, has asked for your help in dealing with some troublesome bandits that have been plaguing the great forest.",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-puska",
+      "title": "The Lost Toy",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_toy_horse",
+      "description_line_count": 4,
+      "description_preview": "Ilya lost her toy while hiding in the basement from trogs on her parents homestead. ",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-shroom",
+      "title": "Shroom's Quest",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_royal_cape",
+      "description_line_count": 3,
+      "description_preview": "Shroom of Green Tower has promised to teach you a fire warding spell if you recover some purple mushrooms for her from a cave.",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    },
+    {
+      "id": "questentry-nate",
+      "title": "Brundegardt",
+      "assign_callback": "quest-assign-notify",
+      "status_callback": "quest-status-inprogress",
+      "icon": "s_dungeon",
+      "description_line_count": 1,
+      "description_preview": "Nate has promised to share with you the secret of ^c+mBrundegardt^c-. You should ask him about it in the wilderness.",
+      "payload_keys": [
+        "on-update"
+      ],
+      "payload_flags": [],
+      "source_file": "quests-data.scm"
+    }
+  ],
+  "quest_update_refs": []
+}

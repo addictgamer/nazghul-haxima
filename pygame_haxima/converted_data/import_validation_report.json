@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-28T05:47:01.303367+00:00",
+  "generated_at_utc": "2026-05-28T06:16:48.094716+00:00",
   "world_dir": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/worlds/haxima-1.002",
   "output_dir": "/mnt/c/games/mine/singularity/haxima/nazghul-git-sourceforge - github fork/pygame_haxima/converted_data",
   "sections": {
@@ -69,11 +69,36 @@
       "loaded_count": 2,
       "resolved_count": 2,
       "unresolved_loads": []
+    },
+    "quests": {
+      "files_seen": 3,
+      "index_count": 3,
+      "index": [
+        {
+          "source": "quests-data-static.scm",
+          "output": "quests-data-static.quests.json",
+          "quest_count": 0,
+          "update_ref_count": 9
+        },
+        {
+          "source": "quests-data.scm",
+          "output": "quests-data.quests.json",
+          "quest_count": 28,
+          "update_ref_count": 0
+        },
+        {
+          "source": "quests-mech.scm",
+          "output": "quests-mech.quests.json",
+          "quest_count": 0,
+          "update_ref_count": 0
+        }
+      ]
     }
   },
-  "warning_count": 2,
+  "warning_count": 3,
   "warnings": [
     "maps/init.scm: no kern-mk-map forms converted",
-    "places/init.scm: no kern-mk-place forms converted"
+    "places/init.scm: no kern-mk-place forms converted",
+    "quests/quests-mech.scm: no qst-mk quest entries or quest-data updates converted"
   ]
 }

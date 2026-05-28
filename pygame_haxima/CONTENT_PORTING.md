@@ -14,7 +14,7 @@ This project keeps Phase 4 in-tree so Haxima content can be migrated incremental
 2. `worlds/haxima-1.002/maps/*.scm` -> static map JSON chunks (`converted_data/maps/*.map.json`)
 3. `worlds/haxima-1.002/places/*.scm` -> place metadata and placement (`converted_data/places/*.place.json`)
 4. `worlds/haxima-1.002/townsfolk/*.scm` (plus loaded files) -> NPC conversation/schedule/factory metadata (`converted_data/townsfolk.runtime.json`)
-5. `worlds/haxima-1.002/quests-*.scm` -> quest logic and state transitions
+5. `worlds/haxima-1.002/quests-*.scm` -> quest metadata/state-transition scaffolds (`converted_data/quests/*.quests.json`)
 
 ## Immediate command
 
@@ -25,4 +25,4 @@ python3 -m pygame_haxima.tools.zone_port
 
 This command writes a validation artifact at
 `converted_data/import_validation_report.json` with conversion counts, basic map
-dimension checks, and unresolved townsfolk load warnings.
+dimension checks, unresolved townsfolk load warnings, and quest export coverage.

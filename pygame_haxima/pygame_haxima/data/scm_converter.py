@@ -144,6 +144,23 @@ class ScmConverter:
         dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return len(entries)
 
+    def convert_quest_file(self, src: Path, dst: Path) -> int:
+        text = src.read_text(encoding="utf-8", errors="ignore")
+        expressions = self.parser.parse_file(text)
+        quests: list[dict[str, object]] = []
+        quest_updates: list[dict[str, object]] = []
+        for expr in expressions:
+            self._collect_quest_entries_recursive(expr, src, quests, quest_updates)
+        payload = {
+            "source": str(src),
+            "quest_count": len(quests),
+            "quests": quests,
+            "quest_update_refs": quest_updates,
+        }
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return len(quests)
+
     def _build_constant_env(self, expressions: list[Expr]) -> dict[str, int | float | bool | None]:
         env: dict[str, int | float | bool | None] = {}
         for expr in expressions:
@@ -269,6 +286,109 @@ class ScmConverter:
             "schedules": schedules,
             "conversations": conversations,
             "factories": factories,
+        }
+
+    def _collect_quest_entries_recursive(
+        self,
+        expr: Expr,
+        src: Path,
+        quests: list[dict[str, object]],
+        quest_updates: list[dict[str, object]],
+    ) -> None:
+        if not isinstance(expr, list) or not expr:
+            return
+        parsed = self._extract_questadd_qstmk(expr, src)
+        if parsed is not None:
+            quests.append(parsed)
+        update_ref = self._extract_quest_update_reference(expr)
+        if update_ref is not None:
+            quest_updates.append(update_ref)
+        for part in expr:
+            self._collect_quest_entries_recursive(part, src, quests, quest_updates)
+
+    def _extract_questadd_qstmk(self, expr: list[Expr], src: Path) -> dict[str, object] | None:
+        if len(expr) < 2 or self._symbol_name(expr[0]) != "questadd":
+            return None
+        qst_call = expr[1]
+        if not isinstance(qst_call, list) or len(qst_call) < 7:
+            return None
+        if self._symbol_name(qst_call[0]) != "qst-mk":
+            return None
+
+        title = self._resolve_to_string(qst_call[1], {})
+        quest_id = self._resolve_to_symbol_string(qst_call[2], {})
+        assignment_cb = self._resolve_to_symbol_string(qst_call[4], {})
+        status_cb = self._resolve_to_symbol_string(qst_call[5], {})
+        icon = self._resolve_to_symbol_string(qst_call[6], {})
+        payload_expr = qst_call[7] if len(qst_call) > 7 else None
+        payload = self._extract_quest_payload(payload_expr)
+        description_lines = self._extract_paginate_lines(qst_call[3])
+        if quest_id is None:
+            return None
+        return {
+            "id": quest_id,
+            "title": title,
+            "assign_callback": assignment_cb,
+            "status_callback": status_cb,
+            "icon": icon,
+            "description_line_count": len(description_lines),
+            "description_preview": description_lines[0] if description_lines else None,
+            "payload_keys": payload["keys"],
+            "payload_flags": payload["flags"],
+            "source_file": src.name,
+        }
+
+    def _extract_quest_payload(self, expr: Expr | None) -> dict[str, list[str]]:
+        if not isinstance(expr, list) or not expr:
+            return {"keys": [], "flags": []}
+        if self._symbol_name(expr[0]) != "tbl-build":
+            return {"keys": [], "flags": []}
+        keys: list[str] = []
+        flags: list[str] = []
+        i = 1
+        while i < len(expr):
+            key = self._resolve_to_symbol_string(expr[i], {})
+            if key is None:
+                i += 1
+                continue
+            keys.append(key)
+            if i + 1 < len(expr):
+                value = self._resolve_value(expr[i + 1], {})
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    if value == 0:
+                        flags.append(key)
+                elif value is False or value is None:
+                    flags.append(key)
+            i += 2
+        return {"keys": sorted(set(keys)), "flags": sorted(set(flags))}
+
+    def _extract_paginate_lines(self, expr: Expr) -> list[str]:
+        if not isinstance(expr, list) or not expr:
+            return []
+        if self._symbol_name(expr[0]) != "kern-ui-paginate-text":
+            return []
+        lines: list[str] = []
+        for item in expr[1:]:
+            if isinstance(item, str):
+                lines.append(item)
+        return lines
+
+    def _extract_quest_update_reference(self, expr: list[Expr]) -> dict[str, object] | None:
+        head = self._symbol_name(expr[0])
+        if head not in {"quest-data-update", "quest-data-update-with", "quest-data-complete-with"}:
+            return None
+        if len(expr) < 3:
+            return None
+        quest_id = self._resolve_to_symbol_string(expr[1], {})
+        key = self._resolve_to_symbol_string(expr[2], {})
+        if quest_id is None:
+            return None
+        if not quest_id.startswith("questentry-"):
+            return None
+        return {
+            "api": head,
+            "quest_id": quest_id,
+            "key": key,
         }
 
     def _extract_schedules_recursive(self, expr: Expr) -> list[dict[str, object]]:

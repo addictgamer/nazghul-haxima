@@ -26,6 +26,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Parser-backed place converter now exports `places/*.scm` into structured place metadata JSON with hooks/subplace/object summaries.
 - Parser-backed townsfolk converter now exports conversation keywords, schedule summaries, and NPC factory metadata from the `townsfolk/init.scm` load chain.
 - Zone import command now writes `converted_data/import_validation_report.json` with per-section counts and validation warnings.
+- Parser-backed quest converter now exports `quests-*.scm` metadata/update scaffolds into `converted_data/quests/*.quests.json` plus index coverage.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -37,7 +38,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
-| M4 | Content import pipeline | In Progress | 94% | Reliable converters for terrain/map/place/NPC/quest data |
+| M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | Not Started | 5% | Main quest path playable with migrated content/system parity |
@@ -63,7 +64,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [x] Convert `places/*.scm` into place metadata and placements.
 - [x] Convert `townsfolk/*.scm` keyword/dialogue content.
 - [x] Create zone-by-zone import command and validation report (sprite coverage + terrains/maps/places/townsfolk exports + indexes + `import_validation_report.json`).
-- [ ] Convert `quests-*.scm` into structured quest metadata/state-transition scaffolds.
+- [x] Convert `quests-*.scm` into structured quest metadata/state-transition scaffolds.
 
 ### M5: Save/load robustness
 
@@ -135,15 +136,15 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added parser-driven place export: `converted_data/places/*.place.json` with place flags, hooks, and object/subplace summaries.
 - Added parser-driven townsfolk export: `converted_data/townsfolk.runtime.json` with conversation keyword sets, schedules, and factory metadata (including `mk-abe` and `sch_abe` extraction).
 - Added generated import validation report: `converted_data/import_validation_report.json` with coverage counters and conversion warnings.
+- Added parser-driven quest exports: `converted_data/quests/*.quests.json` + `converted_data/quests/index.json` with `qst-mk` quest records and quest-data update references.
 
 ## Suggested Delivery Sequence
 
-1. Finish M3 (UX polish + command targeting).
-2. Advance M4 enough to load at least one authentic converted zone.
-3. Complete M5 so converted zones are safely playable/saveable.
-4. Build M6 test/CI gates before larger content migration.
-5. Iterate M7 zone-by-zone until main quest path is reachable.
-6. Close with M8 release packaging.
+1. Start M5 schema/versioning so converted-state saves are robust across updates.
+2. Expand M5 persistence coverage for mutable world/NPC/quest runtime state.
+3. Build M6 test/CI gates before larger compatibility work.
+4. Iterate M7 zone-by-zone until main quest path is reachable.
+5. Close with M8 release packaging and release process docs.
 
 ## Practical Definition of “Playable Alpha”
 
