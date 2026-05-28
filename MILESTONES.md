@@ -36,6 +36,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Inventory UI now renders item icons in the console panel, and ground-item rendering shares the same item-to-sprite mapping helper.
 - Added right-sidebar layout for character + inventory panels, separating them from console dialogue/log space.
 - Save system now includes schema versioning, migration hooks, and corruption quarantine handling for safer loads.
+- Save/load now includes a slot-selection modal (F5/F9) with keyboard navigation and per-slot summaries.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -48,7 +49,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
-| M5 | Save/load robustness | In Progress | 52% | Stable schema versioning + full world state restore |
+| M5 | Save/load robustness | In Progress | 58% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | In Progress | 12% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
@@ -79,7 +80,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 - [x] Add save schema version field and migration hooks.
 - [~] Persist/restore all mutable state (opened containers, NPC states, quest flags, time).
-- [ ] Ensure deterministic reload of combat/non-combat state.
+- [~] Ensure deterministic reload of combat/non-combat state.
 - [x] Add corruption handling and recovery messages.
 
 ### M6: Testing + quality gates
@@ -165,6 +166,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Refactored layout to a dedicated sidebar for character stats and inventory so NPC dialogue and logs no longer compete for the same console space.
 - Added save schema version (`save_version`), v0->v1 migration path, ground-item persistence, and corrupted-save quarantine with user-facing load error messaging.
 - Expanded save payload restoration for key runtime session state (victory flag, targeting state, selected NPC, dialogue panel state) to improve continuity after reload.
+- Added save/load slot modal UI (keyboard-driven) with slot metadata labels and explicit per-slot save/load actions.
 
 ## Suggested Delivery Sequence
 

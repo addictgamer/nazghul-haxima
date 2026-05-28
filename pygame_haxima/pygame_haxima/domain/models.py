@@ -163,6 +163,10 @@ class GameSession:
     terrain_fallback_keys: list[str] = field(default_factory=list)
     show_options_menu: bool = False
     options_selected_index: int = 0
+    show_save_load_menu: bool = False
+    save_load_mode: str | None = None
+    save_load_selected_slot: int = 0
+    save_slot_labels: list[str] = field(default_factory=list)
     option_scale: int = 1
     option_fullscreen: bool = False
     keybind_preview: list[str] = field(default_factory=list)

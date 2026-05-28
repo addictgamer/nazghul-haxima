@@ -25,3 +25,4 @@
 
 .venv/
 __pycache__/
+pygame_haxima/saves/

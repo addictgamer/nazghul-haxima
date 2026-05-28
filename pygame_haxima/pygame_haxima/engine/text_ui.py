@@ -139,6 +139,9 @@ class TextUi:
         pygame.draw.rect(surface, (110, 110, 140), rect, 1)
         prompt = self.cmd_font.render(session.command_prompt, True, (230, 220, 120))
         surface.blit(prompt, (rect.x + 8, rect.y + 6))
+        if session.show_save_load_menu:
+            self.draw_save_load_menu(surface, session)
+            return
         if session.show_options_menu:
             self.draw_options_menu(surface, session)
 
@@ -170,3 +173,22 @@ class TextUi:
         for index, line in enumerate(session.keybind_preview[:9]):
             row = self.menu_font.render(f"- {line}", True, (175, 195, 220))
             surface.blit(row, (panel.x + 28, panel.y + 265 + index * 24))
+
+    def draw_save_load_menu(self, surface: pygame.Surface, session: GameSession) -> None:
+        panel = pygame.Rect(220, 180, 840, 480)
+        pygame.draw.rect(surface, (18, 20, 32), panel)
+        pygame.draw.rect(surface, (170, 185, 225), panel, 2)
+
+        mode = (session.save_load_mode or "save").upper()
+        title = self.cmd_font.render(f"{mode} SLOTS", True, (245, 235, 180))
+        surface.blit(title, (panel.x + 16, panel.y + 12))
+        hint = self.menu_font.render("Arrows: select slot | Enter: confirm | Esc: close", True, (200, 210, 225))
+        surface.blit(hint, (panel.x + 16, panel.y + 46))
+
+        labels = session.save_slot_labels or [f"Slot {i + 1}: (empty)" for i in range(6)]
+        for idx, label in enumerate(labels):
+            selected = idx == session.save_load_selected_slot
+            color = (245, 245, 255) if selected else (180, 190, 215)
+            marker = ">" if selected else " "
+            row = self.menu_font.render(f"{marker} {label}", True, color)
+            surface.blit(row, (panel.x + 24, panel.y + 88 + idx * 52))

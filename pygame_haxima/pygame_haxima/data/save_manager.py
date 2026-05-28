@@ -7,16 +7,21 @@ from pathlib import Path
 from pygame_haxima.domain.models import Entity, GameSession, Item, Mode
 
 CURRENT_SAVE_VERSION = 1
+SAVE_SLOT_COUNT = 6
 
 
 class SaveManager:
     def __init__(self, save_dir: Path) -> None:
         self.save_dir = save_dir
         self.save_dir.mkdir(parents=True, exist_ok=True)
-        self.default_path = self.save_dir / "tutorial-save.json"
+        self.default_path = self.save_dir / "slot1-save.json"
         self.last_error: str | None = None
 
     def save(self, session: GameSession) -> Path:
+        return self.save_slot(0, session)
+
+    def save_slot(self, slot_index: int, session: GameSession) -> Path:
+        path = self._slot_path(slot_index)
         payload = {
             "save_version": CURRENT_SAVE_VERSION,
             "party": {
@@ -52,19 +57,23 @@ class SaveManager:
                 for (x, y), items in session.place.ground_items.items()
             },
         }
-        self.default_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        return self.default_path
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return path
 
     def load(self, session: GameSession) -> bool:
+        return self.load_slot(0, session)
+
+    def load_slot(self, slot_index: int, session: GameSession) -> bool:
         self.last_error = None
-        if not self.default_path.exists():
+        path = self._slot_path(slot_index)
+        if not path.exists():
             self.last_error = "no_save"
             return False
         try:
-            payload = json.loads(self.default_path.read_text(encoding="utf-8"))
+            payload = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             self.last_error = "corrupt_save"
-            self._quarantine_corrupt_save()
+            self._quarantine_corrupt_save(path)
             return False
 
         try:
@@ -139,6 +148,28 @@ class SaveManager:
             self.last_error = "invalid_schema"
             return False
 
+    def list_slots(self) -> list[str]:
+        labels: list[str] = []
+        for idx in range(SAVE_SLOT_COUNT):
+            path = self._slot_path(idx)
+            slot_name = f"Slot {idx + 1}"
+            if not path.exists():
+                labels.append(f"{slot_name}: (empty)")
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                turn = payload.get("party", {}).get("turn_count", "?")
+                hour = payload.get("clock_hours", "?")
+                minute = payload.get("clock_minutes", "?")
+                if isinstance(hour, int) and isinstance(minute, int):
+                    time_text = f"{hour:02d}:{minute:02d}"
+                else:
+                    time_text = "--:--"
+                labels.append(f"{slot_name}: Turn {turn}, {time_text}")
+            except Exception:
+                labels.append(f"{slot_name}: (corrupt)")
+        return labels
+
     def _migrate_payload(self, payload: dict[str, object]) -> dict[str, object]:
         version = int(payload.get("save_version", 0))
         migrated = dict(payload)
@@ -167,10 +198,14 @@ class SaveManager:
         migrated.setdefault("log_lines", [])
         return migrated
 
-    def _quarantine_corrupt_save(self) -> None:
+    def _quarantine_corrupt_save(self, path: Path) -> None:
         try:
-            bad_path = self.default_path.with_suffix(".corrupt.json")
-            self.default_path.replace(bad_path)
+            bad_path = path.with_suffix(".corrupt.json")
+            path.replace(bad_path)
         except OSError:
             # Keep failure silent; load() caller already gets False.
             pass
+
+    def _slot_path(self, slot_index: int) -> Path:
+        clamped = max(0, min(SAVE_SLOT_COUNT - 1, slot_index))
+        return self.save_dir / f"slot{clamped + 1}-save.json"

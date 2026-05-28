@@ -24,11 +24,16 @@ class TurnLoop:
                 self._tick_feedback(session)
                 continue
             if event.kind == EngineEventType.MOUSE_TILE:
+                if session.show_save_load_menu:
+                    continue
                 self._handle_mouse_move(session, event.payload["tile"])
                 continue
             if event.kind != EngineEventType.ACTION:
                 continue
             action = event.payload["action"]
+            if session.show_save_load_menu:
+                self._handle_save_load_menu_action(session, action)
+                continue
             if action == "options_menu":
                 self._toggle_options_menu(session)
                 continue
@@ -57,18 +62,9 @@ class TurnLoop:
             elif action == "examine":
                 self._start_targeting(session, "examine", "Xamine-<target>(Enter confirm, Esc cancel)")
             elif action == "save":
-                path = self.save_manager.save(session)
-                session.append_log(f"Saved game to {path.name}.")
+                self._open_save_load_menu(session, "save")
             elif action == "load":
-                loaded = self.save_manager.load(session)
-                if loaded:
-                    session.append_log("Loaded saved game.")
-                elif self.save_manager.last_error == "corrupt_save":
-                    session.append_log("Save file was corrupted and has been quarantined.")
-                elif self.save_manager.last_error == "invalid_schema":
-                    session.append_log("Save file schema is invalid for this build.")
-                else:
-                    session.append_log("No saved game found.")
+                self._open_save_load_menu(session, "load")
             elif action == "help":
                 self._help(session)
             elif action == "cancel":
@@ -170,6 +166,8 @@ class TurnLoop:
         session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
 
     def _toggle_options_menu(self, session: GameSession) -> None:
+        if session.show_save_load_menu:
+            return
         session.show_options_menu = not session.show_options_menu
         session.option_scale = self.renderer.scale
         session.option_fullscreen = self.renderer.is_fullscreen
@@ -216,6 +214,63 @@ class TurnLoop:
             state = "ON" if session.debug_sprite_warnings else "OFF"
             session.append_log(f"Sprite warning overlay {state}.")
             return
+
+    def _open_save_load_menu(self, session: GameSession, mode: str) -> None:
+        session.show_save_load_menu = True
+        session.save_load_mode = mode
+        session.save_load_selected_slot = 0
+        session.save_slot_labels = self.save_manager.list_slots()
+        action_word = "Save" if mode == "save" else "Load"
+        session.command_prompt = f"{action_word} Menu> up/down slot, Enter confirm, Esc cancel"
+
+    def _close_save_load_menu(self, session: GameSession) -> None:
+        session.show_save_load_menu = False
+        session.save_load_mode = None
+        session.command_prompt = "Command> (H help, F10 options)"
+
+    def _handle_save_load_menu_action(self, session: GameSession, action: str) -> None:
+        if action == "cancel":
+            self._close_save_load_menu(session)
+            session.append_log("Closed save/load menu.")
+            return
+        if action == "save":
+            session.save_load_mode = "save"
+            session.command_prompt = "Save Menu> up/down slot, Enter confirm, Esc cancel"
+            return
+        if action == "load":
+            session.save_load_mode = "load"
+            session.command_prompt = "Load Menu> up/down slot, Enter confirm, Esc cancel"
+            return
+        if action == "move_n":
+            count = max(1, len(session.save_slot_labels))
+            session.save_load_selected_slot = (session.save_load_selected_slot - 1) % count
+            return
+        if action == "move_s":
+            count = max(1, len(session.save_slot_labels))
+            session.save_load_selected_slot = (session.save_load_selected_slot + 1) % count
+            return
+        if action != "confirm":
+            return
+
+        slot = session.save_load_selected_slot
+        mode = session.save_load_mode or "save"
+        if mode == "save":
+            path = self.save_manager.save_slot(slot, session)
+            session.append_log(f"Saved game to {path.name}.")
+            session.save_slot_labels = self.save_manager.list_slots()
+            return
+
+        loaded = self.save_manager.load_slot(slot, session)
+        if loaded:
+            session.append_log("Loaded saved game.")
+            self._close_save_load_menu(session)
+            return
+        if self.save_manager.last_error == "corrupt_save":
+            session.append_log("Save file was corrupted and has been quarantined.")
+        elif self.save_manager.last_error == "invalid_schema":
+            session.append_log("Save file schema is invalid for this build.")
+        else:
+            session.append_log("No saved game found in that slot.")
 
     def _start_targeting(self, session: GameSession, action: str, prompt: str) -> None:
         if action in {"talk", "open", "attack"} and not self._has_action_target_in_range(session, action):

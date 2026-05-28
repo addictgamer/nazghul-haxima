@@ -51,6 +51,7 @@ def run() -> int:
     session.terrain_fallback_key_count = len(session.terrain_fallback_keys)
     session.option_scale = renderer.scale
     session.option_fullscreen = renderer.is_fullscreen
+    session.save_slot_labels = save_manager.list_slots()
     session.command_prompt = "Command> (H help, F10 options)"
     keybind_order = [
         ("move_n", "Move north"),
