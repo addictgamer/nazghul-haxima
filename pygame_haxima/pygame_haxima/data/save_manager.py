@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from pygame_haxima.domain.models import Entity, GameSession, Item, Mode
+from pygame_haxima.domain.models import CombatState, Entity, GameSession, Item, Mode
 
 CURRENT_SAVE_VERSION = 1
 SAVE_SLOT_COUNT = 6
@@ -45,6 +45,11 @@ class SaveManager:
             "dialogue_lines": list(session.dialogue_lines),
             "npc_states": session.npc_states,
             "quest_flags": session.quest_flags,
+            "combat": {
+                "active": session.combat.active,
+                "message": session.combat.message,
+                "enemy_ids": list(session.combat.enemy_ids),
+            },
             "chests": [
                 {
                     "chest_id": chest.chest_id,
@@ -119,6 +124,8 @@ class SaveManager:
             session.npc_states = self._sanitize_nested_state(npc_states)
             quest_flags = payload.get("quest_flags", {})
             session.quest_flags = self._sanitize_flat_state(quest_flags)
+            combat_payload = payload.get("combat", {})
+            session.combat = self._sanitize_combat_state(combat_payload)
             chests_by_id = {ch.chest_id: ch for ch in session.place.chests}
             for chest_payload in payload.get("chests", []):
                 chest = chests_by_id.get(chest_payload["chest_id"])
@@ -200,6 +207,7 @@ class SaveManager:
         migrated.setdefault("dialogue_lines", [])
         migrated.setdefault("npc_states", {})
         migrated.setdefault("quest_flags", {})
+        migrated.setdefault("combat", {"active": False, "message": "", "enemy_ids": []})
         party = migrated.get("party")
         if isinstance(party, dict):
             party.setdefault("members", [])
@@ -235,8 +243,16 @@ class SaveManager:
         session.camera_start_x = None
         session.camera_start_y = None
 
-        if not any(monster.is_alive() for monster in session.place.monsters) and session.mode == Mode.COMBAT:
+        living_enemy_ids = {monster.entity_id for monster in session.place.monsters if monster.is_alive()}
+        filtered_enemy_ids = [eid for eid in session.combat.enemy_ids if eid in living_enemy_ids]
+        session.combat.enemy_ids = filtered_enemy_ids
+        if not filtered_enemy_ids:
+            session.combat.active = False
+            session.combat.message = ""
+        if session.mode == Mode.COMBAT and not session.combat.active:
             session.mode = Mode.EXPLORE
+        if session.mode != Mode.COMBAT and session.combat.active:
+            session.mode = Mode.COMBAT
 
     def _sanitize_flat_state(self, value: object) -> dict[str, object]:
         if not isinstance(value, dict):
@@ -258,3 +274,15 @@ class SaveManager:
                 continue
             out[key] = self._sanitize_flat_state(state)
         return out
+
+    def _sanitize_combat_state(self, value: object) -> CombatState:
+        if not isinstance(value, dict):
+            return CombatState()
+        active = bool(value.get("active", False))
+        message_raw = value.get("message", "")
+        message = message_raw if isinstance(message_raw, str) else ""
+        enemy_ids_raw = value.get("enemy_ids", [])
+        enemy_ids: list[str] = []
+        if isinstance(enemy_ids_raw, list):
+            enemy_ids = [eid for eid in enemy_ids_raw if isinstance(eid, str)]
+        return CombatState(active=active, message=message, enemy_ids=enemy_ids)

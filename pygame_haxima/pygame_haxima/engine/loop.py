@@ -135,12 +135,18 @@ class TurnLoop:
 
     def _attack(self, session: GameSession, monster: Entity) -> None:
         session.mode = Mode.COMBAT
+        session.combat.active = True
+        session.combat.enemy_ids = [monster.entity_id]
+        session.combat.message = f"Engaged {monster.name}"
         self._resolve_combat_round(session, monster)
         if not monster.is_alive():
             session.append_log(f"{monster.name} falls.")
             session.quest_flags[f"defeated:{monster.entity_id}"] = True
             session.victory = True
             session.mode = Mode.EXPLORE
+            session.combat.active = False
+            session.combat.enemy_ids = []
+            session.combat.message = ""
             return
         self._enemy_counterattack(session, monster)
         if session.party.lead().hp <= 0:
@@ -148,6 +154,9 @@ class TurnLoop:
             session.running = False
             return
         session.mode = Mode.EXPLORE
+        session.combat.active = False
+        session.combat.enemy_ids = []
+        session.combat.message = ""
         session.advance_turn()
 
     def _examine(self, session: GameSession, x: int, y: int) -> None:
