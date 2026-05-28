@@ -27,3 +27,5 @@ python -m pygame_haxima
 On startup, the game prints a sprite coverage summary and writes:
 
 - `pygame_haxima/reports/sprite_coverage_report.txt`
+
+Conversation lines now appear in a dedicated dialogue panel above the console log.

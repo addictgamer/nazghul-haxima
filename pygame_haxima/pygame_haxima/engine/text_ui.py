@@ -7,17 +7,72 @@ from pygame_haxima.domain.models import GameSession
 
 class TextUi:
     def __init__(self) -> None:
-        self.console_font = pygame.font.SysFont("consolas", 20)
-        self.cmd_font = pygame.font.SysFont("consolas", 22, bold=True)
-        self.menu_font = pygame.font.SysFont("consolas", 20)
+        self.console_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
+        self.cmd_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 22, bold=True)
+        self.menu_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
+
+    def _choose_font(self, candidates: list[str], size: int, bold: bool = False) -> pygame.font.Font:
+        for name in candidates:
+            matched = pygame.font.match_font(name, bold=bold)
+            if matched:
+                return pygame.font.Font(matched, size)
+        return pygame.font.SysFont(None, size, bold=bold)
+
+    def _wrap_text(self, font: pygame.font.Font, text: str, max_width: int) -> list[str]:
+        if not text:
+            return [""]
+        words = text.split()
+        if not words:
+            return [""]
+        lines: list[str] = []
+        current = words[0]
+        for word in words[1:]:
+            candidate = f"{current} {word}"
+            if font.size(candidate)[0] <= max_width:
+                current = candidate
+            else:
+                lines.append(current)
+                current = word
+        lines.append(current)
+        return lines
 
     def draw_console(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (12, 12, 16), rect)
         pygame.draw.rect(surface, (80, 80, 95), rect, 1)
-        lines = session.log_lines[-8:]
-        for index, line in enumerate(lines):
-            rendered = self.console_font.render(line[:110], True, (190, 210, 190))
-            surface.blit(rendered, (rect.x + 8, rect.y + 8 + index * 20))
+        y_cursor = rect.y + 8
+        max_width = rect.width - 16
+
+        if session.dialogue_lines:
+            y_cursor = self._draw_dialogue_panel(surface, rect, session, y_cursor)
+
+        wrapped_logs: list[str] = []
+        for line in session.log_lines[-16:]:
+            wrapped_logs.extend(self._wrap_text(self.console_font, line, max_width))
+        line_height = 20
+        available_height = max(0, (rect.bottom - 8) - y_cursor)
+        max_visible_lines = max(1, available_height // line_height)
+        visible_lines = wrapped_logs[-max_visible_lines:]
+        for index, line in enumerate(visible_lines):
+            rendered = self.console_font.render(line, True, (190, 210, 190))
+            surface.blit(rendered, (rect.x + 8, y_cursor + index * line_height))
+
+    def _draw_dialogue_panel(
+        self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession, y_cursor: int
+    ) -> int:
+        panel_h = 78
+        panel = pygame.Rect(rect.x + 6, y_cursor, rect.width - 12, panel_h)
+        pygame.draw.rect(surface, (28, 30, 44), panel)
+        pygame.draw.rect(surface, (130, 140, 180), panel, 1)
+        speaker = session.dialogue_speaker or "Unknown"
+        title = self.menu_font.render(f"{speaker} says:", True, (250, 220, 150))
+        surface.blit(title, (panel.x + 8, panel.y + 4))
+        max_width = panel.width - 16
+        dialogue_text = " ".join(session.dialogue_lines)
+        wrapped = self._wrap_text(self.console_font, dialogue_text, max_width)
+        for index, line in enumerate(wrapped[:2]):
+            rendered = self.console_font.render(line, True, (220, 225, 245))
+            surface.blit(rendered, (panel.x + 8, panel.y + 28 + index * 20))
+        return y_cursor + panel_h + 6
 
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)

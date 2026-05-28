@@ -261,9 +261,14 @@ class TurnLoop:
                 session.append_log("You can't perform that action there.")
                 return
             session.mode = Mode.TALK
-            session.append_log(f"{npc.name}: {npc.keywords.get('name', 'Greetings.')}")
-            session.append_log(f"{npc.name}: {npc.keywords.get('job', 'I wander.')}")
-            session.append_log(f"{npc.name}: {npc.keywords.get('bye', 'Farewell.')}")
+            line_name = npc.keywords.get("name", "Greetings.")
+            line_job = npc.keywords.get("job", "I wander.")
+            line_bye = npc.keywords.get("bye", "Farewell.")
+            session.dialogue_speaker = npc.name
+            session.dialogue_lines = [line_name, line_job, line_bye]
+            session.append_log(f"{npc.name}: {line_name}")
+            session.append_log(f"{npc.name}: {line_job}")
+            session.append_log(f"{npc.name}: {line_bye}")
             session.mode = Mode.EXPLORE
             session.advance_turn()
             self._end_targeting(session)

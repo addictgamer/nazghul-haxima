@@ -15,6 +15,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Command targeting flow now exists for talk/open/attack/examine with cursor move + confirm/cancel.
 - Mouse-to-tile targeting now uses the same camera window math as map rendering (fixes cursor offset/misalignment).
 - Short-range actions now fail fast when no in-range target exists and no longer allow out-of-range target selection.
+- Text UI now has font fallback, width-aware wrapping, and a dedicated dialogue panel for NPC conversation lines.
+- Console layout now dynamically clamps visible log lines when dialogue panel is present, preventing overlap with the command bar.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -25,7 +27,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M0 | Build + launch tooling | Completed | 100% | `pygame.sh`, `pygame.bat`, `requirements.txt`, package entrypoints working |
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
-| M3 | UX redesign pass | In Progress | 78% | Scalable display, polished UI readability, robust mouse-target command UX |
+| M3 | UX redesign pass | In Progress | 84% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | In Progress | 35% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
@@ -37,7 +39,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 ### M3: UX redesign pass (next major deliverable)
 
 - [x] Add in-game menu/options screen for scale/fullscreen/keybinds.
-- [~] Improve text system (font fallback + wrapping + dialogue panel behavior) (options panel and command hints improved; wrapping not done).
+- [x] Improve text system (font fallback + wrapping + dialogue panel behavior).
 - [x] Implement command targeting UX parity (cursor mode, cancel/confirm flow, prompts).
 - [x] Add terrain debug overlay toggle for visual map validation (`F2`).
 - [x] Add sprite warning overlay toggle for fallback-key monitoring (`F3`).
@@ -111,6 +113,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added command targeting cursor flow for `talk/open/attack/examine` (`Enter` confirm, `Esc` cancel, mouse target support).
 - Fixed mouse targeting offset by unifying renderer click conversion with map camera viewport origin/clamping.
 - Improved targeting QoL: in-range validation on action start and constrained cursor/mouse selection for short-range actions.
+- Improved text system with font fallback stack, wrapped console rendering, and dialogue panel presentation.
+- Fixed console/log overlap bug where dialogue panel could push log lines underneath the bottom command bar.
 
 ## Suggested Delivery Sequence
 

@@ -165,6 +165,8 @@ class GameSession:
     option_scale: int = 1
     option_fullscreen: bool = False
     keybind_preview: list[str] = field(default_factory=list)
+    dialogue_speaker: str | None = None
+    dialogue_lines: list[str] = field(default_factory=list)
 
     def append_log(self, message: str) -> None:
         self.log_lines.append(message)
