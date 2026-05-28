@@ -6,6 +6,7 @@ from pygame_haxima.config import DISPLAY
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
 from pygame_haxima.domain.models import GameSession
 from pygame_haxima.engine.item_sprites import item_sprite_key
+from pygame_haxima.engine.spells import get_spell
 
 
 class MapView:
@@ -191,24 +192,20 @@ class MapView:
         session: GameSession,
     ) -> None:
         action = session.targeting_action
-        if action not in {"talk", "open", "attack", "cast_spark"}:
+        cast_spell_id = self._cast_spell_id(action)
+        spell = get_spell(cast_spell_id) if cast_spell_id is not None else None
+        if action not in {"talk", "open", "attack"} and not (
+            cast_spell_id is not None and spell is not None and spell.targeted
+        ):
             return
+        cast_range = max(1, spell.range_tiles) if spell is not None and spell.targeted else 1
+        px, py = session.party.x, session.party.y
         candidates = [
-            (session.party.x, session.party.y),
-            (session.party.x + 1, session.party.y),
-            (session.party.x - 1, session.party.y),
-            (session.party.x, session.party.y + 1),
-            (session.party.x, session.party.y - 1),
+            (px + dx, py + dy)
+            for dx in range(-cast_range, cast_range + 1)
+            for dy in range(-cast_range, cast_range + 1)
+            if abs(dx) + abs(dy) <= cast_range
         ]
-        if action == "cast_spark":
-            candidates.extend(
-                [
-                    (session.party.x + 2, session.party.y),
-                    (session.party.x - 2, session.party.y),
-                    (session.party.x, session.party.y + 2),
-                    (session.party.x, session.party.y - 2),
-                ]
-            )
         alpha = 55 + (session.ui_anim_tick % 5) * 10
         for x, y in candidates:
             if x < start_x or y < start_y:
@@ -240,12 +237,23 @@ class MapView:
             return (140, 255, 160) if chest is not None and not chest.opened else (255, 120, 120)
         if action == "attack":
             return (140, 255, 160) if session.place.monster_at(x, y) is not None else (255, 120, 120)
-        if action == "cast_spark":
-            in_range = abs(session.party.x - x) + abs(session.party.y - y) <= 2
+        cast_spell_id = self._cast_spell_id(action)
+        if cast_spell_id is not None:
+            spell = get_spell(cast_spell_id)
+            if spell is None or not spell.targeted:
+                return (255, 120, 120)
+            in_range = abs(session.party.x - x) + abs(session.party.y - y) <= spell.range_tiles
             if not in_range:
                 return (255, 120, 120)
             return (140, 255, 160) if session.place.monster_at(x, y) is not None else (255, 120, 120)
         return (255, 245, 120)
+
+    def _cast_spell_id(self, action: str | None) -> str | None:
+        if not isinstance(action, str):
+            return None
+        if not action.startswith("cast_"):
+            return None
+        return action.replace("cast_", "", 1)
 
     def _draw_encounter_indicators(
         self,

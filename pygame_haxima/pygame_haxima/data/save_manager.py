@@ -5,6 +5,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from pygame_haxima.domain.models import CombatState, Entity, GameSession, Item, Mode
+from pygame_haxima.engine.spells import known_spell_ids
 
 CURRENT_SAVE_VERSION = 1
 SAVE_SLOT_COUNT = 6
@@ -296,11 +297,17 @@ class SaveManager:
         )
         party = migrated.get("party")
         if isinstance(party, dict):
+            default_spells = known_spell_ids()
             party.setdefault("members", [])
             party.setdefault("inventory", [])
             party.setdefault("reagents", {"sulphurous_ash": 2, "ginseng": 1, "garlic": 1})
-            party.setdefault("spells_known", ["spark", "heal", "ward"])
-            party.setdefault("selected_spell", "spark")
+            party.setdefault("spells_known", default_spells)
+            if "spark" in default_spells:
+                party.setdefault("selected_spell", "spark")
+            elif default_spells:
+                party.setdefault("selected_spell", default_spells[0])
+            else:
+                party.setdefault("selected_spell", "spark")
             party.setdefault("ward_charges", 0)
         migrated.setdefault("log_lines", [])
         return migrated
@@ -334,6 +341,9 @@ class SaveManager:
         session.combat_feedback_lines = []
         session.camera_start_x = None
         session.camera_start_y = None
+        available = known_spell_ids()
+        available_set = set(available)
+        session.party.spells_known = [spell for spell in session.party.spells_known if spell in available_set] or available
         if session.party.selected_spell not in session.party.spells_known:
             session.party.selected_spell = session.party.spells_known[0] if session.party.spells_known else "spark"
 

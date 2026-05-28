@@ -382,12 +382,7 @@ class TurnLoop:
             session.target_cursor = self._default_target_for_action(session, action)
             session.command_prompt = f"Cast {spell.name}-<target>(Enter confirm, Esc cancel)"
             return
-        if spell.spell_id == "heal":
-            self._cast_heal(session)
-            return
-        if spell.spell_id == "ward":
-            self._cast_ward(session)
-            return
+        self._cast_non_targeted_spell(session, spell)
 
     def _cycle_spell(self, session: GameSession) -> None:
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
@@ -503,22 +498,23 @@ class TurnLoop:
             self._attack(session, monster)
             self._end_targeting(session)
             return
-        if action == "cast_spark":
+        cast_spell_id = self._cast_spell_id(action)
+        if cast_spell_id is not None:
             monster = session.place.monster_at(x, y)
             if monster is None:
                 session.append_log("No enemy there to cast at.")
                 return
-            spell = get_spell("spark")
+            spell = get_spell(cast_spell_id)
             if spell is None:
                 return
             if self._distance_from_party(session, x, y) > spell.range_tiles:
                 session.append_log("You can't cast that far.")
                 return
-            if not self._has_reagents_for_spell(session, "spark"):
-                session.append_log("You lack reagents for Spark.")
+            if not self._has_reagents_for_spell(session, cast_spell_id):
+                session.append_log(f"You lack reagents for {spell.name}.")
                 self._end_targeting(session)
                 return
-            self._cast_spark(session, monster)
+            self._cast_targeted_spell(session, spell, monster)
             self._end_targeting(session)
             return
         if action == "examine":
@@ -540,32 +536,20 @@ class TurnLoop:
 
     def _has_action_target_in_range(self, session: GameSession, action: str) -> bool:
         px, py = session.party.x, session.party.y
-        candidates = ((px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1))
+        candidates = [(px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)]
         if action == "talk":
             return any(session.place.npc_at(x, y) is not None for x, y in candidates)
         if action == "open":
             return any(session.place.chest_at(x, y) is not None for x, y in candidates)
         if action == "attack":
             return any(session.place.monster_at(x, y) is not None for x, y in candidates)
-        if action == "cast_spark":
-            spell = get_spell("spark")
-            if spell is None:
+        cast_spell_id = self._cast_spell_id(action)
+        if cast_spell_id is not None:
+            spell = get_spell(cast_spell_id)
+            if spell is None or not spell.targeted:
                 return False
-            extended = (
-                (px, py),
-                (px + 1, py),
-                (px - 1, py),
-                (px, py + 1),
-                (px, py - 1),
-            )
-            if spell.range_tiles >= 2:
-                extended = extended + (
-                    (px + 2, py),
-                    (px - 2, py),
-                    (px, py + 2),
-                    (px, py - 2),
-                )
-            return any(session.place.monster_at(x, y) is not None for x, y in extended)
+            targeted_tiles = self._tiles_in_range(px, py, spell.range_tiles)
+            return any(session.place.monster_at(x, y) is not None for x, y in targeted_tiles)
         return True
 
     def _default_target_for_action(self, session: GameSession, action: str) -> tuple[int, int]:
@@ -580,16 +564,23 @@ class TurnLoop:
         if action == "attack":
             matches = [(x, y) for x, y in candidates if session.place.monster_at(x, y) is not None]
             return matches[0] if matches else (px, py)
-        if action == "cast_spark":
-            spell = get_spell("spark")
-            if spell is None:
+        cast_spell_id = self._cast_spell_id(action)
+        if cast_spell_id is not None:
+            spell = get_spell(cast_spell_id)
+            if spell is None or not spell.targeted:
                 return px, py
-            extended = list(candidates)
-            if spell.range_tiles >= 2:
-                extended.extend([(px + 2, py), (px - 2, py), (px, py + 2), (px, py - 2)])
+            extended = self._tiles_in_range(px, py, spell.range_tiles)
             matches = [(x, y) for x, y in extended if session.place.monster_at(x, y) is not None]
             return matches[0] if matches else (px, py)
         return px, py
+
+    def _tiles_in_range(self, x: int, y: int, range_tiles: int) -> list[tuple[int, int]]:
+        tiles: list[tuple[int, int]] = []
+        for dx in range(-range_tiles, range_tiles + 1):
+            for dy in range(-range_tiles, range_tiles + 1):
+                if abs(dx) + abs(dy) <= range_tiles:
+                    tiles.append((x + dx, y + dy))
+        return tiles
 
     def _cast_spark(self, session: GameSession, monster: Entity) -> None:
         self._consume_reagents(session, "spark")
@@ -611,28 +602,107 @@ class TurnLoop:
             self._enemy_counterattack(session, monster)
         session.advance_turn()
 
-    def _cast_heal(self, session: GameSession) -> None:
+    def _cast_heal(
+        self,
+        session: GameSession,
+        spell_id: str = "heal",
+        spell_name: str = "Heal",
+        min_heal: int = 3,
+        max_heal: int = 6,
+    ) -> None:
         caster = session.party.lead()
         if caster.hp >= caster.max_hp:
             session.append_log("You are already at full health.")
             return
-        self._consume_reagents(session, "heal")
-        heal = random.randint(3, 6)
+        self._consume_reagents(session, spell_id)
+        heal = random.randint(min_heal, max_heal)
         caster.hp = min(caster.max_hp, caster.hp + heal)
-        session.append_log(f"You cast Heal and recover {heal} HP.")
+        session.append_log(f"You cast {spell_name} and recover {heal} HP.")
         self._clear_combat_feedback(session)
-        self._set_feedback(session, f"You: Heal {heal}", (170, 255, 200), world_pos=(session.party.x, session.party.y))
+        self._set_feedback(
+            session, f"You: {spell_name} {heal}", (170, 255, 200), world_pos=(session.party.x, session.party.y)
+        )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
             self._enemy_counterattack(session, adjacent)
         session.advance_turn()
 
-    def _cast_ward(self, session: GameSession) -> None:
-        self._consume_reagents(session, "ward")
-        session.party.ward_charges = min(4, session.party.ward_charges + 2)
-        session.append_log("You cast Ward. Incoming damage reduced for 2 hits.")
+    def _cast_targeted_spell(self, session: GameSession, spell, monster: Entity) -> None:
+        if spell.spell_id == "spark":
+            self._cast_spark(session, monster)
+            return
+        self._consume_reagents(session, spell.spell_id)
+        damage = random.randint(1 + spell.circle, 2 + spell.circle * 2)
+        monster.hp = max(0, monster.hp - damage)
+        session.append_log(f"You cast {spell.name} on {monster.name} for {damage} damage.")
         self._clear_combat_feedback(session)
-        self._set_feedback(session, "You: Ward +2", (170, 220, 255), world_pos=(session.party.x, session.party.y))
+        self._set_feedback(
+            session, f"You: {spell.name} {damage}", (170, 210, 255), world_pos=(monster.x, monster.y)
+        )
+        if not monster.is_alive():
+            session.append_log(f"{monster.name} is defeated.")
+            self._set_feedback(
+                session, f"{monster.name}: Falls", (200, 255, 180), world_pos=(monster.x, monster.y)
+            )
+            session.quest_flags[f"defeated:{monster.entity_id}"] = True
+            session.victory = True
+            session.advance_turn()
+            return
+        if self._distance_from_party(session, monster.x, monster.y) <= 1:
+            self._enemy_counterattack(session, monster)
+        session.advance_turn()
+
+    def _cast_non_targeted_spell(self, session: GameSession, spell) -> None:
+        if spell.effect_kind == "heal":
+            self._cast_heal(
+                session,
+                spell_id=spell.spell_id,
+                spell_name=spell.name,
+                min_heal=max(3, spell.circle + 1),
+                max_heal=max(6, spell.circle * 2 + 2),
+            )
+            return
+        if spell.effect_kind == "ward":
+            charges = 2 if spell.spell_id == "ward" else max(1, min(4, spell.circle // 2 + 1))
+            self._cast_ward(
+                session,
+                spell_id=spell.spell_id,
+                spell_name=spell.name,
+                added_charges=charges,
+                max_charges=8,
+            )
+            return
+        self._consume_reagents(session, spell.spell_id)
+        session.append_log(f"You cast {spell.name}.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell.name}", (175, 220, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_ward(
+        self,
+        session: GameSession,
+        spell_id: str = "ward",
+        spell_name: str = "Ward",
+        added_charges: int = 2,
+        max_charges: int = 4,
+    ) -> None:
+        self._consume_reagents(session, spell_id)
+        session.party.ward_charges = min(max_charges, session.party.ward_charges + added_charges)
+        session.append_log(
+            f"You cast {spell_name}. Incoming damage reduced for {added_charges} hits."
+        )
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session,
+            f"You: {spell_name} +{added_charges}",
+            (170, 220, 255),
+            world_pos=(session.party.x, session.party.y),
+        )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
             self._enemy_counterattack(session, adjacent)

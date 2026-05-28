@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 48% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 54% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -103,7 +103,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
-- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(multi-spell scaffold added: Spark/Heal/Ward, reagent recipes, cycle/cast flow, ward mitigation, and save/load persistence; source-accurate spell list/effects still pending)*.
+- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry is now loaded from `spells.scm` (plus tutorial aliases), with data-driven circles/reagents/context and generic targeted/self-cast resolution wired into cast/cycle/targeting; source-authentic per-spell scripted effects and world-context restrictions still pending)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
 - [ ] Implement quest engine and scripted world events.
@@ -199,6 +199,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Updated spell/reagent UX policy: HUD now shows selected-spell cast capacity + required reagents (missing required shown in red with `(0)`), and `R` opens a separate full reagent inventory modal.
 - Rebalanced sidebar lower layout to dedicate most vertical space to Spellbook and keep Inventory as a compact list.
 - Expanded item icon parity mapping with category-aware canonical sprite candidates and atlas-aware fallback selection, then wired both ground-item and sidebar inventory rendering through the same resolver path.
+- Added data-driven spellbook loading from `worlds/haxima-1.002/spells.scm` (retaining `spark/heal/ward` tutorial aliases), and generalized cast targeting/range handling for all targeted spell IDs.
+- Added reagent-specific icon rendering (`s_sulphorous_ash`, `s_ginseng`, `s_garlic`, `s_nightshade`, `s_mandrake`, etc.) in shared item sprite resolution so inventory and ground pickups show reagent art when available.
+- Fixed reagent UI rendering so sidebar spellbook reagent rows and the `R` reagent modal both draw reagent icons alongside text counts.
 
 ## Suggested Delivery Sequence
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from pygame_haxima.data.sprite_profile import load_sprite_profile
 from pygame_haxima.data.tutorial_slice import build_tutorial_place
 from pygame_haxima.domain.models import GameSession
+from pygame_haxima.engine.spells import known_spell_ids
 
 
 class ContentRegistry:
@@ -14,6 +15,11 @@ class ContentRegistry:
     def make_new_session(self) -> GameSession:
         sprite_profile = load_sprite_profile(self.project_root / "converted_data")
         place, party = build_tutorial_place(sprite_profile)
+        party.spells_known = known_spell_ids()
+        if "spark" in party.spells_known:
+            party.selected_spell = "spark"
+        elif party.spells_known:
+            party.selected_spell = party.spells_known[0]
         session = GameSession(place=place, party=party)
         session.append_log("Welcome to the Pygame Haxima redesign.")
         session.append_log("Move with arrows/WASD. Press H for help.")

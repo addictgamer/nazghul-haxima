@@ -38,6 +38,18 @@ TOKEN_CATEGORY_HINTS: tuple[tuple[set[str], str], ...] = (
     ({"coin", "coins", "gold"}, "currency"),
 )
 
+REAGENT_SPRITE_KEYS: dict[str, str] = {
+    "sulphorous_ash": "s_sulphorous_ash",
+    "sulphurous_ash": "s_sulphorous_ash",
+    "ginseng": "s_ginseng",
+    "garlic": "s_garlic",
+    "nightshade": "s_nightshade",
+    "mandrake": "s_mandrake",
+    "blood_moss": "s_blood_moss",
+    "black_pearl": "s_black_pearl",
+    "spider_silk": "s_spider_silk",
+}
+
 
 def _tokenize(text: str) -> set[str]:
     return {match.group(0) for match in WORD_RE.finditer(text.lower())}
@@ -55,7 +67,14 @@ def _best_available(candidates: tuple[str, ...], has_sprite_key: Callable[[str],
 def item_sprite_key(item: Item, has_sprite_key: Callable[[str], bool] | None = None) -> str:
     if item.sprite_key:
         return item.sprite_key
-    tokens = _tokenize(f"{item.item_id} {item.name}")
+    raw_text = f"{item.item_id} {item.name}".lower()
+    tokens = _tokenize(raw_text)
+    for reagent_token, sprite_key in REAGENT_SPRITE_KEYS.items():
+        if (
+            (reagent_token in raw_text or set(reagent_token.split("_")).issubset(tokens))
+            and (has_sprite_key is None or has_sprite_key(sprite_key))
+        ):
+            return sprite_key
     for hints, category in TOKEN_CATEGORY_HINTS:
         if tokens.intersection(hints):
             return _best_available(CANONICAL_ITEM_SPRITES[category], has_sprite_key)

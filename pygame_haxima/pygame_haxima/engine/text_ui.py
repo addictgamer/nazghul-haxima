@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
-from pygame_haxima.domain.models import GameSession
+from pygame_haxima.domain.models import GameSession, Item
 from pygame_haxima.engine.item_sprites import item_sprite_key
 from pygame_haxima.engine.spells import get_spell
 
@@ -196,13 +196,20 @@ class TextUi:
                 reagents,
                 key=lambda pair: (pair[0] not in priority, pair[0]),
             )
-            line_h = self.small_font.get_height() + 1
+            icon_size = 14
+            line_h = max(icon_size, self.small_font.get_height()) + 2
             max_rows = max(1, (rect.bottom - reagent_y - 4) // line_h)
             for idx, (name, qty) in enumerate(ordered[:max_rows]):
                 prefix = "*" if name in priority else "-"
                 pretty = self._pretty_reagent_name(name)
                 line = self.small_font.render(f"{prefix} {pretty}: {qty}", True, (170, 210, 180))
-                surface.blit(line, (rect.x + 8, reagent_y + idx * line_h))
+                row_y = reagent_y + idx * line_h
+                icon = pygame.transform.scale(
+                    self.atlas.get(self._reagent_sprite_key(name)),
+                    (icon_size, icon_size),
+                )
+                surface.blit(icon, (rect.x + 8, row_y))
+                surface.blit(line, (rect.x + 8 + icon_size + 4, row_y))
             if len(ordered) > max_rows:
                 more = self.small_font.render(f"+{len(ordered) - max_rows} more", True, (140, 155, 180))
                 surface.blit(more, (rect.x + 8, rect.bottom - self.small_font.get_height() - 4))
@@ -317,13 +324,19 @@ class TextUi:
             surface.blit(empty, (panel.x + 20, panel.y + 88))
             return
 
+        icon_size = 22
         row_h = 28
         y = panel.y + 86
         max_rows = max(1, (panel.height - 106) // row_h)
         for name, qty in reagents[:max_rows]:
             color = (170, 210, 180) if qty > 0 else (255, 110, 110)
             row = self.menu_font.render(f"{self._pretty_reagent_name(name)}: {qty}", True, color)
-            surface.blit(row, (panel.x + 20, y))
+            icon = pygame.transform.scale(
+                self.atlas.get(self._reagent_sprite_key(name)),
+                (icon_size, icon_size),
+            )
+            surface.blit(icon, (panel.x + 20, y + 1))
+            surface.blit(row, (panel.x + 20 + icon_size + 8, y))
             y += row_h
 
     def save_load_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:
@@ -387,3 +400,11 @@ class TextUi:
         if normalized in special:
             return special[normalized]
         return reagent_id.replace("_", " ").title()
+
+    def _reagent_sprite_key(self, reagent_id: str) -> str:
+        reagent_item = Item(
+            item_id=f"t_{reagent_id}",
+            name=self._pretty_reagent_name(reagent_id),
+            value=0,
+        )
+        return item_sprite_key(reagent_item, self.atlas.has_key)
