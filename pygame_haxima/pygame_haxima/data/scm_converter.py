@@ -67,6 +67,27 @@ class ScmConverter:
         dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return len(converted)
 
+    def convert_map_file(self, src: Path, dst: Path) -> int:
+        text = src.read_text(encoding="utf-8", errors="ignore")
+        expressions = self.parser.parse_file(text)
+        maps: list[dict[str, object]] = []
+        for expr in expressions:
+            if not isinstance(expr, list) or not expr:
+                continue
+            if self._symbol_name(expr[0]) != "kern-mk-map":
+                continue
+            parsed = self._convert_kern_mk_map(expr, src)
+            if parsed is not None:
+                maps.append(parsed)
+        payload = {
+            "source": str(src),
+            "map_count": len(maps),
+            "maps": maps,
+        }
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return len(maps)
+
     def _build_constant_env(self, expressions: list[Expr]) -> dict[str, int | float | bool | None]:
         env: dict[str, int | float | bool | None] = {}
         for expr in expressions:
@@ -134,6 +155,46 @@ class ScmConverter:
             "step_on": step_on,
             "passable": pclass not in self.BLOCKING_PCLASSES,
         }
+
+    def _convert_kern_mk_map(self, expr: list[Expr], src: Path) -> dict[str, object] | None:
+        # (kern-mk-map 'm_cloviskeep 64 64 pal_expanded (list "..."))
+        if len(expr) < 6:
+            return None
+        map_id = self._resolve_to_symbol_string(expr[1], {})
+        width = self._resolve_to_number(expr[2], {})
+        height = self._resolve_to_number(expr[3], {})
+        palette = self._resolve_to_symbol_string(expr[4], {})
+        rows_expr = expr[5]
+        rows = self._extract_map_rows(rows_expr)
+        if map_id is None or width is None or height is None:
+            return None
+        token_rows = [self._tokenize_map_row(row) for row in rows]
+        max_cols = max((len(r) for r in token_rows), default=0)
+        return {
+            "id": map_id,
+            "width": int(width),
+            "height": int(height),
+            "palette": palette,
+            "row_count": len(rows),
+            "max_row_tokens": max_cols,
+            "rows": rows,
+            "tile_rows": token_rows,
+            "source_file": src.name,
+        }
+
+    def _extract_map_rows(self, rows_expr: Expr) -> list[str]:
+        if not isinstance(rows_expr, list) or not rows_expr:
+            return []
+        if self._symbol_name(rows_expr[0]) != "list":
+            return []
+        rows: list[str] = []
+        for entry in rows_expr[1:]:
+            if isinstance(entry, str):
+                rows.append(entry)
+        return rows
+
+    def _tokenize_map_row(self, row: str) -> list[str]:
+        return [token for token in row.strip().split() if token]
 
     def _is_define(self, expr: Expr) -> bool:
         if not isinstance(expr, list) or len(expr) < 3:

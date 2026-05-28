@@ -1,0 +1,12 @@
+[
+  {
+    "source": "cloviskeep.scm",
+    "output": "cloviskeep.map.json",
+    "map_count": 1
+  },
+  {
+    "source": "init.scm",
+    "output": "init.map.json",
+    "map_count": 0
+  }
+]
