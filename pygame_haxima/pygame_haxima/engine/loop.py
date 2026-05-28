@@ -916,6 +916,10 @@ class TurnLoop:
             self._consume_reagents(session, spell.spell_id)
             self._cast_quickness(session, spell.name, spell.circle)
             return
+        if spell.effect_kind == "sight":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_sight(session, spell.name, spell.circle)
+            return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
         self._clear_combat_feedback(session)
@@ -992,6 +996,35 @@ class TurnLoop:
             self._enemy_counterattack(session, adjacent)
         session.advance_turn()
 
+    def _cast_sight(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(4, min(14, 2 + circle * 2))
+        hostiles = self._hostiles_in_radius(session, radius)
+        chests = self._closed_chests_in_radius(session, radius)
+
+        if not hostiles and not chests:
+            session.append_log(f"You cast {spell_name}. Your senses find nothing unusual nearby.")
+        else:
+            parts: list[str] = []
+            if hostiles:
+                nearest_monster, nearest_distance = hostiles[0]
+                parts.append(
+                    f"hostiles {len(hostiles)} (nearest: {nearest_monster.name} {nearest_distance} tiles)"
+                )
+            if chests:
+                nearest_chest, nearest_distance = chests[0]
+                parts.append(f"chests {len(chests)} (nearest: {nearest_distance} tiles)")
+                session.quest_flags[f"sensed_chest:{nearest_chest.chest_id}"] = True
+            session.append_log(f"You cast {spell_name}. Senses: {'; '.join(parts)}.")
+
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (210, 225, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
     def _cast_ward(
         self,
         session: GameSession,
@@ -1036,6 +1069,28 @@ class TurnLoop:
             if chest is not None and not chest.opened:
                 return chest
         return None
+
+    def _hostiles_in_radius(self, session: GameSession, radius: int) -> list[tuple[Entity, int]]:
+        found: list[tuple[Entity, int]] = []
+        for monster in session.place.monsters:
+            if not monster.is_alive():
+                continue
+            distance = self._distance_from_party(session, monster.x, monster.y)
+            if distance <= radius:
+                found.append((monster, distance))
+        found.sort(key=lambda pair: pair[1])
+        return found
+
+    def _closed_chests_in_radius(self, session: GameSession, radius: int) -> list[tuple[Chest, int]]:
+        found: list[tuple[Chest, int]] = []
+        for chest in session.place.chests:
+            if chest.opened:
+                continue
+            distance = self._distance_from_party(session, chest.x, chest.y)
+            if distance <= radius:
+                found.append((chest, distance))
+        found.sort(key=lambda pair: pair[1])
+        return found
 
     def _nearest_alive_monster(self, session: GameSession) -> Entity | None:
         nearest: Entity | None = None

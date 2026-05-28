@@ -369,6 +369,56 @@ def test_cast_quickness_reduces_incoming_counterattack_damage(tmp_path, monkeypa
     assert session.quest_flags.get("buff:quickness_turns") == 15
 
 
+def test_cast_vision_reports_nearby_hostiles_and_chests(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "in_quas_wis"
+    session.party.reagents["nightshade"] = 1
+    session.party.reagents["mandrake"] = 1
+    session.party.x = 10
+    session.party.y = 10
+    session.party.members[0].x = 10
+    session.party.members[0].y = 10
+    wolf = session.place.monsters[0]
+    wolf.x = 12
+    wolf.y = 10
+    chest = session.place.chests[0]
+    chest.opened = False
+    chest.x = 9
+    chest.y = 10
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["nightshade"] == 0
+    assert session.party.reagents["mandrake"] == 0
+    assert any("senses: hostiles 1" in line.lower() for line in session.log_lines)
+    assert any("chests 1" in line.lower() for line in session.log_lines)
+    assert session.quest_flags.get("sensed_chest:starter_chest") is True
+
+
+def test_cast_reveal_logs_when_nothing_is_detected(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "wis_quas"
+    session.party.reagents["nightshade"] = 1
+    session.party.reagents["sulphurous_ash"] = 1
+    session.party.x = 1
+    session.party.y = 1
+    session.party.members[0].x = 1
+    session.party.members[0].y = 1
+    for chest in session.place.chests:
+        chest.opened = True
+    for monster in session.place.monsters:
+        monster.hp = 0
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.turn_count == 1
+    assert session.party.reagents["nightshade"] == 0
+    assert session.party.reagents["sulphurous_ash"] == 0
+    assert "nothing unusual nearby" in session.log_lines[-1].lower()
+
+
 def test_reagents_modal_toggle_updates_prompt(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

@@ -50,6 +50,8 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "locate", False, 0
     if "unlock" in token:
         return "unlock", False, 0
+    if "vision" in token or "reveal" in token or "detect" in token:
+        return "sight", False, 0
     attack_terms = (
         "bolt",
         "ball",
