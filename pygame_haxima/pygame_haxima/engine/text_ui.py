@@ -177,11 +177,21 @@ class TextUi:
         selected_id = session.party.selected_spell
         selected_spell = get_spell(selected_id)
         selected_name = selected_spell.name if selected_spell is not None else selected_id
-        selected_wrapped = self._wrap_text(self.small_font, f"Selected: {selected_name}", rect.width - 16)
+        selected_icon_size = 14
+        selected_text_x = rect.x + 8 + selected_icon_size + 4
+        selected_wrapped = self._wrap_text(
+            self.small_font, f"Selected: {selected_name}", rect.width - (selected_text_x - rect.x) - 8
+        )
         selected_y = rect.y + 36
+        if selected_spell is not None:
+            selected_icon = pygame.transform.scale(
+                self.atlas.get(self._spell_sprite_key(selected_spell)),
+                (selected_icon_size, selected_icon_size),
+            )
+            surface.blit(selected_icon, (rect.x + 8, selected_y + 1))
         for line_text in selected_wrapped[:2]:
             line = self.small_font.render(line_text, True, (190, 215, 245))
-            surface.blit(line, (rect.x + 8, selected_y))
+            surface.blit(line, (selected_text_x, selected_y))
             selected_y += self.small_font.get_height() + 1
 
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
@@ -195,14 +205,20 @@ class TextUi:
         spell_y = selected_y + 2
         max_spell_rows = 6
         used_rows = 0
+        spell_icon_size = 14
         list_indent_x = rect.x + 28
+        list_text_x = list_indent_x + spell_icon_size + 4
         for spell_id in visible_spell_ids:
             if used_rows >= max_spell_rows:
                 break
             spell = get_spell(spell_id)
             if spell is None:
                 continue
-            wrapped = self._wrap_text(self.small_font, spell.name, rect.width - 36)
+            wrapped = self._wrap_text(
+                self.small_font,
+                spell.name,
+                rect.width - (list_text_x - rect.x) - 8,
+            )
             context_ok = spell_context_available(spell.context, getattr(session.place, "spell_context", "context-town"))
             reagent_ok = all(
                 session.party.reagents.get(reagent, 0) >= qty for reagent, qty in spell.reagents.items()
@@ -213,15 +229,23 @@ class TextUi:
                 color = (215, 150, 150)
             else:
                 color = (175, 195, 230)
+            spell_icon = pygame.transform.scale(
+                self.atlas.get(self._spell_sprite_key(spell)),
+                (spell_icon_size, spell_icon_size),
+            )
+            drew_icon = False
             for line_text in wrapped[:2]:
                 if used_rows >= max_spell_rows:
                     break
+                if not drew_icon:
+                    surface.blit(spell_icon, (list_indent_x, spell_y + 1))
+                    drew_icon = True
                 line = self.small_font.render(line_text, True, color)
-                surface.blit(line, (list_indent_x, spell_y))
+                surface.blit(line, (list_text_x, spell_y))
                 spell_y += self.small_font.get_height() + 1
                 used_rows += 1
 
-        reagent_y = spell_y + 4
+        reagent_y = spell_y + self.small_font.get_height() + 1
         reag_title = self.small_font.render("Reagents:", True, (170, 210, 180))
         surface.blit(reag_title, (rect.x + 8, reagent_y))
         reagent_y += reag_title.get_height() + 2
@@ -460,6 +484,14 @@ class TextUi:
                 pygame.draw.rect(surface, (210, 220, 255), row_rect, 2)
             marker = ">" if selected else " "
             active_marker = "*" if active else " "
+            row_icon_size = 16
+            row_icon = pygame.transform.scale(
+                self.atlas.get(self._spell_sprite_key(spell)),
+                (row_icon_size, row_icon_size),
+            )
+            icon_x = row_rect.x + 6
+            icon_y = row_rect.y + (row_rect.height - row_icon_size) // 2
+            surface.blit(row_icon, (icon_x, icon_y))
             text = self.small_font.render(
                 f"{marker}{active_marker} C{spell.circle} {spell.name}",
                 True,
@@ -475,7 +507,7 @@ class TextUi:
                 if selected or hovered
                 else (180, 195, 220),
             )
-            surface.blit(text, (row_rect.x + 8, row_rect.y + 5))
+            surface.blit(text, (icon_x + row_icon_size + 6, row_rect.y + 5))
             if idx == available_count - 1 and available_count < len(entries):
                 divider_y = row_rect.bottom + 1
                 pygame.draw.line(
@@ -510,10 +542,16 @@ class TextUi:
         session: GameSession,
         spell,
     ) -> None:
+        icon_size = 28
         y = rect.y + 10
+        spell_icon = pygame.transform.scale(
+            self.atlas.get(self._spell_sprite_key(spell)),
+            (icon_size, icon_size),
+        )
+        surface.blit(spell_icon, (rect.x + 10, y + 2))
         title = self.cmd_font.render(spell.name, True, (220, 235, 255))
-        surface.blit(title, (rect.x + 10, y))
-        y += title.get_height() + 4
+        surface.blit(title, (rect.x + 10 + icon_size + 8, y))
+        y += max(title.get_height(), icon_size) + 4
         desc_width = rect.width - 20
         for line in self._wrap_text(self.small_font, self._spell_summary_text(spell), desc_width):
             summary = self.small_font.render(line, True, (190, 210, 235))
@@ -712,6 +750,12 @@ class TextUi:
         pretty = [part.replace("-", " ").title() for part in parts]
         pretty = ["Anywhere" if part == "Any" else part for part in pretty]
         return ", ".join(pretty)
+
+    def _spell_sprite_key(self, spell) -> str:
+        icon_key = getattr(spell, "icon_sprite", None)
+        if isinstance(icon_key, str) and icon_key and self.atlas.has_key(icon_key):
+            return icon_key
+        return "s_gem"
 
     def save_load_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:
         panel = self.SAVE_LOAD_PANEL
