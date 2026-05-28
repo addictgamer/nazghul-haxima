@@ -38,6 +38,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Save system now includes schema versioning, migration hooks, and corruption quarantine handling for safer loads.
 - Save/load now includes a slot-selection modal (F5/F9) with keyboard navigation and per-slot summaries.
 - Save/load slot modal now supports mouse click interactions and distinct row-card styling for clearer slot separation.
+- UI layering fix: save/load modal now renders above the sidebar instead of being occluded by it.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -169,6 +170,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Expanded save payload restoration for key runtime session state (victory flag, targeting state, selected NPC, dialogue panel state) to improve continuity after reload.
 - Added save/load slot modal UI (keyboard-driven) with slot metadata labels and explicit per-slot save/load actions.
 - Added mouse support for save/load modal selection/actions and visually distinct slot rows with dedicated action buttons.
+- Fixed render order so modal UI layers (save/load/options) draw above sidebar panels.
 
 ## Suggested Delivery Sequence
 
