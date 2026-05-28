@@ -25,6 +25,8 @@ class InputController:
                 if action is not None:
                     events.append(EngineEvent(EngineEventType.ACTION, {"action": action}))
             elif pg_event.type == pygame.MOUSEBUTTONDOWN and pg_event.button == 1:
+                ui_pos = self.renderer.window_to_virtual(pg_event.pos)
+                events.append(EngineEvent(EngineEventType.MOUSE_CLICK, {"ui_pos": ui_pos}))
                 tile = self.renderer.screen_to_map_tile(pg_event.pos, session)
                 if tile is not None:
                     events.append(EngineEvent(EngineEventType.MOUSE_TILE, {"tile": tile}))

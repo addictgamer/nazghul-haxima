@@ -10,6 +10,7 @@ class EngineEventType(StrEnum):
     QUIT = "quit"
     ACTION = "action"
     MOUSE_TILE = "mouse_tile"
+    MOUSE_CLICK = "mouse_click"
     ANIMATION_TICK = "animation_tick"
 
 

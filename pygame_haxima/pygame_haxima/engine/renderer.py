@@ -89,10 +89,7 @@ class Renderer:
         pygame.display.flip()
 
     def screen_to_map_tile(self, pos: tuple[int, int], session: GameSession) -> tuple[int, int] | None:
-        x, y = pos
-        if self.scale != 1:
-            x //= self.scale
-            y //= self.scale
+        x, y = self.window_to_virtual(pos)
         map_rect = self.rects["map"]
         if not map_rect.collidepoint((x, y)):
             return None
@@ -104,3 +101,10 @@ class Renderer:
         if not session.place.in_bounds(world_x, world_y):
             return None
         return world_x, world_y
+
+    def window_to_virtual(self, pos: tuple[int, int]) -> tuple[int, int]:
+        x, y = pos
+        if self.scale != 1:
+            x //= self.scale
+            y //= self.scale
+        return x, y

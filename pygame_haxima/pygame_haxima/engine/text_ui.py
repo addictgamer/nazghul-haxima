@@ -8,6 +8,8 @@ from pygame_haxima.engine.item_sprites import item_sprite_key
 
 
 class TextUi:
+    SAVE_LOAD_PANEL = pygame.Rect(220, 180, 840, 480)
+
     def __init__(self, atlas: SpriteAtlas) -> None:
         self.atlas = atlas
         self.console_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
@@ -175,20 +177,79 @@ class TextUi:
             surface.blit(row, (panel.x + 28, panel.y + 265 + index * 24))
 
     def draw_save_load_menu(self, surface: pygame.Surface, session: GameSession) -> None:
-        panel = pygame.Rect(220, 180, 840, 480)
+        panel = self.SAVE_LOAD_PANEL
         pygame.draw.rect(surface, (18, 20, 32), panel)
         pygame.draw.rect(surface, (170, 185, 225), panel, 2)
 
         mode = (session.save_load_mode or "save").upper()
         title = self.cmd_font.render(f"{mode} SLOTS", True, (245, 235, 180))
         surface.blit(title, (panel.x + 16, panel.y + 12))
-        hint = self.menu_font.render("Arrows: select slot | Enter: confirm | Esc: close", True, (200, 210, 225))
+        hint = self.menu_font.render(
+            "Arrows/mouse: select slot | Enter or Confirm button | Esc/Close button", True, (200, 210, 225)
+        )
         surface.blit(hint, (panel.x + 16, panel.y + 46))
 
         labels = session.save_slot_labels or [f"Slot {i + 1}: (empty)" for i in range(6)]
         for idx, label in enumerate(labels):
+            row_rect = self._save_slot_row_rect(idx)
             selected = idx == session.save_load_selected_slot
-            color = (245, 245, 255) if selected else (180, 190, 215)
+            bg = (58, 72, 105) if selected else (28, 34, 52)
+            border = (230, 235, 255) if selected else (110, 125, 165)
+            pygame.draw.rect(surface, bg, row_rect)
+            pygame.draw.rect(surface, border, row_rect, 2 if selected else 1)
+            color = (250, 250, 255) if selected else (190, 200, 225)
             marker = ">" if selected else " "
             row = self.menu_font.render(f"{marker} {label}", True, color)
-            surface.blit(row, (panel.x + 24, panel.y + 88 + idx * 52))
+            surface.blit(row, (row_rect.x + 10, row_rect.y + 11))
+
+        for button, button_rect in self._save_load_button_rects().items():
+            if button == "confirm":
+                label = "SAVE NOW" if (session.save_load_mode or "save") == "save" else "LOAD NOW"
+                fill = (70, 105, 78)
+            elif button == "mode_save":
+                label = "SAVE MODE"
+                fill = (58, 66, 96)
+            elif button == "mode_load":
+                label = "LOAD MODE"
+                fill = (58, 66, 96)
+            else:
+                label = "CLOSE"
+                fill = (96, 62, 62)
+            active = (
+                (button == "mode_save" and (session.save_load_mode or "save") == "save")
+                or (button == "mode_load" and (session.save_load_mode or "save") == "load")
+            )
+            if active:
+                fill = (86, 106, 160)
+            pygame.draw.rect(surface, fill, button_rect)
+            pygame.draw.rect(surface, (225, 230, 245), button_rect, 2)
+            txt = self.menu_font.render(label, True, (240, 245, 255))
+            tx = button_rect.x + (button_rect.width - txt.get_width()) // 2
+            ty = button_rect.y + (button_rect.height - txt.get_height()) // 2
+            surface.blit(txt, (tx, ty))
+
+    def save_load_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:
+        panel = self.SAVE_LOAD_PANEL
+        if not panel.collidepoint(ui_pos):
+            return None
+        for idx in range(len(session.save_slot_labels or [])):
+            if self._save_slot_row_rect(idx).collidepoint(ui_pos):
+                return ("slot", idx)
+        for key, rect in self._save_load_button_rects().items():
+            if rect.collidepoint(ui_pos):
+                return (key, None)
+        return None
+
+    def _save_slot_row_rect(self, idx: int) -> pygame.Rect:
+        panel = self.SAVE_LOAD_PANEL
+        return pygame.Rect(panel.x + 20, panel.y + 86 + idx * 58, panel.width - 40, 46)
+
+    def _save_load_button_rects(self) -> dict[str, pygame.Rect]:
+        panel = self.SAVE_LOAD_PANEL
+        y = panel.bottom - 56
+        return {
+            "confirm": pygame.Rect(panel.x + 20, y, 180, 36),
+            "mode_save": pygame.Rect(panel.x + 220, y, 160, 36),
+            "mode_load": pygame.Rect(panel.x + 396, y, 160, 36),
+            "close": pygame.Rect(panel.right - 140, y, 120, 36),
+        }

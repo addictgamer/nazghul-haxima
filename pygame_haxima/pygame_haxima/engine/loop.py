@@ -23,6 +23,10 @@ class TurnLoop:
             if event.kind == EngineEventType.ANIMATION_TICK:
                 self._tick_feedback(session)
                 continue
+            if event.kind == EngineEventType.MOUSE_CLICK:
+                if session.show_save_load_menu:
+                    self._handle_save_load_menu_click(session, event.payload["ui_pos"])
+                continue
             if event.kind == EngineEventType.MOUSE_TILE:
                 if session.show_save_load_menu:
                     continue
@@ -271,6 +275,26 @@ class TurnLoop:
             session.append_log("Save file schema is invalid for this build.")
         else:
             session.append_log("No saved game found in that slot.")
+
+    def _handle_save_load_menu_click(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
+        hit = self.renderer.text_ui.save_load_hit_test(ui_pos, session)
+        if hit is None:
+            return
+        target, index = hit
+        if target == "slot" and index is not None:
+            session.save_load_selected_slot = index
+            return
+        if target == "mode_save":
+            self._handle_save_load_menu_action(session, "save")
+            return
+        if target == "mode_load":
+            self._handle_save_load_menu_action(session, "load")
+            return
+        if target == "close":
+            self._handle_save_load_menu_action(session, "cancel")
+            return
+        if target == "confirm":
+            self._handle_save_load_menu_action(session, "confirm")
 
     def _start_targeting(self, session: GameSession, action: str, prompt: str) -> None:
         if action in {"talk", "open", "attack"} and not self._has_action_target_in_range(session, action):
