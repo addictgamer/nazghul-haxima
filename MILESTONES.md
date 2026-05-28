@@ -221,6 +221,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added scripted unlock behavior for `Unlock` spells (`An Sanct`/`In Ex Por` effect-kind), allowing non-targeted casts to open an adjacent closed chest, spill its items to ground, and set corresponding chest-open quest flags.
 - Added scripted `Quickness <Rel Tym>` handling with turn-based duration (`buff:quickness_turns`), HUD effect row visibility (`Quick(n)`), and combat impact via temporary defense bonus during enemy counterattacks.
 - Added scripted sight-style handling for `Vision`/`Reveal`/`Detect` families (`In Quas Wis`, `Wis Quas`, `Wis Sanct`, etc.) so casts report sensed nearby hostiles/chests with distance, including quest flagging for sensed chest IDs.
+- Added held-movement input repeat for `W/A/S/D` + arrow movement with tuned delay/interval so party movement continues smoothly after hold threshold, then aligned movement repeat timing to exactly match spellbook repeat timing and extended spellbook held-repeat to support both up/down directions with matching `W/S` + arrow key behavior (while preserving modal/targeting guards).
 
 ## Suggested Delivery Sequence
 
