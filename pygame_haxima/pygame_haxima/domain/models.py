@@ -81,6 +81,7 @@ class Chest:
     chest_id: str
     x: int
     y: int
+    sprite_key: str = "s_chest"
     items: list[Item] = field(default_factory=list)
     opened: bool = False
 

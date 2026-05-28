@@ -111,7 +111,7 @@ class MapView:
             if monster.is_alive()
         )
         drawables.extend(
-            ("s_chest", chest.x, chest.y) for chest in session.place.chests if not chest.opened
+            (chest.sprite_key, chest.x, chest.y) for chest in session.place.chests if not chest.opened
         )
         drawables.extend(
             (item_sprite_key(items[0]), x, y)

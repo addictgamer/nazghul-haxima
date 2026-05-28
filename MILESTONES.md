@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 12% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 18% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -98,7 +98,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 - [~] Sprite parity pass (entity/object visuals beyond terrain):
   - [x] Pass 1: tutorial critical keys switched from placeholders to canonical keys (`s_wanderer`, `s_old_townsman`, `s_wolf`, `s_chest`).
-  - [ ] Pass 2: pull NPC/monster/object sprite keys from converted place/townsfolk content instead of hardcoded defaults.
+  - [~] Pass 2: pull NPC/monster/object sprite keys from converted place/townsfolk content instead of hardcoded defaults *(runtime sprite profile now sourced from converted place/townsfolk outputs; broader zone-wide adoption pending)*.
   - [~] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
   - [ ] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases.
   - [ ] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
@@ -182,6 +182,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added parser/converter fixture tests for terrains, maps, quests, and townsfolk load-chain extraction with passing local pytest run.
 - Added GitHub Actions CI workflow to run Ruff + pytest on pushes and pull requests affecting the Pygame port.
 - Expanded tutorial/domain test coverage for blocked wall movement, no-target action rejection, and non-lethal combat resolution; local suite now passes at 15 tests.
+- Added converted-content sprite profile loading (townsfolk + places JSON) and wired tutorial NPC/monster/chest sprite assignment through profile-based resolution instead of direct hardcoded keys.
 
 ## Suggested Delivery Sequence
 

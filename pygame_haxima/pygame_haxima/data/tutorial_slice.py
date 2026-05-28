@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pygame_haxima.data.sprite_profile import SpriteProfile
 from pygame_haxima.domain.models import Chest, Entity, Item, Npc, Party, Place, Terrain, Tile
 
 
@@ -18,7 +19,8 @@ def _make_tiles(width: int, height: int) -> list[list[Tile]]:
     return rows
 
 
-def build_tutorial_place() -> tuple[Place, Party]:
+def build_tutorial_place(sprite_profile: SpriteProfile | None = None) -> tuple[Place, Party]:
+    profile = sprite_profile or SpriteProfile(frozenset())
     terrain_defs = {
         "grass": Terrain(
             "grass",
@@ -53,7 +55,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         name="The Wanderer",
         x=3,
         y=9,
-        sprite_key="s_wanderer",
+        sprite_key=profile.player_sprite("s_wanderer"),
         hp=20,
         max_hp=20,
         ap=50,
@@ -67,7 +69,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         name="Old Mentor",
         x=7,
         y=9,
-        sprite_key="s_old_townsman",
+        sprite_key=profile.npc_sprite("mentor", "Old Mentor", "s_old_townsman"),
         keywords={
             "name": "I am called the Old Mentor.",
             "job": "I teach wanderers how to survive Nazghul.",
@@ -79,6 +81,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         chest_id="starter_chest",
         x=5,
         y=11,
+        sprite_key=profile.object_sprite("starter_chest", "chest", "s_chest"),
         items=[
             Item("t_dagger", "Dagger", 8, sprite_key="s_dagger"),
             Item("t_armor_leather", "Leather Armor", 12, sprite_key="s_leather_armor"),
@@ -90,7 +93,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         name="Wolf",
         x=14,
         y=9,
-        sprite_key="s_wolf",
+        sprite_key=profile.monster_sprite("wolf_1", "Wolf", "s_wolf"),
         hostile=True,
         hp=10,
         max_hp=10,
