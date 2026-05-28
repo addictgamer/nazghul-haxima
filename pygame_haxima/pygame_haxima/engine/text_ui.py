@@ -47,10 +47,9 @@ class TextUi:
 
         if session.dialogue_lines:
             y_cursor = self._draw_dialogue_panel(surface, rect, session, y_cursor)
-        y_cursor = self._draw_inventory_strip(surface, rect, session, y_cursor)
 
         wrapped_logs: list[str] = []
-        for line in session.log_lines[-16:]:
+        for line in session.log_lines[-28:]:
             wrapped_logs.extend(self._wrap_text(self.console_font, line, max_width))
         line_height = 20
         available_height = max(0, (rect.bottom - 8) - y_cursor)
@@ -78,27 +77,62 @@ class TextUi:
             surface.blit(rendered, (panel.x + 8, panel.y + 28 + index * 20))
         return y_cursor + panel_h + 6
 
-    def _draw_inventory_strip(
-        self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession, y_cursor: int
-    ) -> int:
-        panel_h = 44
-        panel = pygame.Rect(rect.x + 6, y_cursor, rect.width - 12, panel_h)
-        pygame.draw.rect(surface, (24, 24, 34), panel)
-        pygame.draw.rect(surface, (95, 105, 140), panel, 1)
-        title = self.menu_font.render("Inventory:", True, (220, 220, 180))
-        surface.blit(title, (panel.x + 8, panel.y + 10))
+    def draw_sidebar(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
+        pygame.draw.rect(surface, (14, 14, 20), rect)
+        pygame.draw.rect(surface, (85, 95, 120), rect, 1)
+        lead = session.party.lead()
 
-        icons_x = panel.x + 128
+        panel_pad = 8
+        char_panel_h = 230
+        char_panel = pygame.Rect(
+            rect.x + panel_pad, rect.y + panel_pad, rect.width - panel_pad * 2, char_panel_h
+        )
+        pygame.draw.rect(surface, (22, 24, 32), char_panel)
+        pygame.draw.rect(surface, (115, 130, 170), char_panel, 1)
+        title = self.cmd_font.render("Character", True, (245, 225, 160))
+        surface.blit(title, (char_panel.x + 8, char_panel.y + 8))
+        portrait = pygame.transform.scale(self.atlas.get(lead.sprite_key), (48, 48))
+        surface.blit(portrait, (char_panel.x + 8, char_panel.y + 42))
+        name = self.menu_font.render(lead.name, True, (220, 230, 245))
+        surface.blit(name, (char_panel.x + 64, char_panel.y + 46))
+        rows = [
+            f"HP: {lead.hp}/{lead.max_hp}",
+            f"AP: {lead.ap}",
+            f"ATK: {lead.attack}  DEF: {lead.defense}",
+            f"Food: {session.party.food}  Gold: {session.party.gold}",
+            f"Turn: {session.party.turn_count}",
+            f"Time: {session.clock_hours:02d}:{session.clock_minutes:02d}",
+        ]
+        for idx, row in enumerate(rows):
+            text = self.menu_font.render(row, True, (190, 205, 225))
+            surface.blit(text, (char_panel.x + 8, char_panel.y + 96 + idx * 20))
+
+        inv_panel = pygame.Rect(
+            rect.x + panel_pad,
+            char_panel.bottom + panel_pad,
+            rect.width - panel_pad * 2,
+            rect.bottom - (char_panel.bottom + panel_pad) - panel_pad,
+        )
+        pygame.draw.rect(surface, (20, 22, 30), inv_panel)
+        pygame.draw.rect(surface, (105, 120, 155), inv_panel, 1)
+        inv_title = self.cmd_font.render("Inventory", True, (235, 225, 175))
+        surface.blit(inv_title, (inv_panel.x + 8, inv_panel.y + 8))
+
         icon_size = 24
-        spacing = 6
-        max_icons = 10
-        for item in session.party.inventory[-max_icons:]:
+        row_h = 30
+        y = inv_panel.y + 42
+        visible_rows = max(1, (inv_panel.height - 50) // row_h)
+        items = session.party.inventory[-visible_rows:]
+        if not items:
+            empty = self.menu_font.render("(empty)", True, (145, 155, 175))
+            surface.blit(empty, (inv_panel.x + 10, y))
+            return
+        for item in items:
             icon = pygame.transform.scale(self.atlas.get(item_sprite_key(item)), (icon_size, icon_size))
-            surface.blit(icon, (icons_x, panel.y + 9))
-            icons_x += icon_size + spacing
-            if icons_x + icon_size >= panel.right - 8:
-                break
-        return y_cursor + panel_h + 6
+            surface.blit(icon, (inv_panel.x + 8, y))
+            label = self.menu_font.render(item.name, True, (210, 220, 238))
+            surface.blit(label, (inv_panel.x + 38, y + 3))
+            y += row_h
 
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)

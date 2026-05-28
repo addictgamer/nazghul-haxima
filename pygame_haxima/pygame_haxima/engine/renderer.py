@@ -59,12 +59,15 @@ class Renderer:
         hud_h = 70
         cmd_h = 38
         console_h = 200
+        sidebar_w = 320
+        main_w = DISPLAY.base_width - sidebar_w
         map_h = DISPLAY.base_height - (hud_h + console_h + cmd_h)
         return {
             "hud": pygame.Rect(0, 0, DISPLAY.base_width, hud_h),
-            "map": pygame.Rect(0, hud_h, DISPLAY.base_width, map_h),
-            "console": pygame.Rect(0, hud_h + map_h, DISPLAY.base_width, console_h),
-            "cmd": pygame.Rect(0, DISPLAY.base_height - cmd_h, DISPLAY.base_width, cmd_h),
+            "map": pygame.Rect(0, hud_h, main_w, map_h),
+            "console": pygame.Rect(0, hud_h + map_h, main_w, console_h),
+            "cmd": pygame.Rect(0, DISPLAY.base_height - cmd_h, main_w, cmd_h),
+            "sidebar": pygame.Rect(main_w, hud_h, sidebar_w, DISPLAY.base_height - hud_h),
         }
 
     def render(self, session: GameSession) -> None:
@@ -74,6 +77,7 @@ class Renderer:
         self.hud.draw(target, self.rects["hud"], session)
         self.text_ui.draw_console(target, self.rects["console"], session)
         self.text_ui.draw_command(target, self.rects["cmd"], session)
+        self.text_ui.draw_sidebar(target, self.rects["sidebar"], session)
 
         if self.scale == 1:
             self.window.blit(target, (0, 0))

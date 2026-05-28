@@ -34,6 +34,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Sprite parity workstream is now tracked explicitly (entity/object key parity, runtime coverage diagnostics, and fallback quality gates).
 - Post-port conversation UX enhancement is logged: modal interactable dialogue vs anchored fade popups for one-off NPC utterances.
 - Inventory UI now renders item icons in the console panel, and ground-item rendering shares the same item-to-sprite mapping helper.
+- Added right-sidebar layout for character + inventory panels, separating them from console dialogue/log space.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -160,6 +161,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Started item sprite parity implementation: chest-spilled ground items now render with item-key mapping (`s_dagger`, `s_leather_armor`, `s_healing_potion` fallbacks).
 - Logged post-port dialogue UX split: modal conversations for interactables, anchored fade popups for one-off NPC lines.
 - Added inventory icon strip in UI and unified item sprite lookup between map ground-item rendering and UI item display.
+- Refactored layout to a dedicated sidebar for character stats and inventory so NPC dialogue and logs no longer compete for the same console space.
 
 ## Suggested Delivery Sequence
 
