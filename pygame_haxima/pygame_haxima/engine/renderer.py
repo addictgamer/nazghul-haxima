@@ -76,8 +76,9 @@ class Renderer:
         self.map_view.draw(target, self.rects["map"], session)
         self.hud.draw(target, self.rects["hud"], session)
         self.text_ui.draw_console(target, self.rects["console"], session)
-        self.text_ui.draw_command(target, self.rects["cmd"], session)
         self.text_ui.draw_sidebar(target, self.rects["sidebar"], session)
+        # Draw command/modal last so popups stay above sidebar panels.
+        self.text_ui.draw_command(target, self.rects["cmd"], session)
 
         if self.scale == 1:
             self.window.blit(target, (0, 0))
