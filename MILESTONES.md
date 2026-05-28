@@ -209,6 +209,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Fixed sidebar selected-spell label overflow by wrapping the `Selected: <spell>` line and flowing known-spell rows below the wrapped block.
 - Increased spellbook modal real estate and reduced spell-entry text sizing/row height so longer spell names fit cleanly in list entries.
 - Added cast-time context enforcement for `context-town`/`context-world`/`context-any`, plus UI color differentiation for context-blocked spells and first iconic spell-effect mappings (`Mani`/`Vas Mani` healing family, poison/protection ward family, `In Lor`/`Vas Lor` light effects).
+- Added spellbook tabs (`All`, per-context tabs, `Missing Reagents`) with keyboard (`Left/Right`) and mouse tab switching, plus tab-aware spell list filtering/selection.
+- Added `Tab` as spellbook tab-cycle shortcut, tuned blocked-header rendering to fit without overflow with context-colored `context` text, and made spellbook wheel scrolling anchor from hovered entry when hovering the list.
+- Renamed spellbook `Any` context label to `Anywhere` in tab and context display text.
 
 ## Suggested Delivery Sequence
 

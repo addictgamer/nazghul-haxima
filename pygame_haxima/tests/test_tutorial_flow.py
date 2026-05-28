@@ -283,6 +283,28 @@ def test_spellbook_mousewheel_scroll_changes_selection(tmp_path) -> None:
     assert session.spellbook_selected_index != start_idx
 
 
+def test_spellbook_tabs_cycle_with_left_right(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    loop.process_events(session, [_action("spellbook_menu")])
+    start_tab = session.spellbook_tab
+
+    loop.process_events(session, [_action("move_e")])
+
+    assert session.spellbook_tab != start_tab
+
+
+def test_spellbook_tab_key_cycles_tabs(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    loop.process_events(session, [_action("spellbook_menu")])
+    start_tab = session.spellbook_tab
+
+    loop.process_events(session, [_action("spellbook_next_tab")])
+
+    assert session.spellbook_tab != start_tab
+
+
 def test_spellbook_cast_shortcut_casts_selected_spell(tmp_path, monkeypatch) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

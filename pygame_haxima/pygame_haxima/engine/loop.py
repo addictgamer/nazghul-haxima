@@ -271,13 +271,15 @@ class TurnLoop:
             self._toggle_reagents_menu(session)
         session.show_spellbook_menu = not session.show_spellbook_menu
         if session.show_spellbook_menu:
+            if session.spellbook_tab not in self._spellbook_tabs():
+                session.spellbook_tab = "all"
             ordered = self._spellbook_ordered_spell_ids(session)
             if session.party.selected_spell in ordered:
                 session.spellbook_selected_index = ordered.index(session.party.selected_spell)
             else:
                 session.spellbook_selected_index = 0
             session.spellbook_hover_index = None
-            session.command_prompt = "Spellbook> wheel/Up/Down select, Enter set, C cast, B/Esc close"
+            session.command_prompt = "Spellbook> Left/Right tabs, wheel/Up/Down select, Enter set, C cast, B/Esc close"
             session.append_log("Opened spellbook.")
         else:
             session.spellbook_hover_index = None
@@ -288,6 +290,12 @@ class TurnLoop:
         known = self._spellbook_ordered_spell_ids(session)
         if action in {"cancel", "spellbook_menu"}:
             self._toggle_spellbook_menu(session)
+            return
+        if action == "move_w":
+            self._cycle_spellbook_tab(session, -1)
+            return
+        if action in {"move_e", "spellbook_next_tab"}:
+            self._cycle_spellbook_tab(session, 1)
             return
         if not known:
             return
@@ -316,6 +324,9 @@ class TurnLoop:
             session.spellbook_hover_index = index
             self._set_selected_spell_from_spellbook(session, index)
             return
+        if target.startswith("tab:"):
+            self._set_spellbook_tab(session, target.replace("tab:", "", 1))
+            return
         if target == "cast":
             self._cast_from_spellbook(session)
             return
@@ -341,8 +352,13 @@ class TurnLoop:
         if not known or delta_y == 0:
             return
         direction = -1 if delta_y > 0 else 1
-        session.spellbook_selected_index = (session.spellbook_selected_index + direction) % len(known)
-        session.spellbook_hover_index = None
+        base_index = (
+            session.spellbook_hover_index
+            if session.spellbook_hover_index is not None and 0 <= session.spellbook_hover_index < len(known)
+            else session.spellbook_selected_index
+        )
+        session.spellbook_selected_index = (base_index + direction) % len(known)
+        session.spellbook_hover_index = session.spellbook_selected_index
 
     def _set_selected_spell_from_spellbook(self, session: GameSession, index: int) -> None:
         known = self._spellbook_ordered_spell_ids(session)
@@ -550,10 +566,40 @@ class TurnLoop:
 
     def _spellbook_ordered_spell_ids(self, session: GameSession) -> list[str]:
         known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        tab = session.spellbook_tab
+        if tab == "missing":
+            return [spell_id for spell_id in known if not self._has_reagents_for_spell(session, spell_id)]
+        if tab in {"any", "town", "world"}:
+            context_tag = f"context-{tab}"
+            known = [
+                spell_id
+                for spell_id in known
+                if (spell := get_spell(spell_id)) is not None and spell.context == context_tag
+            ]
         available = [spell_id for spell_id in known if self._is_spell_castable_now(session, spell_id)]
         available_set = set(available)
         missing = [spell_id for spell_id in known if spell_id not in available_set]
         return available + missing
+
+    def _spellbook_tabs(self) -> list[str]:
+        return ["all", "any", "town", "world", "missing"]
+
+    def _cycle_spellbook_tab(self, session: GameSession, direction: int) -> None:
+        tabs = self._spellbook_tabs()
+        current = session.spellbook_tab if session.spellbook_tab in tabs else "all"
+        idx = tabs.index(current)
+        self._set_spellbook_tab(session, tabs[(idx + direction) % len(tabs)])
+
+    def _set_spellbook_tab(self, session: GameSession, tab: str) -> None:
+        if tab not in self._spellbook_tabs():
+            return
+        session.spellbook_tab = tab
+        session.spellbook_hover_index = None
+        ordered = self._spellbook_ordered_spell_ids(session)
+        if session.party.selected_spell in ordered:
+            session.spellbook_selected_index = ordered.index(session.party.selected_spell)
+        else:
+            session.spellbook_selected_index = 0
 
     def _is_spell_context_available(self, session: GameSession, spell_id: str) -> bool:
         spell = get_spell(spell_id)

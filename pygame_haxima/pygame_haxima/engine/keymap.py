@@ -16,6 +16,7 @@ class KeyMap:
             "attack": [pygame.K_f],
             "cast": [pygame.K_c],
             "cycle_spell": [pygame.K_v],
+            "spellbook_next_tab": [pygame.K_TAB],
             "examine": [pygame.K_x],
             "save": [pygame.K_F5],
             "load": [pygame.K_F9],

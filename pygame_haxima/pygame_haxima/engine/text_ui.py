@@ -11,6 +11,13 @@ from pygame_haxima.engine.spells import get_spell, spell_context_available
 class TextUi:
     SAVE_LOAD_PANEL = pygame.Rect(220, 180, 840, 480)
     SPELLBOOK_PANEL = pygame.Rect(120, 100, 1040, 660)
+    SPELLBOOK_TABS: tuple[tuple[str, str], ...] = (
+        ("all", "All Spells"),
+        ("any", "Anywhere"),
+        ("town", "Town"),
+        ("world", "World"),
+        ("missing", "Missing Reagents"),
+    )
 
     def __init__(self, atlas: SpriteAtlas) -> None:
         self.atlas = atlas
@@ -380,6 +387,7 @@ class TextUi:
             (200, 210, 225),
         )
         surface.blit(hint, (panel.x + 16, panel.y + 46))
+        self._draw_spellbook_tabs(surface, session)
 
         entries, available_count = self._known_spells(session)
         list_rect = self._spellbook_list_rect()
@@ -410,10 +418,21 @@ class TextUi:
         start_idx = self._spellbook_start_index(len(entries), selected_idx, visible_rows)
         visible = entries[start_idx : start_idx + visible_rows]
         label_ready = self.small_font.render("Ready To Cast", True, (170, 230, 170))
-        label_missing = self.small_font.render("Blocked (Reagents/Context)", True, (245, 165, 150))
+        blocked_left = self.small_font.render("Blocked (reagents/", True, (245, 165, 150))
+        blocked_context = self.small_font.render("context", True, (235, 195, 145))
+        blocked_right = self.small_font.render(")", True, (245, 165, 150))
+        blocked_total_w = (
+            blocked_left.get_width() + blocked_context.get_width() + blocked_right.get_width()
+        )
         surface.blit(label_ready, (list_rect.x + 8, list_rect.y + 6))
         if available_count < len(entries):
-            surface.blit(label_missing, (list_rect.x + 210, list_rect.y + 6))
+            blocked_x = max(list_rect.x + 170, list_rect.right - blocked_total_w - 8)
+            blocked_y = list_rect.y + 6
+            surface.blit(blocked_left, (blocked_x, blocked_y))
+            blocked_x += blocked_left.get_width()
+            surface.blit(blocked_context, (blocked_x, blocked_y))
+            blocked_x += blocked_context.get_width()
+            surface.blit(blocked_right, (blocked_x, blocked_y))
         for offset, entry in enumerate(visible):
             spell = entry["spell"]
             idx = start_idx + offset
@@ -569,6 +588,9 @@ class TextUi:
         panel = self.SPELLBOOK_PANEL
         if not panel.collidepoint(ui_pos):
             return None
+        for tab_id, tab_rect in self._spellbook_tab_rects().items():
+            if tab_rect.collidepoint(ui_pos):
+                return (f"tab:{tab_id}", None)
         for key, rect in self._spellbook_button_rects().items():
             if rect.collidepoint(ui_pos):
                 return (key, None)
@@ -591,11 +613,11 @@ class TextUi:
 
     def _spellbook_list_rect(self) -> pygame.Rect:
         panel = self.SPELLBOOK_PANEL
-        return pygame.Rect(panel.x + 16, panel.y + 84, 440, panel.height - 160)
+        return pygame.Rect(panel.x + 16, panel.y + 124, 440, panel.height - 200)
 
     def _spellbook_detail_rect(self) -> pygame.Rect:
         panel = self.SPELLBOOK_PANEL
-        return pygame.Rect(panel.x + 470, panel.y + 84, panel.width - 486, panel.height - 160)
+        return pygame.Rect(panel.x + 470, panel.y + 124, panel.width - 486, panel.height - 200)
 
     def _spellbook_button_rects(self) -> dict[str, pygame.Rect]:
         panel = self.SPELLBOOK_PANEL
@@ -606,11 +628,47 @@ class TextUi:
             "close": pygame.Rect(panel.right - 160, y, 140, 36),
         }
 
+    def _spellbook_tab_rects(self) -> dict[str, pygame.Rect]:
+        panel = self.SPELLBOOK_PANEL
+        x = panel.x + 16
+        y = panel.y + 80
+        tab_w = 130
+        tab_h = 32
+        gap = 8
+        rects: dict[str, pygame.Rect] = {}
+        for tab_id, _label in self.SPELLBOOK_TABS:
+            width = 190 if tab_id == "missing" else tab_w
+            rects[tab_id] = pygame.Rect(x, y, width, tab_h)
+            x += width + gap
+        return rects
+
+    def _draw_spellbook_tabs(self, surface: pygame.Surface, session: GameSession) -> None:
+        for tab_id, label in self.SPELLBOOK_TABS:
+            rect = self._spellbook_tab_rects()[tab_id]
+            active = session.spellbook_tab == tab_id
+            fill = (78, 102, 148) if active else (44, 54, 80)
+            border = (220, 230, 255) if active else (125, 140, 180)
+            pygame.draw.rect(surface, fill, rect)
+            pygame.draw.rect(surface, border, rect, 2 if active else 1)
+            txt = self.small_font.render(label, True, (245, 250, 255) if active else (190, 205, 235))
+            tx = rect.x + (rect.width - txt.get_width()) // 2
+            ty = rect.y + (rect.height - txt.get_height()) // 2
+            surface.blit(txt, (tx, ty))
+
     def _spellbook_start_index(self, total: int, selected_idx: int, visible_rows: int) -> int:
         return max(0, min(selected_idx - visible_rows // 2, max(0, total - visible_rows)))
 
     def _known_spells(self, session: GameSession) -> tuple[list[dict[str, object]], int]:
         known = [spell for spell_id in session.party.spells_known if (spell := get_spell(spell_id)) is not None]
+        tab = session.spellbook_tab
+        if tab == "missing":
+            known = [
+                spell
+                for spell in known
+                if any(session.party.reagents.get(reagent, 0) < qty for reagent, qty in spell.reagents.items())
+            ]
+        elif tab in {"any", "town", "world"}:
+            known = [spell for spell in known if spell.context == f"context-{tab}"]
         entries: list[dict[str, object]] = []
         for spell in known:
             context_ok = self._context_available(session, spell)
@@ -643,8 +701,9 @@ class TextUi:
         normalized = context.replace("context-", "").replace("_", "-")
         parts = [part.strip() for part in normalized.split(",") if part.strip()]
         if not parts:
-            return "Any"
+            return "Anywhere"
         pretty = [part.replace("-", " ").title() for part in parts]
+        pretty = ["Anywhere" if part == "Any" else part for part in pretty]
         return ", ".join(pretty)
 
     def save_load_hit_test(self, ui_pos: tuple[int, int], session: GameSession) -> tuple[str, int | None] | None:

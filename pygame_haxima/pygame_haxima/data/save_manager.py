@@ -330,6 +330,7 @@ class SaveManager:
         session.show_save_load_menu = False
         session.show_reagents_menu = False
         session.show_spellbook_menu = False
+        session.spellbook_tab = "all"
         session.spellbook_selected_index = 0
         session.spellbook_hover_index = None
         session.save_load_mode = None

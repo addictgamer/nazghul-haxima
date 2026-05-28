@@ -180,6 +180,7 @@ class GameSession:
     show_save_load_menu: bool = False
     show_reagents_menu: bool = False
     show_spellbook_menu: bool = False
+    spellbook_tab: str = "all"
     spellbook_selected_index: int = 0
     spellbook_hover_index: int | None = None
     save_load_mode: str | None = None

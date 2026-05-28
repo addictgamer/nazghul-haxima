@@ -34,6 +34,7 @@ Spell notes:
 - Spellbook now loads from `spells.scm` (with tutorial aliases for `Spark`, `Heal`, `Ward`).
 - `B` opens a spellbook modal with keyboard/mouse/wheel selection and spell details.
 - Inside Spellbook: `C` casts selected spell, `Enter` sets active spell, and on-screen buttons mirror these shortcuts.
+- Spellbook has tabs: `All`, `Any`, `Town`, `World`, and `Missing Reagents` (keyboard left/right, `Tab`, or mouse click).
 - `V` now cycles only through currently castable spells (based on available reagents).
 - Spell casting now enforces `context-town` / `context-world` / `context-any` restrictions at cast time.
 - Spellbook colors now distinguish reagent-blocked vs context-blocked spells.
