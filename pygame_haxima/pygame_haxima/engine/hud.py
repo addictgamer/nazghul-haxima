@@ -128,7 +128,7 @@ class HudPane:
         rx = rect.x + 280
         for reagent, required in sorted(spell.reagents.items()):
             available = int(session.party.reagents.get(reagent, 0))
-            label = f"{reagent}({available})"
+            label = f"{self._pretty_reagent_name(reagent)} ({available})"
             if available <= 0:
                 color = (255, 110, 110)
             elif available < required:
@@ -154,3 +154,13 @@ class HudPane:
         if not caps:
             return 0
         return min(caps)
+
+    def _pretty_reagent_name(self, reagent_id: str) -> str:
+        normalized = reagent_id.strip().lower()
+        special = {
+            "sulphorous_ash": "Sulphurous Ash",
+            "sulphurous_ash": "Sulphurous Ash",
+        }
+        if normalized in special:
+            return special[normalized]
+        return reagent_id.replace("_", " ").title()

@@ -119,22 +119,25 @@ class TextUi:
         )
         pygame.draw.rect(surface, (20, 22, 30), inv_panel)
         pygame.draw.rect(surface, (105, 120, 155), inv_panel, 1)
-        inv_title = self.cmd_font.render("Inventory", True, (235, 225, 175))
-        surface.blit(inv_title, (inv_panel.x + 8, inv_panel.y + 8))
-
-        spell_panel_h = min(170, max(132, inv_panel.height // 2))
+        spell_panel_h = min(inv_panel.height - 60, max(200, int(inv_panel.height * 0.45)))
         spell_panel = pygame.Rect(
             inv_panel.x + 6,
             inv_panel.bottom - spell_panel_h - 6,
             inv_panel.width - 12,
             spell_panel_h,
         )
-        inv_list_bottom = spell_panel.y - 6
-        inv_list_h = max(40, inv_list_bottom - (inv_panel.y + 42))
-        inv_list_rect = pygame.Rect(inv_panel.x + 6, inv_panel.y + 42, inv_panel.width - 12, inv_list_h)
+        inv_list_rect = pygame.Rect(
+            inv_panel.x + 6,
+            inv_panel.y + 34,
+            inv_panel.width - 12,
+            max(40, spell_panel.y - (inv_panel.y + 34) - 6),
+        )
+
+        inv_title = self.cmd_font.render("Inventory", True, (235, 225, 175))
+        surface.blit(inv_title, (inv_panel.x + 8, inv_panel.y + 6))
 
         icon_size = 24
-        row_h = 30
+        row_h = 28
         y = inv_list_rect.y
         visible_rows = max(1, inv_list_rect.height // row_h)
         items = session.party.inventory[-visible_rows:]
@@ -194,7 +197,8 @@ class TextUi:
             max_rows = max(1, (rect.bottom - reagent_y - 4) // line_h)
             for idx, (name, qty) in enumerate(ordered[:max_rows]):
                 prefix = "*" if name in priority else "-"
-                line = self.small_font.render(f"{prefix} {name}: {qty}", True, (170, 210, 180))
+                pretty = self._pretty_reagent_name(name)
+                line = self.small_font.render(f"{prefix} {pretty}: {qty}", True, (170, 210, 180))
                 surface.blit(line, (rect.x + 8, reagent_y + idx * line_h))
             if len(ordered) > max_rows:
                 more = self.small_font.render(f"+{len(ordered) - max_rows} more", True, (140, 155, 180))
@@ -315,7 +319,7 @@ class TextUi:
         max_rows = max(1, (panel.height - 106) // row_h)
         for name, qty in reagents[:max_rows]:
             color = (170, 210, 180) if qty > 0 else (255, 110, 110)
-            row = self.menu_font.render(f"{name}: {qty}", True, color)
+            row = self.menu_font.render(f"{self._pretty_reagent_name(name)}: {qty}", True, color)
             surface.blit(row, (panel.x + 20, y))
             y += row_h
 
@@ -370,3 +374,13 @@ class TextUi:
             rendered = self.menu_font.render(str(line), True, (245, 220, 220))
             surface.blit(rendered, (panel.x + 8, y))
             y += 18
+
+    def _pretty_reagent_name(self, reagent_id: str) -> str:
+        normalized = reagent_id.strip().lower()
+        special = {
+            "sulphorous_ash": "Sulphurous Ash",
+            "sulphurous_ash": "Sulphurous Ash",
+        }
+        if normalized in special:
+            return special[normalized]
+        return reagent_id.replace("_", " ").title()
