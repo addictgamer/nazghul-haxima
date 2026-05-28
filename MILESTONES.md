@@ -53,7 +53,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
-| M6 | Testing + quality gates | In Progress | 45% | Unit/integration tests + CI smoke run + regression suite |
+| M6 | Testing + quality gates | In Progress | 80% | Unit/integration tests + CI smoke run + regression suite |
 | M7 | Full Haxima compatibility | In Progress | 12% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
@@ -90,9 +90,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 - [~] Add pytest suite for domain logic (movement, passability, combat resolution, inventory) *(save/load regression coverage added; gameplay rule coverage pending)*.
 - [~] Add integration tests for tutorial flow *(event-driven tests added for talk/open/get/attack + NPC collision; broader path coverage pending)*.
-- [ ] Add converter tests with fixture `.scm` files.
+- [~] Add converter tests with fixture `.scm` files *(terrain/map/quest/townsfolk fixture coverage added; broader edge-case coverage pending)*.
 - [x] Add lint/test commands to documented workflow.
-- [ ] Add CI pipeline to run static checks + tests.
+- [x] Add CI pipeline to run static checks + tests.
 
 ### M7: Full Haxima compatibility
 
@@ -179,6 +179,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added save/load regression tests covering round-trip mutable-state persistence, v0->v1 migration defaults, and corrupted-save quarantine behavior.
 - Updated README controls with the `F4` runtime debug toggle and documented local `pytest` test execution.
 - Added tutorial integration tests for event-driven gameplay flow (talk, chest open/get loop, attack/victory transition, and actor-collision blocking).
+- Added parser/converter fixture tests for terrains, maps, quests, and townsfolk load-chain extraction with passing local pytest run.
+- Added GitHub Actions CI workflow to run Ruff + pytest on pushes and pull requests affecting the Pygame port.
 
 ## Suggested Delivery Sequence
 

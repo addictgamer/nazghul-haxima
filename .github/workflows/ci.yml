@@ -1,0 +1,36 @@
+name: pygame-haxima-ci
+
+on:
+  push:
+    paths:
+      - ".github/workflows/ci.yml"
+      - "pygame_haxima/**"
+      - "requirements.txt"
+      - "pytest.sh"
+  pull_request:
+    paths:
+      - ".github/workflows/ci.yml"
+      - "pygame_haxima/**"
+      - "requirements.txt"
+      - "pytest.sh"
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package + dev tools
+        run: python -m pip install -e "./pygame_haxima[dev]"
+
+      - name: Ruff
+        run: python -m ruff check pygame_haxima
+
+      - name: Pytest
+        run: python -m pytest pygame_haxima/tests
