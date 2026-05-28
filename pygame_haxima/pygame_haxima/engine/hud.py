@@ -25,6 +25,10 @@ class HudPane:
             encounter = f"Encounter nearby: {', '.join(adjacent[:2])}"
             surface.blit(self.font.render(encounter, True, (255, 145, 120)), (rect.x + 10, y))
             y += 22
+        if session.party.ward_charges > 0:
+            effect = f"Active effects: Ward({session.party.ward_charges})"
+            surface.blit(self.font.render(effect, True, (170, 220, 255)), (rect.x + 10, y))
+            y += 22
         if session.debug_sprite_warnings:
             warn = (
                 f"Terrain fallback keys: {session.terrain_fallback_key_count} "

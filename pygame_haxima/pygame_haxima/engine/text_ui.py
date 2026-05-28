@@ -5,6 +5,7 @@ import pygame
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
 from pygame_haxima.domain.models import GameSession
 from pygame_haxima.engine.item_sprites import item_sprite_key
+from pygame_haxima.engine.spells import get_spell
 
 
 class TextUi:
@@ -120,24 +121,71 @@ class TextUi:
         inv_title = self.cmd_font.render("Inventory", True, (235, 225, 175))
         surface.blit(inv_title, (inv_panel.x + 8, inv_panel.y + 8))
 
+        spell_panel_h = min(170, max(132, inv_panel.height // 2))
+        spell_panel = pygame.Rect(
+            inv_panel.x + 6,
+            inv_panel.bottom - spell_panel_h - 6,
+            inv_panel.width - 12,
+            spell_panel_h,
+        )
+        inv_list_bottom = spell_panel.y - 6
+        inv_list_h = max(40, inv_list_bottom - (inv_panel.y + 42))
+        inv_list_rect = pygame.Rect(inv_panel.x + 6, inv_panel.y + 42, inv_panel.width - 12, inv_list_h)
+
         icon_size = 24
         row_h = 30
-        y = inv_panel.y + 42
-        visible_rows = max(1, (inv_panel.height - 50) // row_h)
+        y = inv_list_rect.y
+        visible_rows = max(1, inv_list_rect.height // row_h)
         items = session.party.inventory[-visible_rows:]
         if not items:
             empty = self.menu_font.render("(empty)", True, (145, 155, 175))
             surface.blit(empty, (inv_panel.x + 10, y))
-            return
-        for item in items:
-            icon = pygame.transform.scale(self.atlas.get(item_sprite_key(item)), (icon_size, icon_size))
-            surface.blit(icon, (inv_panel.x + 8, y))
-            label = self.menu_font.render(item.name, True, (210, 220, 238))
-            surface.blit(label, (inv_panel.x + 38, y + 3))
-            y += row_h
+        else:
+            for item in items:
+                icon = pygame.transform.scale(self.atlas.get(item_sprite_key(item)), (icon_size, icon_size))
+                surface.blit(icon, (inv_panel.x + 8, y))
+                label = self.menu_font.render(item.name, True, (210, 220, 238))
+                surface.blit(label, (inv_panel.x + 38, y + 3))
+                y += row_h
+
+        self._draw_spell_panel(surface, spell_panel, session)
 
         if session.debug_runtime_state:
             self._draw_runtime_debug_panel(surface, rect, session)
+
+    def _draw_spell_panel(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
+        pygame.draw.rect(surface, (24, 26, 38), rect)
+        pygame.draw.rect(surface, (120, 140, 190), rect, 1)
+        title = self.cmd_font.render("Spellbook", True, (205, 225, 255))
+        surface.blit(title, (rect.x + 8, rect.y + 6))
+
+        selected_id = session.party.selected_spell
+        selected_spell = get_spell(selected_id)
+        selected_name = selected_spell.name if selected_spell is not None else selected_id
+        selected_line = self.menu_font.render(f"Selected: {selected_name}", True, (190, 215, 245))
+        surface.blit(selected_line, (rect.x + 8, rect.y + 36))
+
+        known = [spell_id for spell_id in session.party.spells_known if get_spell(spell_id) is not None]
+        for idx, spell_id in enumerate(known[:3]):
+            spell = get_spell(spell_id)
+            if spell is None:
+                continue
+            marker = ">" if spell_id == selected_id else " "
+            line = self.menu_font.render(f"{marker} {spell.name}", True, (175, 195, 230))
+            surface.blit(line, (rect.x + 8, rect.y + 58 + idx * 18))
+
+        reagent_y = rect.y + 116
+        reagents = sorted(session.party.reagents.items())
+        if not reagents:
+            text = self.menu_font.render("Reagents: none", True, (150, 160, 185))
+            surface.blit(text, (rect.x + 8, reagent_y))
+        else:
+            summary = ", ".join(f"{name}:{qty}" for name, qty in reagents[:3])
+            text = self.menu_font.render(f"Reagents: {summary}", True, (170, 210, 180))
+            surface.blit(text, (rect.x + 8, reagent_y))
+            if len(reagents) > 3:
+                extra = self.menu_font.render(f"+{len(reagents) - 3} more", True, (140, 155, 180))
+                surface.blit(extra, (rect.x + 8, reagent_y + 18))
 
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)

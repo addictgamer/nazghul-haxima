@@ -193,6 +193,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added first-pass directional/animation rendering support: entity facing is tracked from movement, renderer probes directional sprite variants (`_n/_s/_e/_w` and dash forms), and multi-frame sprite refs now animate by tick.
 - Added spell system foundation: `Cast Spark` action (`c`) with range-2 targeting, sulphurous ash reagent usage, combat feedback integration, and reagent save/load persistence.
 - Expanded spell scaffold into a mini spellbook (`Spark`, `Heal`, `Ward`) with `v` cycle + `c` cast flow, per-spell reagent recipes, ward damage mitigation, and regression tests.
+- Added persistent spell UI visibility: sidebar spellbook/reagent panel and HUD active-effects line for ward charges.
 
 ## Suggested Delivery Sequence
 

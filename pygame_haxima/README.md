@@ -32,6 +32,8 @@ Spell notes:
 - `Spark`: range 2 targeted spell, consumes `sulphurous_ash`.
 - `Heal`: self-cast restore, consumes `ginseng`.
 - `Ward`: self-cast protective charges, consumes `garlic`.
+- Sidebar now shows selected spell + reagent counts.
+- HUD shows active effect state (currently Ward charges) when present.
 
 On startup, the game prints a sprite coverage summary and writes:
 
