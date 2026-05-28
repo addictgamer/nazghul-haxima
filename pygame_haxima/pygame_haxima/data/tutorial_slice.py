@@ -67,7 +67,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         name="Old Mentor",
         x=7,
         y=9,
-        sprite_key="s_npc",
+        sprite_key="s_old_townsman",
         keywords={
             "name": "I am called the Old Mentor.",
             "job": "I teach wanderers how to survive Nazghul.",
@@ -90,7 +90,7 @@ def build_tutorial_place() -> tuple[Place, Party]:
         name="Wolf",
         x=14,
         y=9,
-        sprite_key="s_monster",
+        sprite_key="s_wolf",
         hostile=True,
         hp=10,
         max_hp=10,

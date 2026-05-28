@@ -15,7 +15,7 @@ SPRITE_RE = re.compile(
 SPRITE_SET_RE = re.compile(
     r'\(kern-mk-sprite-set\s+\'(?P<name>[^\s]+)\s+'
     r"(?P<tile_w>\d+)\s+(?P<tile_h>\d+)\s+"
-    r"(?P<cols>\d+)\s+(?P<rows>\d+)\s+"
+    r"(?P<rows>\d+)\s+(?P<cols>\d+)\s+"
     r"(?P<xoff>\d+)\s+(?P<yoff>\d+)\s+"
     r'"(?P<filename>[^"]+)"\s*\)'
 )
@@ -81,7 +81,7 @@ class SpriteAtlas:
             elif reason == "out_of_bounds":
                 self.out_of_bounds_keys.add(key)
 
-        for fallback in ("s_grass", "s_wall", "s_party", "s_npc", "s_chest", "s_monster"):
+        for fallback in ("s_grass", "s_wall", "s_wanderer", "s_old_townsman", "s_chest", "s_wolf"):
             self.surfaces.setdefault(fallback, self._fallback_surface(fallback))
 
     def _active_lines(self, path: Path) -> list[str]:

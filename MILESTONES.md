@@ -28,6 +28,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Parser-backed townsfolk converter now exports conversation keywords, schedule summaries, and NPC factory metadata from the `townsfolk/init.scm` load chain.
 - Zone import command now writes `converted_data/import_validation_report.json` with per-section counts and validation warnings.
 - Parser-backed quest converter now exports `quests-*.scm` metadata/update scaffolds into `converted_data/quests/*.quests.json` plus index coverage.
+- Sprite parity workstream is now tracked explicitly (entity/object key parity, runtime coverage diagnostics, and fallback quality gates).
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -42,7 +43,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | Not Started | 5% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 12% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -84,6 +85,13 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 ### M7: Full Haxima compatibility
 
+- [~] Sprite parity pass (entity/object visuals beyond terrain):
+  - [x] Pass 1: tutorial critical keys switched from placeholders to canonical keys (`s_wanderer`, `s_old_townsman`, `s_wolf`, `s_chest`).
+  - [ ] Pass 2: pull NPC/monster/object sprite keys from converted place/townsfolk content instead of hardcoded defaults.
+  - [ ] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
+  - [ ] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases.
+  - [ ] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
+  - [ ] Pass 6: directional/animation variants where source art supports it.
 - [ ] Implement spell system parity (`spells.scm` + reagents behavior).
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
@@ -139,14 +147,16 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added generated import validation report: `converted_data/import_validation_report.json` with coverage counters and conversion warnings.
 - Added parser-driven quest exports: `converted_data/quests/*.quests.json` + `converted_data/quests/index.json` with `qst-mk` quest records and quest-data update references.
 - Fixed missing player art by switching tutorial/player rendering from placeholder `s_party` to actual sprite key usage (`s_wanderer` / party lead sprite).
+- Started sprite parity pass for non-terrain visuals by replacing tutorial placeholder entity keys (`s_npc`, `s_monster`) with canonical sprite keys and matching atlas fallbacks.
 
 ## Suggested Delivery Sequence
 
-1. Start M5 schema/versioning so converted-state saves are robust across updates.
-2. Expand M5 persistence coverage for mutable world/NPC/quest runtime state.
-3. Build M6 test/CI gates before larger compatibility work.
-4. Iterate M7 zone-by-zone until main quest path is reachable.
-5. Close with M8 release packaging and release process docs.
+1. Continue M7 sprite parity pass so entity/object visuals are data-driven and fallback-safe.
+2. Start M5 schema/versioning so converted-state saves are robust across updates.
+3. Expand M5 persistence coverage for mutable world/NPC/quest runtime state.
+4. Build M6 test/CI gates before larger compatibility work.
+5. Iterate M7 zone-by-zone until main quest path is reachable.
+6. Close with M8 release packaging and release process docs.
 
 ## Practical Definition of “Playable Alpha”
 

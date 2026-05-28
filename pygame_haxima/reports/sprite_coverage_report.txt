@@ -1,6 +1,6 @@
 Sprite Coverage Report
 - sprite_sets: 26
 - sprite_refs: 497
-- resolved_keys: 361
-- fallback_keys: 136
-- out_of_bounds_keys: 136
+- resolved_keys: 469
+- fallback_keys: 28
+- out_of_bounds_keys: 28
