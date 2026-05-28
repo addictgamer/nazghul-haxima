@@ -126,3 +126,55 @@ def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:
 
     assert (session.party.x, session.party.y) == (6, 9)
     assert session.log_lines[-1] == "Blocked."
+
+
+def test_party_cannot_step_into_impassable_wall(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 1
+    session.party.y = 1
+    session.party.members[0].x = 1
+    session.party.members[0].y = 1
+
+    loop.process_events(session, [_action("move_n")])
+
+    assert (session.party.x, session.party.y) == (1, 1)
+    assert session.party.turn_count == 0
+    assert session.log_lines[-1] == "Blocked."
+
+
+def test_open_action_rejects_when_no_chest_in_range(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+
+    loop.process_events(session, [_action("open")])
+
+    assert session.targeting_action is None
+    assert session.target_cursor is None
+    assert session.log_lines[-1] == "You can't perform that action right now."
+
+
+def test_nonlethal_attack_round_resets_to_explore_and_advances_turn(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 13
+    session.party.y = 9
+    session.party.members[0].x = 13
+    session.party.members[0].y = 9
+    wolf = session.place.monsters[0]
+    start_hp = wolf.hp
+    start_party_hp = session.party.lead().hp
+
+    # Sequence: player miss (1 vs 6), wolf miss (1 vs 6)
+    rolls = iter([1, 6, 1, 6])
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: next(rolls))
+
+    loop.process_events(session, [_action("attack"), _action("confirm")])
+
+    assert wolf.hp == start_hp
+    assert session.party.lead().hp == start_party_hp
+    assert session.victory is False
+    assert "defeated:wolf_1" not in session.quest_flags
+    assert session.mode.value == "explore"
+    assert session.combat.active is False
+    assert session.party.turn_count == 1
