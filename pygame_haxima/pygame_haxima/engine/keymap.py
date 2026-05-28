@@ -24,6 +24,7 @@ class KeyMap:
             "options_menu": [pygame.K_F10],
             "debug_terrain": [pygame.K_F2],
             "debug_sprite_warnings": [pygame.K_F3],
+            "debug_runtime_state": [pygame.K_F4],
         }
 
     def action_for_key(self, key: int) -> str | None:

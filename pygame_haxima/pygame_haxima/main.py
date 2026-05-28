@@ -63,6 +63,7 @@ def run() -> int:
         ("get", "Get"),
         ("attack", "Attack"),
         ("options_menu", "Options menu"),
+        ("debug_runtime_state", "Runtime state debug"),
     ]
     session.keybind_preview = [
         f"{label}: {', '.join(pygame.key.name(key) for key in keymap.bindings[action])}"

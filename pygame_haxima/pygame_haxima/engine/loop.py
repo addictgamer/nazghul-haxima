@@ -84,6 +84,10 @@ class TurnLoop:
                 session.debug_sprite_warnings = not session.debug_sprite_warnings
                 state = "ON" if session.debug_sprite_warnings else "OFF"
                 session.append_log(f"Sprite warning overlay {state}.")
+            elif action == "debug_runtime_state":
+                session.debug_runtime_state = not session.debug_runtime_state
+                state = "ON" if session.debug_runtime_state else "OFF"
+                session.append_log(f"Runtime state debug panel {state}.")
 
     def _handle_mouse_move(self, session: GameSession, tile: tuple[int, int]) -> None:
         if session.targeting_action is not None:
@@ -166,7 +170,7 @@ class TurnLoop:
     def _help(self, session: GameSession) -> None:
         session.append_log("Move: arrows/WASD | t talk | o open | g get | f attack | x examine")
         session.append_log(
-            "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings"
+            "F5 save | F9 load | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | F4 runtime state"
         )
         session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
 

@@ -159,6 +159,7 @@ class GameSession:
     victory: bool = False
     debug_terrain_ids: bool = False
     debug_sprite_warnings: bool = False
+    debug_runtime_state: bool = False
     terrain_fallback_key_count: int = 0
     terrain_fallback_keys: list[str] = field(default_factory=list)
     show_options_menu: bool = False

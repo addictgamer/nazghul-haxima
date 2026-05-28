@@ -136,6 +136,9 @@ class TextUi:
             surface.blit(label, (inv_panel.x + 38, y + 3))
             y += row_h
 
+        if session.debug_runtime_state:
+            self._draw_runtime_debug_panel(surface, rect, session)
+
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)
         pygame.draw.rect(surface, (110, 110, 140), rect, 1)
@@ -253,3 +256,29 @@ class TextUi:
             "mode_load": pygame.Rect(panel.x + 396, y, 160, 36),
             "close": pygame.Rect(panel.right - 140, y, 120, 36),
         }
+
+    def _draw_runtime_debug_panel(
+        self, surface: pygame.Surface, sidebar_rect: pygame.Rect, session: GameSession
+    ) -> None:
+        panel = pygame.Rect(sidebar_rect.x + 8, sidebar_rect.y + 8, sidebar_rect.width - 16, 220)
+        pygame.draw.rect(surface, (32, 20, 24), panel)
+        pygame.draw.rect(surface, (205, 120, 120), panel, 1)
+        title = self.menu_font.render("Debug Runtime State (F4)", True, (255, 205, 170))
+        surface.blit(title, (panel.x + 8, panel.y + 6))
+
+        lines: list[str] = []
+        lines.append(f"Quest flags: {len(session.quest_flags)}")
+        for key in sorted(session.quest_flags.keys())[:6]:
+            lines.append(f"- {key}={session.quest_flags[key]}")
+        lines.append(f"NPC states: {len(session.npc_states)}")
+        for npc_id in sorted(session.npc_states.keys())[:4]:
+            state = session.npc_states[npc_id]
+            talk_count = state.get("talk_count", 0)
+            last_turn = state.get("last_turn", "?")
+            lines.append(f"- {npc_id}: talks={talk_count}, turn={last_turn}")
+
+        y = panel.y + 34
+        for line in lines[:10]:
+            rendered = self.menu_font.render(str(line), True, (245, 220, 220))
+            surface.blit(rendered, (panel.x + 8, y))
+            y += 18
