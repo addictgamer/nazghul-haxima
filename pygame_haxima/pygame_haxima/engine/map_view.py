@@ -13,6 +13,7 @@ class MapView:
         self.tile_w = DISPLAY.tile_w
         self.tile_h = DISPLAY.tile_h
         self.debug_font = pygame.font.SysFont("consolas", 12)
+        self.feedback_font = pygame.font.SysFont("consolas", 18, bold=True)
 
     def draw(self, surface: pygame.Surface, viewport: pygame.Rect, session: GameSession) -> None:
         place = session.place
@@ -237,9 +238,14 @@ class MapView:
     ) -> None:
         if session.combat_feedback_ticks <= 0 or not session.combat_feedback_text:
             return
-        alpha = min(255, max(0, session.combat_feedback_ticks * 7))
-        banner = pygame.Surface((300, 32), pygame.SRCALPHA)
-        banner.fill((20, 20, 28, alpha // 2))
-        text = self.debug_font.render(session.combat_feedback_text, True, session.combat_feedback_color)
-        banner.blit(text, (8, 8))
-        surface.blit(banner, (viewport.centerx - 150, viewport.y + 12))
+        alpha = min(255, max(120, session.combat_feedback_ticks * 9))
+        banner = pygame.Surface((420, 54), pygame.SRCALPHA)
+        banner.fill((10, 10, 14, alpha))
+        pygame.draw.rect(banner, (240, 240, 240, min(255, alpha)), banner.get_rect(), 2)
+        text_shadow = self.feedback_font.render(session.combat_feedback_text, True, (0, 0, 0))
+        text = self.feedback_font.render(session.combat_feedback_text, True, session.combat_feedback_color)
+        text_x = 16
+        text_y = (banner.get_height() - text.get_height()) // 2
+        banner.blit(text_shadow, (text_x + 2, text_y + 2))
+        banner.blit(text, (text_x, text_y))
+        surface.blit(banner, (viewport.centerx - banner.get_width() // 2, viewport.y + 10))

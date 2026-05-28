@@ -99,7 +99,7 @@ class TurnLoop:
         if dx == 0 and dy == 0:
             return
         nx, ny = session.party.x + dx, session.party.y + dy
-        if not session.place.passable(nx, ny):
+        if not self._party_can_enter_tile(session, nx, ny):
             session.append_log("Blocked.")
             return
         session.party.x, session.party.y = nx, ny
@@ -385,7 +385,7 @@ class TurnLoop:
         self._set_feedback(session, f"You take {damage}", (255, 120, 120))
 
     def _set_feedback(
-        self, session: GameSession, text: str, color: tuple[int, int, int], ticks: int = 35
+        self, session: GameSession, text: str, color: tuple[int, int, int], ticks: int = 55
     ) -> None:
         session.combat_feedback_text = text
         session.combat_feedback_color = color
@@ -408,5 +408,35 @@ class TurnLoop:
                 step_x = 1 if session.party.x > monster.x else -1 if session.party.x < monster.x else 0
                 step_y = 1 if session.party.y > monster.y else -1 if session.party.y < monster.y else 0
                 nx, ny = monster.x + step_x, monster.y + step_y
-                if session.place.passable(nx, ny):
+                if self._monster_can_enter_tile(session, monster, nx, ny):
                     monster.x, monster.y = nx, ny
+
+    def _party_can_enter_tile(self, session: GameSession, x: int, y: int) -> bool:
+        if not session.place.passable(x, y):
+            return False
+        if session.place.npc_at(x, y) is not None:
+            return False
+        chest = session.place.chest_at(x, y)
+        if chest is not None and not chest.opened:
+            return False
+        return True
+
+    def _monster_can_enter_tile(self, session: GameSession, monster: Entity, x: int, y: int) -> bool:
+        if not session.place.in_bounds(x, y):
+            return False
+        terrain = session.place.terrain_at(x, y)
+        if not terrain.passable:
+            return False
+        if (x, y) == (session.party.x, session.party.y):
+            return False
+        if session.place.npc_at(x, y) is not None:
+            return False
+        chest = session.place.chest_at(x, y)
+        if chest is not None and not chest.opened:
+            return False
+        for other in session.place.monsters:
+            if other is monster or not other.is_alive():
+                continue
+            if (other.x, other.y) == (x, y):
+                return False
+        return True
