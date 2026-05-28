@@ -180,12 +180,14 @@ class TextUi:
             text = self.menu_font.render("Reagents: none", True, (150, 160, 185))
             surface.blit(text, (rect.x + 8, reagent_y))
         else:
-            summary = ", ".join(f"{name}:{qty}" for name, qty in reagents[:3])
-            text = self.menu_font.render(f"Reagents: {summary}", True, (170, 210, 180))
-            surface.blit(text, (rect.x + 8, reagent_y))
-            if len(reagents) > 3:
-                extra = self.menu_font.render(f"+{len(reagents) - 3} more", True, (140, 155, 180))
-                surface.blit(extra, (rect.x + 8, reagent_y + 18))
+            summary = ", ".join(f"{name}:{qty}" for name, qty in reagents)
+            reagent_text = f"Reagents: {summary}"
+            max_width = rect.width - 16
+            wrapped = self._wrap_text(self.menu_font, reagent_text, max_width)
+            max_lines = max(1, (rect.bottom - reagent_y - 4) // 18)
+            for idx, line in enumerate(wrapped[:max_lines]):
+                text = self.menu_font.render(line, True, (170, 210, 180))
+                surface.blit(text, (rect.x + 8, reagent_y + idx * 18))
 
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)

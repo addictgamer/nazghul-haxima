@@ -194,6 +194,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added spell system foundation: `Cast Spark` action (`c`) with range-2 targeting, sulphurous ash reagent usage, combat feedback integration, and reagent save/load persistence.
 - Expanded spell scaffold into a mini spellbook (`Spark`, `Heal`, `Ward`) with `v` cycle + `c` cast flow, per-spell reagent recipes, ward damage mitigation, and regression tests.
 - Added persistent spell UI visibility: sidebar spellbook/reagent panel and HUD active-effects line for ward charges.
+- Fixed spellbook reagent text wrapping and top HUD overflow by adding wrapped/clamped rendering for reagent/status lines.
 
 ## Suggested Delivery Sequence
 
