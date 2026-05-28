@@ -41,7 +41,7 @@ class MapView:
         self._draw_target_candidates(surface, viewport, start_x, start_y, session)
         if session.target_cursor is not None:
             self._draw_target_cursor(surface, viewport, start_x, start_y, session)
-        self._draw_combat_feedback(surface, viewport, session)
+        self._draw_combat_feedback(surface, viewport, start_x, start_y, session)
 
     def compute_view_window(
         self, viewport: pygame.Rect, session: GameSession
@@ -234,11 +234,16 @@ class MapView:
             pygame.draw.rect(surface, (255, 80, 80), rect, 2)
 
     def _draw_combat_feedback(
-        self, surface: pygame.Surface, viewport: pygame.Rect, session: GameSession
+        self,
+        surface: pygame.Surface,
+        viewport: pygame.Rect,
+        start_x: int,
+        start_y: int,
+        session: GameSession,
     ) -> None:
         if session.combat_feedback_ticks <= 0 or not session.combat_feedback_text:
             return
-        alpha = min(255, max(120, session.combat_feedback_ticks * 9))
+        alpha = min(210, max(140, session.combat_feedback_ticks * 5))
         banner = pygame.Surface((420, 54), pygame.SRCALPHA)
         banner.fill((10, 10, 14, alpha))
         pygame.draw.rect(banner, (240, 240, 240, min(255, alpha)), banner.get_rect(), 2)
@@ -248,4 +253,20 @@ class MapView:
         text_y = (banner.get_height() - text.get_height()) // 2
         banner.blit(text_shadow, (text_x + 2, text_y + 2))
         banner.blit(text, (text_x, text_y))
-        surface.blit(banner, (viewport.centerx - banner.get_width() // 2, viewport.y + 10))
+
+        pos_x = viewport.centerx - banner.get_width() // 2
+        pos_y = viewport.y + 10
+        anchor = session.combat_feedback_world_pos
+        if anchor is not None:
+            ax, ay = anchor
+            if start_x <= ax < start_x + (viewport.width // self.tile_w) and start_y <= ay < start_y + (
+                viewport.height // self.tile_h
+            ):
+                tile_center_x = viewport.x + (ax - start_x) * self.tile_w + self.tile_w // 2
+                tile_top_y = viewport.y + (ay - start_y) * self.tile_h
+                pos_x = tile_center_x - banner.get_width() // 2
+                pos_y = tile_top_y - banner.get_height() - 8
+
+        pos_x = max(viewport.x + 4, min(pos_x, viewport.right - banner.get_width() - 4))
+        pos_y = max(viewport.y + 4, min(pos_y, viewport.bottom - banner.get_height() - 4))
+        surface.blit(banner, (pos_x, pos_y))

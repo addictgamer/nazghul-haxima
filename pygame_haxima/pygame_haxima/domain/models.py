@@ -170,6 +170,7 @@ class GameSession:
     combat_feedback_text: str | None = None
     combat_feedback_ticks: int = 0
     combat_feedback_color: tuple[int, int, int] = (240, 220, 150)
+    combat_feedback_world_pos: tuple[int, int] | None = None
     ui_anim_tick: int = 0
     camera_start_x: int | None = None
     camera_start_y: int | None = None

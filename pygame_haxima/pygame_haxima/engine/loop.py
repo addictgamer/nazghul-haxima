@@ -361,12 +361,14 @@ class TurnLoop:
         defense_roll = random.randint(1, 6) + monster.defense
         if attack_roll <= defense_roll:
             session.append_log(f"You miss the {monster.name}.")
-            self._set_feedback(session, "Miss", (230, 220, 120))
+            self._set_feedback(session, "Miss", (230, 220, 120), world_pos=(monster.x, monster.y))
             return
         damage = max(1, attack_roll - defense_roll)
         monster.hp = max(0, monster.hp - damage)
         session.append_log(f"You hit {monster.name} for {damage} damage.")
-        self._set_feedback(session, f"Hit {damage}", (255, 170, 140))
+        self._set_feedback(
+            session, f"Hit {damage}", (255, 170, 140), world_pos=(monster.x, monster.y)
+        )
         self.audio.play_effect("sounds/hit.wav")
 
     def _enemy_counterattack(self, session: GameSession, monster: Entity) -> None:
@@ -377,19 +379,29 @@ class TurnLoop:
         defense_roll = random.randint(1, 6) + target.defense
         if attack_roll <= defense_roll:
             session.append_log(f"{monster.name} misses.")
-            self._set_feedback(session, f"{monster.name} misses", (220, 210, 120))
+            self._set_feedback(
+                session, f"{monster.name} misses", (220, 210, 120), world_pos=(session.party.x, session.party.y)
+            )
             return
         damage = max(1, attack_roll - defense_roll)
         target.hp = max(0, target.hp - damage)
         session.append_log(f"{monster.name} hits you for {damage}. HP: {target.hp}/{target.max_hp}")
-        self._set_feedback(session, f"You take {damage}", (255, 120, 120))
+        self._set_feedback(
+            session, f"You take {damage}", (255, 120, 120), world_pos=(session.party.x, session.party.y)
+        )
 
     def _set_feedback(
-        self, session: GameSession, text: str, color: tuple[int, int, int], ticks: int = 55
+        self,
+        session: GameSession,
+        text: str,
+        color: tuple[int, int, int],
+        ticks: int = 55,
+        world_pos: tuple[int, int] | None = None,
     ) -> None:
         session.combat_feedback_text = text
         session.combat_feedback_color = color
         session.combat_feedback_ticks = ticks
+        session.combat_feedback_world_pos = world_pos
 
     def _tick_feedback(self, session: GameSession) -> None:
         session.ui_anim_tick = (session.ui_anim_tick + 1) % 10_000
@@ -398,6 +410,7 @@ class TurnLoop:
         session.combat_feedback_ticks -= 1
         if session.combat_feedback_ticks == 0:
             session.combat_feedback_text = None
+            session.combat_feedback_world_pos = None
 
     def _npc_turn(self, session: GameSession) -> None:
         # Tiny movement jitter emulates non-player turns in place_exec.

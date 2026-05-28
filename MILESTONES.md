@@ -24,6 +24,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Party rendering now uses the lead member sprite key (`s_wanderer` in tutorial) instead of a hardcoded placeholder key.
 - Startup UI scale now prefers `2x` and automatically falls back to `1x` when `2x` would exceed desktop resolution.
 - Actor collision blocking now prevents party/monsters from stepping onto occupied actor tiles, and combat feedback banners are larger/higher-contrast for readability.
+- Combat feedback banners now support semi-transparency and world-anchor positioning near the relevant combatant tile.
 - M4 kickoff complete: nested Scheme parser added, and `terrains.scm` now converts into a runtime terrain registry JSON.
 - Parser-backed map converter now exports `maps/*.scm` into structured tile-layer JSON files plus an index.
 - Parser-backed place converter now exports `places/*.scm` into structured place metadata JSON with hooks/subplace/object summaries.
@@ -152,6 +153,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Started sprite parity pass for non-terrain visuals by replacing tutorial placeholder entity keys (`s_npc`, `s_monster`) with canonical sprite keys and matching atlas fallbacks.
 - Updated startup display behavior: default UI scale now auto-selects `2x` on large displays and `1x` on smaller desktops.
 - Fixed movement overlap behavior (no actor tile-sharing during movement) and improved combat damage popup readability/visibility.
+- Reanchored combat feedback popups to relevant world tiles (with clamping fallback) and tuned transparency for better map readability.
 
 ## Suggested Delivery Sequence
 
