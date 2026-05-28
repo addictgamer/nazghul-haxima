@@ -32,6 +32,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Zone import command now writes `converted_data/import_validation_report.json` with per-section counts and validation warnings.
 - Parser-backed quest converter now exports `quests-*.scm` metadata/update scaffolds into `converted_data/quests/*.quests.json` plus index coverage.
 - Sprite parity workstream is now tracked explicitly (entity/object key parity, runtime coverage diagnostics, and fallback quality gates).
+- Post-port conversation UX enhancement is logged: modal interactable dialogue vs anchored fade popups for one-off NPC utterances.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -91,7 +92,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [~] Sprite parity pass (entity/object visuals beyond terrain):
   - [x] Pass 1: tutorial critical keys switched from placeholders to canonical keys (`s_wanderer`, `s_old_townsman`, `s_wolf`, `s_chest`).
   - [ ] Pass 2: pull NPC/monster/object sprite keys from converted place/townsfolk content instead of hardcoded defaults.
-  - [ ] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
+  - [~] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
   - [ ] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases.
   - [ ] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [ ] Pass 6: directional/animation variants where source art supports it.
@@ -154,6 +155,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Updated startup display behavior: default UI scale now auto-selects `2x` on large displays and `1x` on smaller desktops.
 - Fixed movement overlap behavior (no actor tile-sharing during movement) and improved combat damage popup readability/visibility.
 - Reanchored combat feedback popups to relevant world tiles (with clamping fallback) and tuned transparency for better map readability.
+- Expanded sprite definition parsing to scan world `.scm` files beyond `sprites.scm`, enabling canonical item sprite keys from modules like `arms.scm` and `potions.scm`.
+- Started item sprite parity implementation: chest-spilled ground items now render with item-key mapping (`s_dagger`, `s_leather_armor`, `s_healing_potion` fallbacks).
+- Logged post-port dialogue UX split: modal conversations for interactables, anchored fade popups for one-off NPC lines.
 
 ## Suggested Delivery Sequence
 
