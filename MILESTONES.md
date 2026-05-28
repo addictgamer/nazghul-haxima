@@ -195,6 +195,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Expanded spell scaffold into a mini spellbook (`Spark`, `Heal`, `Ward`) with `v` cycle + `c` cast flow, per-spell reagent recipes, ward damage mitigation, and regression tests.
 - Added persistent spell UI visibility: sidebar spellbook/reagent panel and HUD active-effects line for ward charges.
 - Fixed spellbook reagent text wrapping and top HUD overflow by adding wrapped/clamped rendering for reagent/status lines.
+- Refined top HUD status rendering to combine encounter + active effects into one wrapped status block so both remain visible simultaneously.
 
 ## Suggested Delivery Sequence
 

@@ -31,26 +31,19 @@ class HudPane:
             max_width,
             rect.bottom - 4,
         )
+        status_parts: list[str] = []
         adjacent = self._adjacent_hostile_names(session)
         if adjacent:
-            encounter = f"Encounter nearby: {', '.join(adjacent[:2])}"
-            y = self._blit_wrapped_line(
-                surface,
-                self.sub_font,
-                encounter,
-                (255, 145, 120),
-                rect.x + 10,
-                y,
-                max_width,
-                rect.bottom - 4,
-            )
+            status_parts.append(f"Encounter: {', '.join(adjacent[:2])}")
         if session.party.ward_charges > 0:
-            effect = f"Active effects: Ward({session.party.ward_charges})"
+            status_parts.append(f"Effects: Ward({session.party.ward_charges})")
+        if status_parts:
+            status_text = " | ".join(status_parts)
             y = self._blit_wrapped_line(
                 surface,
                 self.sub_font,
-                effect,
-                (170, 220, 255),
+                status_text,
+                (225, 200, 165),
                 rect.x + 10,
                 y,
                 max_width,
