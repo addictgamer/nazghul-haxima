@@ -1,27 +1,27 @@
-*.[oa]
-*~
-Makefile
-Makefile.in
-src/nazghul
-config.*
-aclocal.m4
-autom4te.cache/
-configure
-depcomp
-compile
-install-sh
-missing
-src/.deps/
-src/TAGS
-stamp-h1
-worlds/haxima-1.002/haxima.sh
-worlds/haxima-1.002/options.scm
-worlds/haxima-1.002/saved-games.scm
-*.sav
-*.sav.png
-# coverage detritus
-*.gcda
-*.gcno
+# *.[oa]
+# *~
+# Makefile
+# Makefile.in
+# src/nazghul
+# config.*
+# aclocal.m4
+# autom4te.cache/
+# configure
+# depcomp
+# compile
+# install-sh
+# missing
+# src/.deps/
+# src/TAGS
+# stamp-h1
+# worlds/haxima-1.002/haxima.sh
+# worlds/haxima-1.002/options.scm
+# worlds/haxima-1.002/saved-games.scm
+# *.sav
+# *.sav.png
+# # coverage detritus
+# *.gcda
+# *.gcno
 
 .venv/
 __pycache__/
