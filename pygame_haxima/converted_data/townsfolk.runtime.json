@@ -4,7 +4,9 @@
     "townsfolk/abe.scm",
     "townsfolk/alchemist.scm"
   ],
+  "loaded_count": 2,
   "resolved_count": 2,
+  "unresolved_loads": [],
   "entries": [
     {
       "source_file": "abe.scm",

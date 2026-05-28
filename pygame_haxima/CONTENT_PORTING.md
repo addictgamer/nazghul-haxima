@@ -22,3 +22,7 @@ This project keeps Phase 4 in-tree so Haxima content can be migrated incremental
 cd pygame_haxima
 python3 -m pygame_haxima.tools.zone_port
 ```
+
+This command writes a validation artifact at
+`converted_data/import_validation_report.json` with conversion counts, basic map
+dimension checks, and unresolved townsfolk load warnings.

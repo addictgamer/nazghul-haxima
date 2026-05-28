@@ -114,6 +114,7 @@ class ScmConverter:
         init_exprs = self.parser.parse_file(init_text)
         loaded_files = self._extract_load_files(init_exprs)
         resolved_files: list[Path] = []
+        unresolved_files: list[str] = []
         for rel in loaded_files:
             candidate = world_dir / rel
             if candidate.exists():
@@ -122,6 +123,8 @@ class ScmConverter:
             fallback = world_dir / Path(rel).name
             if fallback.exists():
                 resolved_files.append(fallback)
+                continue
+            unresolved_files.append(rel)
 
         entries: list[dict[str, object]] = []
         for src in resolved_files:
@@ -132,7 +135,9 @@ class ScmConverter:
         payload = {
             "source_init": str(init_src),
             "loaded_files": loaded_files,
+            "loaded_count": len(loaded_files),
             "resolved_count": len(entries),
+            "unresolved_loads": unresolved_files,
             "entries": entries,
         }
         dst.parent.mkdir(parents=True, exist_ok=True)
