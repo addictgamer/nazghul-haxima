@@ -4,6 +4,7 @@ from pathlib import Path
 
 from pygame_haxima.data.content_registry import ContentRegistry
 from pygame_haxima.data.save_manager import SaveManager
+from pygame_haxima.domain.models import Entity
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.loop import TurnLoop
 
@@ -143,6 +144,47 @@ def test_cast_spark_consumes_reagent_and_damages_target(tmp_path, monkeypatch) -
     assert session.party.turn_count == 1
     assert session.combat_feedback_text is not None
     assert "spark 4" in session.combat_feedback_text.lower()
+
+
+def test_cast_fire_field_hits_multiple_adjacent_hostiles(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "in_flam_grav"
+    session.party.reagents["sulphurous_ash"] = 2
+    session.party.reagents["black_pearl"] = 1
+    session.party.reagents["spider_silk"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 14
+    wolf.y = 9
+    wolf.hp = 10
+    spider = Entity(
+        entity_id="spider_1",
+        name="Spider",
+        x=14,
+        y=10,
+        sprite_key="s_spider",
+        hp=8,
+        max_hp=8,
+        hostile=True,
+    )
+    session.place.monsters.append(spider)
+
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 3)
+
+    loop.process_events(session, [_action("cast"), _action("confirm")])
+
+    assert session.party.reagents["sulphurous_ash"] == 1
+    assert session.party.reagents["black_pearl"] == 0
+    assert session.party.reagents["spider_silk"] == 0
+    assert wolf.hp == 7
+    assert spider.hp == 5
+    assert any("in flam grav" in line.lower() and "wolf" in line.lower() for line in session.log_lines)
+    assert any("in flam grav" in line.lower() and "spider" in line.lower() for line in session.log_lines)
 
 
 def test_cast_spark_requires_reagent(tmp_path) -> None:

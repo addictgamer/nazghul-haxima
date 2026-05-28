@@ -56,6 +56,9 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "sight", False, 0
     if "dispel" in token or "negate magic" in token:
         return "dispel", False, 0
+    field_terms = ("fire field", "poison field", "sleep field")
+    if any(term in token for term in field_terms):
+        return "field", True, max(2, min(8, circle + 1))
     attack_terms = (
         "bolt",
         "ball",

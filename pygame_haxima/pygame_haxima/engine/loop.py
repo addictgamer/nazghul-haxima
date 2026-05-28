@@ -848,6 +848,9 @@ class TurnLoop:
         if spell.spell_id == "spark":
             self._cast_spark(session, monster)
             return
+        if spell.effect_kind == "field":
+            self._cast_field_spell(session, spell, monster)
+            return
         self._consume_reagents(session, spell.spell_id)
         damage = random.randint(1 + spell.circle, 2 + spell.circle * 2)
         monster.hp = max(0, monster.hp - damage)
@@ -867,6 +870,42 @@ class TurnLoop:
             return
         if self._distance_from_party(session, monster.x, monster.y) <= 1:
             self._enemy_counterattack(session, monster)
+        session.advance_turn()
+
+    def _cast_field_spell(self, session: GameSession, spell, center: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        targets = [
+            monster
+            for monster in session.place.monsters
+            if monster.is_alive() and abs(monster.x - center.x) + abs(monster.y - center.y) <= 1
+        ]
+        if not targets:
+            session.append_log(f"You cast {spell.name}, but the field catches nothing.")
+            self._clear_combat_feedback(session)
+            self._set_feedback(
+                session, f"You: {spell.name}", (255, 205, 160), world_pos=(center.x, center.y)
+            )
+            if self._distance_from_party(session, center.x, center.y) <= 1:
+                self._enemy_counterattack(session, center)
+            session.advance_turn()
+            return
+        hit_count = 0
+        for monster in targets:
+            damage = random.randint(max(2, spell.circle), max(4, spell.circle + 2))
+            monster.hp = max(0, monster.hp - damage)
+            hit_count += 1
+            session.append_log(f"{spell.name} scorches {monster.name} for {damage}.")
+            if not monster.is_alive():
+                session.append_log(f"{monster.name} is defeated.")
+                session.quest_flags[f"defeated:{monster.entity_id}"] = True
+        session.victory = all(not monster.is_alive() for monster in session.place.monsters)
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell.name} x{hit_count}", (255, 190, 145), world_pos=(center.x, center.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
         session.advance_turn()
 
     def _cast_non_targeted_spell(self, session: GameSession, spell) -> None:
