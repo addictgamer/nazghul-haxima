@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from pygame_haxima.data.asset_loader import AssetLoader
-from pygame_haxima.data.sprite_atlas import SpriteAtlas
+from pygame_haxima.data.sprite_atlas import SpriteAtlas, SpriteRef
 
 
 def test_runtime_coverage_classifies_aliases_and_missing(tmp_path) -> None:
@@ -25,3 +25,29 @@ def test_runtime_coverage_classifies_aliases_and_missing(tmp_path) -> None:
     assert "s_mystery" in report["missing_runtime_keys"]
     # Direct fallback and alias-to-fallback both count as runtime fallback usage.
     assert "s_old_townsman" in report["fallback_runtime_keys"]
+
+
+def test_get_for_tick_uses_multiframe_variants_and_caches(tmp_path, monkeypatch) -> None:
+    atlas = SpriteAtlas(asset_loader=AssetLoader(tmp_path), project_root=Path(tmp_path))
+    atlas.refs = {"s_wolf": SpriteRef(key="s_wolf", sprite_set="ss_test", frame_count=3, tile_index=10)}
+    atlas.surfaces = {
+        "s_grass": object(),  # type: ignore[assignment]
+        "s_wolf": object(),  # type: ignore[assignment]
+    }
+
+    calls: list[int] = []
+
+    def _fake_extract(key: str, frame_offset: int):
+        calls.append(frame_offset)
+        return object(), None  # type: ignore[return-value]
+
+    monkeypatch.setattr(atlas, "_extract_surface_for_frame", _fake_extract)
+
+    # Tick chooses frame 1 (10 // 8 => 1).
+    frame_surface = atlas.get_for_tick("s_wolf", tick=10, frame_stride=8)
+    assert calls == [1]
+
+    # Same frame should hit cache and avoid another extract call.
+    cached_surface = atlas.get_for_tick("s_wolf", tick=10, frame_stride=8)
+    assert frame_surface is cached_surface
+    assert calls == [1]

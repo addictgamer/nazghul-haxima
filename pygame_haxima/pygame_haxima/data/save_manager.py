@@ -189,6 +189,9 @@ class SaveManager:
                 monster.hp = monster_payload["hp"]
                 monster.x = monster_payload["x"]
                 monster.y = monster_payload["y"]
+                facing = monster_payload.get("facing")
+                if isinstance(facing, str) and facing in {"n", "s", "e", "w"}:
+                    monster.facing = facing
 
             ground_payload = payload.get("ground_items", {})
             session.place.ground_items.clear()

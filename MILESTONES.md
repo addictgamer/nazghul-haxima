@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 32% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 36% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -102,7 +102,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [~] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
-  - [ ] Pass 6: directional/animation variants where source art supports it.
+  - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
 - [ ] Implement spell system parity (`spells.scm` + reagents behavior).
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
@@ -190,6 +190,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Sprite coverage report now includes runtime key diagnostics (party/NPC/monster/chest/item) with alias resolution and unresolved-alias classification, plus regression tests for alias/missing detection.
 - Runtime sprite coverage now ingests converted-data probes (places/townsfolk/quest icons) in startup diagnostics, and sprite-profile tokenization now handles mixed-case names correctly.
 - Added sprite parity quality-gate test that fails if critical runtime keys (player/NPC/monster/chest/door/item categories) ever regress to fallback surfaces.
+- Added first-pass directional/animation rendering support: entity facing is tracked from movement, renderer probes directional sprite variants (`_n/_s/_e/_w` and dash forms), and multi-frame sprite refs now animate by tick.
 
 ## Suggested Delivery Sequence
 

@@ -131,6 +131,23 @@ def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:
     assert session.log_lines[-1] == "Blocked."
 
 
+def test_party_facing_updates_with_movement_direction(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+
+    loop.process_events(session, [_action("move_e")])
+    assert session.party.lead().facing == "e"
+
+    loop.process_events(session, [_action("move_w")])
+    assert session.party.lead().facing == "w"
+
+    loop.process_events(session, [_action("move_s")])
+    assert session.party.lead().facing == "s"
+
+    loop.process_events(session, [_action("move_n")])
+    assert session.party.lead().facing == "n"
+
+
 def test_party_cannot_step_into_impassable_wall(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

@@ -102,11 +102,15 @@ class MapView:
         start_y: int,
         session: GameSession,
     ) -> None:
-        party_sprite = session.party.lead().sprite_key if session.party.members else "s_wanderer"
+        party_sprite = (
+            self._directional_entity_sprite_key(session.party.lead())
+            if session.party.members
+            else "s_wanderer"
+        )
         drawables: list[tuple[str, int, int]] = [(party_sprite, session.party.x, session.party.y)]
-        drawables.extend((npc.sprite_key, npc.x, npc.y) for npc in session.place.npcs)
+        drawables.extend((self._directional_entity_sprite_key(npc), npc.x, npc.y) for npc in session.place.npcs)
         drawables.extend(
-            (monster.sprite_key, monster.x, monster.y)
+            (self._directional_entity_sprite_key(monster), monster.x, monster.y)
             for monster in session.place.monsters
             if monster.is_alive()
         )
@@ -123,7 +127,15 @@ class MapView:
                 continue
             px = viewport.x + (x - start_x) * self.tile_w
             py = viewport.y + (y - start_y) * self.tile_h
-            surface.blit(self.atlas.get(sprite_key), (px, py))
+            surface.blit(self.atlas.get_for_tick(sprite_key, session.ui_anim_tick), (px, py))
+
+    def _directional_entity_sprite_key(self, entity: object) -> str:
+        base = getattr(entity, "sprite_key", "s_wanderer")
+        facing = str(getattr(entity, "facing", "s")).lower()
+        for candidate in (f"{base}_{facing}", f"{base}-{facing}"):
+            if self.atlas.has_key(candidate):
+                return candidate
+        return base
 
     def _draw_target_cursor(
         self,

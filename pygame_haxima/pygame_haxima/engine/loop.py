@@ -115,6 +115,7 @@ class TurnLoop:
             return
         session.party.x, session.party.y = nx, ny
         session.party.members[0].x, session.party.members[0].y = nx, ny
+        session.party.members[0].facing = self._facing_from_delta(dx, dy, session.party.members[0].facing)
         session.advance_turn()
         session.party.food = max(0, session.party.food - 1)
         self._check_auto_combat(session)
@@ -566,6 +567,7 @@ class TurnLoop:
                 nx, ny = monster.x + step_x, monster.y + step_y
                 if self._monster_can_enter_tile(session, monster, nx, ny):
                     monster.x, monster.y = nx, ny
+                    monster.facing = self._facing_from_delta(step_x, step_y, monster.facing)
 
     def _party_can_enter_tile(self, session: GameSession, x: int, y: int) -> bool:
         if not session.place.passable(x, y):
@@ -596,3 +598,14 @@ class TurnLoop:
             if (other.x, other.y) == (x, y):
                 return False
         return True
+
+    def _facing_from_delta(self, dx: int, dy: int, current: str = "s") -> str:
+        if dx > 0:
+            return "e"
+        if dx < 0:
+            return "w"
+        if dy > 0:
+            return "s"
+        if dy < 0:
+            return "n"
+        return current

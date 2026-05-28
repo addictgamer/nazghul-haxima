@@ -47,6 +47,7 @@ class Entity:
     attack: int = 3
     defense: int = 1
     hostile: bool = False
+    facing: str = "s"
 
     def is_alive(self) -> bool:
         return self.hp > 0

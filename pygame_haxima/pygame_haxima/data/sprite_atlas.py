@@ -11,7 +11,7 @@ from pygame_haxima.config import DISPLAY
 from pygame_haxima.data.asset_loader import AssetLoader
 
 SPRITE_RE = re.compile(
-    r"\(kern-mk-sprite\s+'(?P<name>[^\s]+)\s+(?P<set>[^\s]+)\s+\d+\s+(?P<index>\d+)\s+[#tf]+\s+\d+\s*\)"
+    r"\(kern-mk-sprite\s+'(?P<name>[^\s]+)\s+(?P<set>[^\s]+)\s+(?P<frames>\d+)\s+(?P<index>\d+)\s+[#tf]+\s+\d+\s*\)"
 )
 SPRITE_SET_RE = re.compile(
     r'\(kern-mk-sprite-set\s+\'(?P<name>[^\s]+)\s+'
@@ -26,6 +26,7 @@ SPRITE_SET_RE = re.compile(
 class SpriteRef:
     key: str
     sprite_set: str
+    frame_count: int
     tile_index: int
 
 
@@ -137,6 +138,7 @@ class SpriteAtlas:
                 self.refs[key] = SpriteRef(
                     key=key,
                     sprite_set=match.group("set"),
+                    frame_count=max(1, int(match.group("frames"))),
                     tile_index=int(match.group("index")),
                 )
 
@@ -145,6 +147,9 @@ class SpriteAtlas:
         return sorted(world_dir.rglob("*.scm"))
 
     def _extract_surface(self, key: str) -> tuple[pygame.Surface | None, str | None]:
+        return self._extract_surface_for_frame(key, 0)
+
+    def _extract_surface_for_frame(self, key: str, frame_offset: int) -> tuple[pygame.Surface | None, str | None]:
         sprite_ref = self.refs.get(key)
         if sprite_ref is None:
             return None, "missing_ref"
@@ -155,8 +160,9 @@ class SpriteAtlas:
         if sheet is None:
             self.missing_sheet_files.add(sprite_set.filename)
             return None, "missing_sheet"
-        col = sprite_ref.tile_index % sprite_set.cols
-        row = sprite_ref.tile_index // sprite_set.cols
+        tile_index = sprite_ref.tile_index + max(0, frame_offset)
+        col = tile_index % sprite_set.cols
+        row = tile_index // sprite_set.cols
         if row >= sprite_set.rows:
             return None, "out_of_bounds"
         src = pygame.Rect(
@@ -183,6 +189,26 @@ class SpriteAtlas:
 
     def get(self, key: str) -> pygame.Surface:
         return self.surfaces.get(key, self.surfaces["s_grass"])
+
+    def get_for_tick(self, key: str, tick: int, frame_stride: int = 8) -> pygame.Surface:
+        sprite_ref = self.refs.get(key)
+        if sprite_ref is None or sprite_ref.frame_count <= 1:
+            return self.get(key)
+        frame = (tick // max(1, frame_stride)) % sprite_ref.frame_count
+        if frame == 0:
+            return self.get(key)
+        cache_key = f"{key}#f{frame}"
+        cached = self.surfaces.get(cache_key)
+        if cached is not None:
+            return cached
+        surface, _reason = self._extract_surface_for_frame(key, frame)
+        if surface is None:
+            return self.get(key)
+        self.surfaces[cache_key] = surface
+        return surface
+
+    def has_key(self, key: str) -> bool:
+        return key in self.refs or key in self.surfaces
 
     def is_fallback(self, key: str) -> bool:
         return key in self.fallback_keys
