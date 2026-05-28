@@ -20,6 +20,7 @@ python -m pygame_haxima
 - Options panel: `F10`
 - Terrain debug overlay: `F2`
 - Sprite warning overlay: `F3`
+- Runtime state debug overlay: `F4`
 - Save/load: `F5` / `F9`
 - Target confirm: `Enter` (or `Space`)
 - Target cancel: `Esc`
@@ -29,3 +30,10 @@ On startup, the game prints a sprite coverage summary and writes:
 - `pygame_haxima/reports/sprite_coverage_report.txt`
 
 Conversation lines now appear in a dedicated dialogue panel above the console log.
+
+## Tests
+
+```bash
+cd pygame_haxima
+python -m pytest
+```
