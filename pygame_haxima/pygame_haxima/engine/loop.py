@@ -77,6 +77,9 @@ class TurnLoop:
 
     def _handle_mouse_move(self, session: GameSession, tile: tuple[int, int]) -> None:
         if session.targeting_action is not None:
+            if not self._is_tile_in_target_range(session, tile[0], tile[1]):
+                session.append_log("You can't perform that action there.")
+                return
             session.target_cursor = tile
             self._confirm_target_action(session)
             return
@@ -205,6 +208,9 @@ class TurnLoop:
             return
 
     def _start_targeting(self, session: GameSession, action: str, prompt: str) -> None:
+        if action in {"talk", "open", "attack"} and not self._has_action_target_in_range(session, action):
+            session.append_log("You can't perform that action right now.")
+            return
         session.targeting_action = action
         session.target_cursor = (session.party.x, session.party.y)
         session.command_prompt = prompt
@@ -237,6 +243,8 @@ class TurnLoop:
         x, y = session.target_cursor
         nx = max(0, min(session.place.width - 1, x + dx))
         ny = max(0, min(session.place.height - 1, y + dy))
+        if not self._is_tile_in_target_range(session, nx, ny):
+            return
         session.target_cursor = (nx, ny)
 
     def _confirm_target_action(self, session: GameSession) -> None:
@@ -250,7 +258,7 @@ class TurnLoop:
                 session.append_log("No one there to talk to.")
                 return
             if self._distance_from_party(session, x, y) > 1:
-                session.append_log("Target is too far away to talk.")
+                session.append_log("You can't perform that action there.")
                 return
             session.mode = Mode.TALK
             session.append_log(f"{npc.name}: {npc.keywords.get('name', 'Greetings.')}")
@@ -266,7 +274,7 @@ class TurnLoop:
                 session.append_log("No chest there.")
                 return
             if self._distance_from_party(session, x, y) > 1:
-                session.append_log("You must stand next to the chest.")
+                session.append_log("You can't perform that action there.")
                 return
             if chest.opened:
                 session.append_log("Chest is already open.")
@@ -285,7 +293,7 @@ class TurnLoop:
                 session.append_log("No enemy there.")
                 return
             if self._distance_from_party(session, x, y) > 1:
-                session.append_log("Target is out of melee range.")
+                session.append_log("You can't perform that action there.")
                 return
             self._attack(session, monster)
             self._end_targeting(session)
@@ -296,6 +304,22 @@ class TurnLoop:
 
     def _distance_from_party(self, session: GameSession, x: int, y: int) -> int:
         return abs(session.party.x - x) + abs(session.party.y - y)
+
+    def _is_tile_in_target_range(self, session: GameSession, x: int, y: int) -> bool:
+        if session.targeting_action in {"talk", "open", "attack"}:
+            return self._distance_from_party(session, x, y) <= 1
+        return True
+
+    def _has_action_target_in_range(self, session: GameSession, action: str) -> bool:
+        px, py = session.party.x, session.party.y
+        candidates = ((px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1))
+        if action == "talk":
+            return any(session.place.npc_at(x, y) is not None for x, y in candidates)
+        if action == "open":
+            return any(session.place.chest_at(x, y) is not None for x, y in candidates)
+        if action == "attack":
+            return any(session.place.monster_at(x, y) is not None for x, y in candidates)
+        return True
 
     def _check_auto_combat(self, session: GameSession) -> None:
         monster = self._adjacent_monster(session)

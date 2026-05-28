@@ -14,6 +14,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - In-game options panel exists (`F10`) with scale/fullscreen/debug toggles and keybind preview.
 - Command targeting flow now exists for talk/open/attack/examine with cursor move + confirm/cancel.
 - Mouse-to-tile targeting now uses the same camera window math as map rendering (fixes cursor offset/misalignment).
+- Short-range actions now fail fast when no in-range target exists and no longer allow out-of-range target selection.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -109,6 +110,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added in-game options panel (`F10`) for scale/fullscreen/debug toggles plus keybind preview.
 - Added command targeting cursor flow for `talk/open/attack/examine` (`Enter` confirm, `Esc` cancel, mouse target support).
 - Fixed mouse targeting offset by unifying renderer click conversion with map camera viewport origin/clamping.
+- Improved targeting QoL: in-range validation on action start and constrained cursor/mouse selection for short-range actions.
 
 ## Suggested Delivery Sequence
 
