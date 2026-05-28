@@ -37,6 +37,7 @@ class MapView:
 
         self._draw_entities(surface, viewport, start_x, start_y, session)
         self._draw_encounter_indicators(surface, viewport, start_x, start_y, session)
+        self._draw_target_candidates(surface, viewport, start_x, start_y, session)
         if session.target_cursor is not None:
             self._draw_target_cursor(surface, viewport, start_x, start_y, session)
         self._draw_combat_feedback(surface, viewport, session)
@@ -47,14 +48,46 @@ class MapView:
         place = session.place
         visible_w = max(1, viewport.width // self.tile_w)
         visible_h = max(1, viewport.height // self.tile_h)
-        half_w = visible_w // 2
-        half_h = visible_h // 2
-        cam_x, cam_y = session.party.x, session.party.y
-
         max_start_x = max(0, place.width - visible_w)
         max_start_y = max(0, place.height - visible_h)
-        start_x = max(0, min(cam_x - half_w, max_start_x))
-        start_y = max(0, min(cam_y - half_h, max_start_y))
+
+        # Initialize camera centered on party.
+        if session.camera_start_x is None or session.camera_start_y is None:
+            half_w = visible_w // 2
+            half_h = visible_h // 2
+            start_x = max(0, min(session.party.x - half_w, max_start_x))
+            start_y = max(0, min(session.party.y - half_h, max_start_y))
+        else:
+            start_x = max(0, min(session.camera_start_x, max_start_x))
+            start_y = max(0, min(session.camera_start_y, max_start_y))
+
+        # Deadzone follow: only move camera when party leaves margin.
+        deadzone_x = max(1, min(session.camera_deadzone_tiles, max(1, visible_w // 2)))
+        deadzone_y = max(1, min(session.camera_deadzone_tiles, max(1, visible_h // 2)))
+
+        party_view_x = session.party.x - start_x
+        party_view_y = session.party.y - start_y
+
+        left_bound = deadzone_x
+        right_bound = max(left_bound, visible_w - deadzone_x - 1)
+        top_bound = deadzone_y
+        bottom_bound = max(top_bound, visible_h - deadzone_y - 1)
+
+        if party_view_x < left_bound:
+            start_x -= left_bound - party_view_x
+        elif party_view_x > right_bound:
+            start_x += party_view_x - right_bound
+
+        if party_view_y < top_bound:
+            start_y -= top_bound - party_view_y
+        elif party_view_y > bottom_bound:
+            start_y += party_view_y - bottom_bound
+
+        start_x = max(0, min(start_x, max_start_x))
+        start_y = max(0, min(start_y, max_start_y))
+        session.camera_start_x = start_x
+        session.camera_start_y = start_y
+
         end_x = min(place.width, start_x + visible_w)
         end_y = min(place.height, start_y + visible_h)
         return start_x, start_y, end_x, end_y
@@ -100,14 +133,67 @@ class MapView:
         py = viewport.y + (y - start_y) * self.tile_h
         rect = pygame.Rect(px, py, self.tile_w, self.tile_h)
         color = self._target_color(session, x, y)
-        pygame.draw.rect(surface, color, rect, 2)
+        pulse = 2 + (session.ui_anim_tick % 3)
+        pygame.draw.rect(surface, color, rect, pulse)
         pygame.draw.rect(surface, (20, 20, 20), rect, 1)
+        self._draw_target_trail(surface, viewport, start_x, start_y, session, rect)
 
     def _draw_terrain_debug(self, surface: pygame.Surface, cell: pygame.Rect, terrain_id: str) -> None:
         tag = self.debug_font.render(terrain_id[:5], True, (240, 245, 200))
         shadow = self.debug_font.render(terrain_id[:5], True, (20, 20, 20))
         surface.blit(shadow, (cell.x + 2, cell.y + 2))
         surface.blit(tag, (cell.x + 1, cell.y + 1))
+
+    def _draw_target_trail(
+        self,
+        surface: pygame.Surface,
+        viewport: pygame.Rect,
+        start_x: int,
+        start_y: int,
+        session: GameSession,
+        target_rect: pygame.Rect,
+    ) -> None:
+        if session.target_cursor is None:
+            return
+        px = viewport.x + (session.party.x - start_x) * self.tile_w + self.tile_w // 2
+        py = viewport.y + (session.party.y - start_y) * self.tile_h + self.tile_h // 2
+        tx = target_rect.x + self.tile_w // 2
+        ty = target_rect.y + self.tile_h // 2
+        trail_color = (180, 210, 255) if session.targeting_action == "examine" else (255, 240, 170)
+        pygame.draw.line(surface, trail_color, (px, py), (tx, ty), 1)
+
+    def _draw_target_candidates(
+        self,
+        surface: pygame.Surface,
+        viewport: pygame.Rect,
+        start_x: int,
+        start_y: int,
+        session: GameSession,
+    ) -> None:
+        action = session.targeting_action
+        if action not in {"talk", "open", "attack"}:
+            return
+        candidates = [
+            (session.party.x, session.party.y),
+            (session.party.x + 1, session.party.y),
+            (session.party.x - 1, session.party.y),
+            (session.party.x, session.party.y + 1),
+            (session.party.x, session.party.y - 1),
+        ]
+        alpha = 55 + (session.ui_anim_tick % 5) * 10
+        for x, y in candidates:
+            if x < start_x or y < start_y:
+                continue
+            if not session.place.in_bounds(x, y):
+                continue
+            color = self._target_color(session, x, y)
+            if color[0] > 200 and color[1] < 180:
+                continue
+            px = viewport.x + (x - start_x) * self.tile_w
+            py = viewport.y + (y - start_y) * self.tile_h
+            overlay = pygame.Surface((self.tile_w, self.tile_h), pygame.SRCALPHA)
+            overlay.fill((color[0], color[1], color[2], alpha))
+            surface.blit(overlay, (px, py))
 
     def _target_color(self, session: GameSession, x: int, y: int) -> tuple[int, int, int]:
         action = session.targeting_action

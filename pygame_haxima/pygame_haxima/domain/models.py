@@ -170,6 +170,10 @@ class GameSession:
     combat_feedback_text: str | None = None
     combat_feedback_ticks: int = 0
     combat_feedback_color: tuple[int, int, int] = (240, 220, 150)
+    ui_anim_tick: int = 0
+    camera_start_x: int | None = None
+    camera_start_y: int | None = None
+    camera_deadzone_tiles: int = 4
 
     def append_log(self, message: str) -> None:
         self.log_lines.append(message)

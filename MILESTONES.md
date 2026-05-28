@@ -19,6 +19,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Console layout now dynamically clamps visible log lines when dialogue panel is present, preventing overlap with the command bar.
 - Visual combat polish added: target cursor validity colors, nearby-hostile indicators, and transient hit/miss feedback banners.
 - Targeting now auto-focuses a valid in-range target tile for short-range actions instead of defaulting to the player tile.
+- Camera now uses clamped deadzone-follow behavior for larger maps, reducing constant recentering while preserving edge clamping.
+- Selection highlight polish now includes pulsing target cursor, valid-target overlays, and a target trail from party to cursor.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -29,7 +31,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M0 | Build + launch tooling | Completed | 100% | `pygame.sh`, `pygame.bat`, `requirements.txt`, package entrypoints working |
 | M1 | Engine foundation | Completed | 100% | Event loop, renderer, map draw, domain models, input wiring in place |
 | M2 | Vertical slice gameplay | Completed | 100% | Tutorial map with move/talk/open/get/attack/examine/save/load |
-| M3 | UX redesign pass | In Progress | 90% | Scalable display, polished UI readability, robust mouse-target command UX |
+| M3 | UX redesign pass | Completed | 100% | Scalable display, polished UI readability, robust mouse-target command UX |
 | M4 | Content import pipeline | In Progress | 35% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | In Progress | 35% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Not Started | 10% | Unit/integration tests + CI smoke run + regression suite |
@@ -38,15 +40,15 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 ## What Remains To Implement
 
-### M3: UX redesign pass (next major deliverable)
+### M3: UX redesign pass (completed)
 
 - [x] Add in-game menu/options screen for scale/fullscreen/keybinds.
 - [x] Improve text system (font fallback + wrapping + dialogue panel behavior).
 - [x] Implement command targeting UX parity (cursor mode, cancel/confirm flow, prompts).
 - [x] Add terrain debug overlay toggle for visual map validation (`F2`).
 - [x] Add sprite warning overlay toggle for fallback-key monitoring (`F3`).
-- [~] Add visual polish: selection highlights, damage feedback, encounter indicators (implemented for targeting/combat core loop; further effects optional).
-- [ ] Improve camera behavior and clamping for larger places.
+- [x] Add visual polish: selection highlights, damage feedback, encounter indicators.
+- [x] Improve camera behavior and clamping for larger places.
 
 ### M4: Content import pipeline
 
@@ -119,6 +121,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Fixed console/log overlap bug where dialogue panel could push log lines underneath the bottom command bar.
 - Added visual combat UX polish: valid/invalid target coloring, adjacent hostile indicators, and fading hit/miss feedback banners.
 - Improved target UX: when entering `talk/open/attack`, cursor now starts on a valid nearby target if one exists.
+- Improved camera UX for larger maps with deadzone-follow + strict world-edge clamping.
+- Completed final M3 selection polish with pulsing target cursor, valid-target overlays, and party-to-target trail rendering.
 
 ## Suggested Delivery Sequence
 

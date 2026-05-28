@@ -392,6 +392,7 @@ class TurnLoop:
         session.combat_feedback_ticks = ticks
 
     def _tick_feedback(self, session: GameSession) -> None:
+        session.ui_anim_tick = (session.ui_anim_tick + 1) % 10_000
         if session.combat_feedback_ticks <= 0:
             return
         session.combat_feedback_ticks -= 1
