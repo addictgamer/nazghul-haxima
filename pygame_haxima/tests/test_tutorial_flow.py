@@ -328,6 +328,53 @@ def test_cast_magic_unlock_without_chest_still_spends_turn(tmp_path) -> None:
     assert "no locked chest is nearby" in session.log_lines[-1].lower()
 
 
+def test_cast_magic_lock_closes_adjacent_open_chest(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "an_ex_por"
+    session.party.x = 5
+    session.party.y = 10
+    session.party.members[0].x = 5
+    session.party.members[0].y = 10
+    session.party.reagents["sulphurous_ash"] = 1
+    session.party.reagents["blood_moss"] = 1
+    session.party.reagents["garlic"] = 1
+    chest = session.place.chests[0]
+    chest.opened = True
+
+    loop.process_events(session, [_action("cast")])
+
+    assert chest.opened is False
+    assert session.party.reagents["sulphurous_ash"] == 0
+    assert session.party.reagents["blood_moss"] == 0
+    assert session.party.reagents["garlic"] == 0
+    assert any("chest seals shut" in line.lower() for line in session.log_lines)
+
+
+def test_cast_dispel_clears_active_buffs_and_sensed_flags(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "in_an"
+    session.party.reagents["garlic"] = 1
+    session.party.reagents["mandrake"] = 1
+    session.party.reagents["sulphurous_ash"] = 1
+    session.party.ward_charges = 3
+    session.quest_flags["buff:light_turns"] = 10
+    session.quest_flags["buff:quickness_turns"] = 7
+    session.quest_flags["sensed_chest:starter_chest"] = True
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["garlic"] == 0
+    assert session.party.reagents["mandrake"] == 0
+    assert session.party.reagents["sulphurous_ash"] == 0
+    assert session.party.ward_charges == 0
+    assert "buff:light_turns" not in session.quest_flags
+    assert "buff:quickness_turns" not in session.quest_flags
+    assert "sensed_chest:starter_chest" not in session.quest_flags
+    assert any("dispelled: ward, light, quickness, sensed traces" in line.lower() for line in session.log_lines)
+
+
 def test_cast_quickness_sets_duration_and_ticks_down(tmp_path) -> None:
     loop = _make_loop(tmp_path)
     session = ContentRegistry().make_new_session()

@@ -912,6 +912,10 @@ class TurnLoop:
             self._consume_reagents(session, spell.spell_id)
             self._cast_unlock(session, spell.name)
             return
+        if spell.effect_kind == "lock":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_lock(session, spell.name)
+            return
         if spell.effect_kind == "quickness":
             self._consume_reagents(session, spell.spell_id)
             self._cast_quickness(session, spell.name, spell.circle)
@@ -919,6 +923,10 @@ class TurnLoop:
         if spell.effect_kind == "sight":
             self._consume_reagents(session, spell.spell_id)
             self._cast_sight(session, spell.name, spell.circle)
+            return
+        if spell.effect_kind == "dispel":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_dispel(session, spell.name)
             return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
@@ -982,6 +990,30 @@ class TurnLoop:
             self._enemy_counterattack(session, adjacent)
         session.advance_turn()
 
+    def _cast_lock(self, session: GameSession, spell_name: str) -> None:
+        chest = self._adjacent_opened_chest(session)
+        if chest is None:
+            session.append_log(f"You cast {spell_name}. No open chest is nearby.")
+            self._clear_combat_feedback(session)
+            self._set_feedback(
+                session, f"You: {spell_name}", (210, 210, 255), world_pos=(session.party.x, session.party.y)
+            )
+            adjacent = self._adjacent_monster(session)
+            if adjacent is not None:
+                self._enemy_counterattack(session, adjacent)
+            session.advance_turn()
+            return
+        chest.opened = False
+        session.append_log(f"You cast {spell_name}. The chest seals shut.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (190, 220, 255), world_pos=(chest.x, chest.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
     def _cast_quickness(self, session: GameSession, spell_name: str, circle: int) -> None:
         duration = max(8, min(24, circle * 3))
         # Add one extra step so the immediate end-of-action advance lands on the displayed duration.
@@ -1019,6 +1051,37 @@ class TurnLoop:
         self._clear_combat_feedback(session)
         self._set_feedback(
             session, f"You: {spell_name}", (210, 225, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_dispel(self, session: GameSession, spell_name: str) -> None:
+        dispelled: list[str] = []
+        if session.party.ward_charges > 0:
+            session.party.ward_charges = 0
+            dispelled.append("ward")
+        for buff_key, label in (
+            ("buff:light_turns", "light"),
+            ("buff:quickness_turns", "quickness"),
+        ):
+            value = session.quest_flags.get(buff_key)
+            if isinstance(value, int) and value > 0:
+                session.quest_flags.pop(buff_key, None)
+                dispelled.append(label)
+        sensed_keys = [key for key in session.quest_flags if key.startswith("sensed_chest:")]
+        if sensed_keys:
+            for key in sensed_keys:
+                session.quest_flags.pop(key, None)
+            dispelled.append("sensed traces")
+        if dispelled:
+            session.append_log(f"You cast {spell_name}. Dispelled: {', '.join(dispelled)}.")
+        else:
+            session.append_log(f"You cast {spell_name}. No magical effects to dispel.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (220, 220, 255), world_pos=(session.party.x, session.party.y)
         )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
@@ -1067,6 +1130,14 @@ class TurnLoop:
         for x, y in ((px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)):
             chest = session.place.chest_at(x, y)
             if chest is not None and not chest.opened:
+                return chest
+        return None
+
+    def _adjacent_opened_chest(self, session: GameSession) -> Chest | None:
+        px, py = session.party.x, session.party.y
+        for x, y in ((px, py), (px + 1, py), (px - 1, py), (px, py + 1), (px, py - 1)):
+            chest = session.place.chest_at(x, y)
+            if chest is not None and chest.opened:
                 return chest
         return None
 

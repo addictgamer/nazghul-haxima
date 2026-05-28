@@ -103,7 +103,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
-- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry is now loaded from `spells.scm` (plus tutorial aliases), with data-driven circles/reagents/context and generic targeted/self-cast resolution wired into cast/cycle/targeting; cast-time context restrictions plus scripted heal/ward/light/locate/unlock/quickness/sight handling are active (including turn-based buff duration tracking and HUD effect visibility); broader source-authentic scripted spell families still pending)*.
+- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry is now loaded from `spells.scm` (plus tutorial aliases), with data-driven circles/reagents/context and generic targeted/self-cast resolution wired into cast/cycle/targeting; cast-time context restrictions plus scripted heal/ward/light/locate/unlock/lock/quickness/sight/dispel handling are active (including turn-based buff duration tracking and HUD effect visibility); broader source-authentic scripted spell families still pending)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
 - [ ] Implement quest engine and scripted world events.
@@ -221,6 +221,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added scripted unlock behavior for `Unlock` spells (`An Sanct`/`In Ex Por` effect-kind), allowing non-targeted casts to open an adjacent closed chest, spill its items to ground, and set corresponding chest-open quest flags.
 - Added scripted `Quickness <Rel Tym>` handling with turn-based duration (`buff:quickness_turns`), HUD effect row visibility (`Quick(n)`), and combat impact via temporary defense bonus during enemy counterattacks.
 - Added scripted sight-style handling for `Vision`/`Reveal`/`Detect` families (`In Quas Wis`, `Wis Quas`, `Wis Sanct`, etc.) so casts report sensed nearby hostiles/chests with distance, including quest flagging for sensed chest IDs.
+- Added scripted lock/dispel utility handling: `Lock` spells (`Sanct`, `An Ex Por`) can reseal adjacent opened chests, while `Dispel`/`Negate Magic` families clear active ward/light/quickness buffs and sensed-chest trace flags.
 - Added held-movement input repeat for `W/A/S/D` + arrow movement with tuned delay/interval so party movement continues smoothly after hold threshold, then aligned movement repeat timing to exactly match spellbook repeat timing and extended spellbook held-repeat to support both up/down directions with matching `W/S` + arrow key behavior (while preserving modal/targeting guards).
 
 ## Suggested Delivery Sequence
