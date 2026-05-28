@@ -65,8 +65,13 @@ class Party:
     reagents: dict[str, int] = field(
         default_factory=lambda: {
             "sulphurous_ash": 2,
+            "ginseng": 1,
+            "garlic": 1,
         }
     )
+    spells_known: list[str] = field(default_factory=lambda: ["spark", "heal", "ward"])
+    selected_spell: str = "spark"
+    ward_charges: int = 0
 
     def lead(self) -> Entity:
         return self.members[0]

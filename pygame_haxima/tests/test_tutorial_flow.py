@@ -150,7 +150,62 @@ def test_cast_spark_requires_reagent(tmp_path) -> None:
     loop.process_events(session, [_action("cast")])
 
     assert session.targeting_action is None
-    assert session.log_lines[-1] == "You lack sulphurous ash to cast Spark."
+    assert "lack reagents for spark" in session.log_lines[-1].lower()
+
+
+def test_cycle_spell_rotates_known_spells(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.spells_known = ["spark", "heal", "ward"]
+    session.party.selected_spell = "spark"
+
+    loop.process_events(session, [_action("cycle_spell")])
+    assert session.party.selected_spell == "heal"
+
+    loop.process_events(session, [_action("cycle_spell")])
+    assert session.party.selected_spell == "ward"
+
+    loop.process_events(session, [_action("cycle_spell")])
+    assert session.party.selected_spell == "spark"
+
+
+def test_cast_heal_consumes_ginseng_and_restores_hp(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "heal"
+    session.party.lead().hp = 12
+    session.party.reagents["ginseng"] = 1
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 5)
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.lead().hp == 17
+    assert session.party.reagents["ginseng"] == 0
+    assert session.party.turn_count == 1
+    assert session.combat_feedback_text is not None
+    assert "heal 5" in session.combat_feedback_text.lower()
+
+
+def test_cast_ward_reduces_next_enemy_hit(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 13
+    session.party.y = 9
+    session.party.members[0].x = 13
+    session.party.members[0].y = 9
+    session.party.selected_spell = "ward"
+    session.party.reagents["garlic"] = 1
+
+    # Counterattack roll: hit for base 6, reduced by ward to 4.
+    rolls = iter([6, 1])
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: next(rolls))
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["garlic"] == 0
+    assert session.party.lead().hp == 16
+    assert session.party.ward_charges == 1
+    assert session.party.turn_count == 1
 
 
 def test_party_cannot_step_onto_npc_tile(tmp_path) -> None:

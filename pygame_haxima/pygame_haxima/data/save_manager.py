@@ -33,6 +33,9 @@ class SaveManager:
                 "inventory": [asdict(item) for item in session.party.inventory],
                 "members": [asdict(member) for member in session.party.members],
                 "reagents": dict(session.party.reagents),
+                "spells_known": list(session.party.spells_known),
+                "selected_spell": session.party.selected_spell,
+                "ward_charges": session.party.ward_charges,
             },
             "mode": session.mode.value,
             "victory": session.victory,
@@ -120,6 +123,17 @@ class SaveManager:
                         cleaned[key] = max(0, value)
                 if cleaned:
                     session.party.reagents = cleaned
+            spells_known_payload = party_payload.get("spells_known", [])
+            if isinstance(spells_known_payload, list):
+                known = [spell for spell in spells_known_payload if isinstance(spell, str)]
+                if known:
+                    session.party.spells_known = known
+            selected_spell = party_payload.get("selected_spell", session.party.selected_spell)
+            if isinstance(selected_spell, str):
+                session.party.selected_spell = selected_spell
+            ward_charges = party_payload.get("ward_charges", session.party.ward_charges)
+            if isinstance(ward_charges, int):
+                session.party.ward_charges = max(0, min(6, ward_charges))
             if session.party.members:
                 session.party.members[0].x = session.party.x
                 session.party.members[0].y = session.party.y
@@ -284,7 +298,10 @@ class SaveManager:
         if isinstance(party, dict):
             party.setdefault("members", [])
             party.setdefault("inventory", [])
-            party.setdefault("reagents", {"sulphurous_ash": 2})
+            party.setdefault("reagents", {"sulphurous_ash": 2, "ginseng": 1, "garlic": 1})
+            party.setdefault("spells_known", ["spark", "heal", "ward"])
+            party.setdefault("selected_spell", "spark")
+            party.setdefault("ward_charges", 0)
         migrated.setdefault("log_lines", [])
         return migrated
 
@@ -316,6 +333,8 @@ class SaveManager:
         session.combat_feedback_lines = []
         session.camera_start_x = None
         session.camera_start_y = None
+        if session.party.selected_spell not in session.party.spells_known:
+            session.party.selected_spell = session.party.spells_known[0] if session.party.spells_known else "spark"
 
         living_enemy_ids = {monster.entity_id for monster in session.place.monsters if monster.is_alive()}
         filtered_enemy_ids = [eid for eid in session.combat.enemy_ids if eid in living_enemy_ids]

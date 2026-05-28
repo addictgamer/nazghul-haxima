@@ -16,7 +16,8 @@ python -m pygame_haxima
 - Open chest: `o`
 - Get items: `g`
 - Attack: `f`
-- Cast Spark: `c` (uses `sulphurous_ash`)
+- Cast selected spell: `c`
+- Cycle spell: `v`
 - Examine: `x`
 - Options panel: `F10`
 - Terrain debug overlay: `F2`
@@ -28,7 +29,9 @@ python -m pygame_haxima
 
 Spell notes:
 
-- `Spark` is currently available on `c` (range 2), consumes `sulphurous_ash`.
+- `Spark`: range 2 targeted spell, consumes `sulphurous_ash`.
+- `Heal`: self-cast restore, consumes `ginseng`.
+- `Ward`: self-cast protective charges, consumes `garlic`.
 
 On startup, the game prints a sprite coverage summary and writes:
 

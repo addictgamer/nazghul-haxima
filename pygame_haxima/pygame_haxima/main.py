@@ -75,7 +75,8 @@ def run() -> int:
         ("open", "Open"),
         ("get", "Get"),
         ("attack", "Attack"),
-        ("cast", "Cast Spark"),
+        ("cast", "Cast spell"),
+        ("cycle_spell", "Cycle spell"),
         ("options_menu", "Options menu"),
         ("debug_runtime_state", "Runtime state debug"),
     ]

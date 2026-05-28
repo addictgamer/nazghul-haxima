@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 40% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 46% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -103,7 +103,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
-- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(Spark spell scaffold added with reagent consumption, targeting flow, save/load reagent persistence, and tests; broader spellbook/reagent matrix pending)*.
+- [~] Implement spell system parity (`spells.scm` + reagents behavior) *(multi-spell scaffold added: Spark/Heal/Ward, reagent recipes, cycle/cast flow, ward mitigation, and save/load persistence; source-accurate spell list/effects still pending)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
 - [ ] Implement quest engine and scripted world events.
@@ -192,6 +192,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added sprite parity quality-gate test that fails if critical runtime keys (player/NPC/monster/chest/door/item categories) ever regress to fallback surfaces.
 - Added first-pass directional/animation rendering support: entity facing is tracked from movement, renderer probes directional sprite variants (`_n/_s/_e/_w` and dash forms), and multi-frame sprite refs now animate by tick.
 - Added spell system foundation: `Cast Spark` action (`c`) with range-2 targeting, sulphurous ash reagent usage, combat feedback integration, and reagent save/load persistence.
+- Expanded spell scaffold into a mini spellbook (`Spark`, `Heal`, `Ward`) with `v` cycle + `c` cast flow, per-spell reagent recipes, ward damage mitigation, and regression tests.
 
 ## Suggested Delivery Sequence
 
