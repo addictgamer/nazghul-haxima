@@ -10,7 +10,7 @@ from pygame_haxima.engine.spells import get_spell
 
 class TextUi:
     SAVE_LOAD_PANEL = pygame.Rect(220, 180, 840, 480)
-    SPELLBOOK_PANEL = pygame.Rect(150, 120, 980, 620)
+    SPELLBOOK_PANEL = pygame.Rect(120, 100, 1040, 660)
 
     def __init__(self, atlas: SpriteAtlas) -> None:
         self.atlas = atlas
@@ -394,7 +394,7 @@ class TextUi:
             return
 
         selected_idx = max(0, min(session.spellbook_selected_index, len(spells) - 1))
-        row_h = 28
+        row_h = 24
         visible_rows = max(1, list_rect.height // row_h)
         start_idx = self._spellbook_start_index(len(spells), selected_idx, visible_rows)
         visible = spells[start_idx : start_idx + visible_rows]
@@ -419,7 +419,7 @@ class TextUi:
                 pygame.draw.rect(surface, (210, 220, 255), row_rect, 2)
             marker = ">" if selected else " "
             active_marker = "*" if active else " "
-            text = self.menu_font.render(
+            text = self.small_font.render(
                 f"{marker}{active_marker} C{spell.circle} {spell.name}",
                 True,
                 (255, 230, 230)
@@ -430,7 +430,7 @@ class TextUi:
                 if selected or hovered
                 else (180, 195, 220),
             )
-            surface.blit(text, (row_rect.x + 8, row_rect.y + 4))
+            surface.blit(text, (row_rect.x + 8, row_rect.y + 5))
             if idx == available_count - 1 and available_count < len(spells):
                 divider_y = row_rect.bottom + 1
                 pygame.draw.line(
@@ -560,11 +560,11 @@ class TextUi:
 
     def _spellbook_list_rect(self) -> pygame.Rect:
         panel = self.SPELLBOOK_PANEL
-        return pygame.Rect(panel.x + 16, panel.y + 84, 380, panel.height - 160)
+        return pygame.Rect(panel.x + 16, panel.y + 84, 440, panel.height - 160)
 
     def _spellbook_detail_rect(self) -> pygame.Rect:
         panel = self.SPELLBOOK_PANEL
-        return pygame.Rect(panel.x + 410, panel.y + 84, panel.width - 426, panel.height - 160)
+        return pygame.Rect(panel.x + 470, panel.y + 84, panel.width - 486, panel.height - 160)
 
     def _spellbook_button_rects(self) -> dict[str, pygame.Rect]:
         panel = self.SPELLBOOK_PANEL

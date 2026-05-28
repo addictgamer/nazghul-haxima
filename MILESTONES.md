@@ -207,6 +207,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Adjusted spellbook modal/detail layout to reduce description overflow (wider modal, wrapped description text) and split context into a two-line block (`Context:` + indented value list).
 - Split spellbook modal list into castable-first vs missing-reagent sections with distinct coloring, moved `Range` onto its own detail line, and updated sidebar spell list wrapping plus `V` cycling to castable-only spells.
 - Fixed sidebar selected-spell label overflow by wrapping the `Selected: <spell>` line and flowing known-spell rows below the wrapped block.
+- Increased spellbook modal real estate and reduced spell-entry text sizing/row height so longer spell names fit cleanly in list entries.
 
 ## Suggested Delivery Sequence
 
