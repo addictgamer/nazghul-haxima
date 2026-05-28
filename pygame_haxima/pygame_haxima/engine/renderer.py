@@ -14,12 +14,32 @@ class Renderer:
         self.map_view = map_view
         self.hud = hud
         self.text_ui = text_ui
-        self.scale = DISPLAY.scale
         self.base_size = (DISPLAY.base_width, DISPLAY.base_height)
+        self.scale = self._startup_scale()
         self.virtual_surface = pygame.Surface(self.base_size)
         self.window = self._create_window(fullscreen=DISPLAY.fullscreen)
         self.is_fullscreen = DISPLAY.fullscreen
         self.rects = self._layout_rects()
+
+    def _startup_scale(self) -> int:
+        preferred = 2
+        fallback = max(1, DISPLAY.scale)
+        desktop_w = 0
+        desktop_h = 0
+
+        sizes = pygame.display.get_desktop_sizes()
+        if sizes:
+            desktop_w, desktop_h = sizes[0]
+        else:
+            info = pygame.display.Info()
+            desktop_w = info.current_w
+            desktop_h = info.current_h
+
+        if desktop_w <= 0 or desktop_h <= 0:
+            return fallback
+        if DISPLAY.base_width * preferred <= desktop_w and DISPLAY.base_height * preferred <= desktop_h:
+            return preferred
+        return fallback
 
     def _create_window(self, fullscreen: bool) -> pygame.Surface:
         flags = pygame.FULLSCREEN if fullscreen else 0
