@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 24% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 28% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -100,7 +100,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [x] Pass 1: tutorial critical keys switched from placeholders to canonical keys (`s_wanderer`, `s_old_townsman`, `s_wolf`, `s_chest`).
   - [~] Pass 2: pull NPC/monster/object sprite keys from converted place/townsfolk content instead of hardcoded defaults *(runtime sprite profile now sourced from converted place/townsfolk outputs; broader zone-wide adoption pending)*.
   - [~] Pass 3: item sprite parity (ground pickups/containers/inventory categories) with canonical icon mappings.
-  - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage section now reports party/NPC/monster/chest/item keys, alias resolutions, and unresolved aliases; broader zone runtime feed still pending)*.
+  - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [ ] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [ ] Pass 6: directional/animation variants where source art supports it.
 - [ ] Implement spell system parity (`spells.scm` + reagents behavior).
@@ -188,6 +188,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Combat banner now resets at the start of each new attack exchange so prior-round lines never linger into subsequent rounds.
 - Enemy death outcomes are now included in the combat banner (`<Enemy>: Falls`) so kill confirmations appear in-banner, not only in the log.
 - Sprite coverage report now includes runtime key diagnostics (party/NPC/monster/chest/item) with alias resolution and unresolved-alias classification, plus regression tests for alias/missing detection.
+- Runtime sprite coverage now ingests converted-data probes (places/townsfolk/quest icons) in startup diagnostics, and sprite-profile tokenization now handles mixed-case names correctly.
 
 ## Suggested Delivery Sequence
 

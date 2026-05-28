@@ -7,7 +7,9 @@ import pygame
 from pygame_haxima.config import DISPLAY
 from pygame_haxima.data.asset_loader import AssetLoader
 from pygame_haxima.data.content_registry import ContentRegistry
+from pygame_haxima.data.runtime_sprite_probe import converted_runtime_sprite_keys
 from pygame_haxima.data.save_manager import SaveManager
+from pygame_haxima.data.sprite_profile import load_sprite_profile
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
 from pygame_haxima.domain.models import GameSession
 from pygame_haxima.engine.audio import AudioManager
@@ -44,7 +46,9 @@ def run() -> int:
     save_manager = SaveManager(project_root / "saves")
     loop = TurnLoop(renderer=renderer, audio=AudioManager(assets), save_manager=save_manager)
     session = ContentRegistry().make_new_session()
+    sprite_profile = load_sprite_profile(project_root / "converted_data")
     runtime_sprite_keys = _runtime_sprite_keys(session)
+    runtime_sprite_keys.update(converted_runtime_sprite_keys(project_root / "converted_data", sprite_profile))
     runtime_report_text = atlas.format_runtime_coverage_report(runtime_sprite_keys)
     print(report_text, end="")
     print(runtime_report_text, end="")

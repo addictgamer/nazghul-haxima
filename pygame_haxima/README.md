@@ -32,7 +32,7 @@ On startup, the game prints a sprite coverage summary and writes:
 The report now includes:
 
 - Base atlas coverage (`sprite_sets`, `sprite_refs`, fallback causes)
-- Runtime sprite coverage (party/NPC/monster/chest/item keys, alias resolutions, unresolved aliases)
+- Runtime sprite coverage (tutorial runtime + converted place/townsfolk/quest probes, alias resolutions, unresolved aliases)
 
 Conversation lines now appear in a dedicated dialogue panel above the console log.
 

@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-WORD_RE = re.compile(r"[a-z0-9]+")
+WORD_RE = re.compile(r"[A-Za-z0-9]+")
 
 NPC_TOKEN_SPRITES = {
     "mentor": "s_old_townsman",
