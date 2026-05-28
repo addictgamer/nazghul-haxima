@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import pygame
 
+from pygame_haxima.data.sprite_atlas import SpriteAtlas
 from pygame_haxima.domain.models import GameSession
+from pygame_haxima.engine.item_sprites import item_sprite_key
 
 
 class TextUi:
-    def __init__(self) -> None:
+    def __init__(self, atlas: SpriteAtlas) -> None:
+        self.atlas = atlas
         self.console_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
         self.cmd_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 22, bold=True)
         self.menu_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
@@ -44,6 +47,7 @@ class TextUi:
 
         if session.dialogue_lines:
             y_cursor = self._draw_dialogue_panel(surface, rect, session, y_cursor)
+        y_cursor = self._draw_inventory_strip(surface, rect, session, y_cursor)
 
         wrapped_logs: list[str] = []
         for line in session.log_lines[-16:]:
@@ -72,6 +76,28 @@ class TextUi:
         for index, line in enumerate(wrapped[:2]):
             rendered = self.console_font.render(line, True, (220, 225, 245))
             surface.blit(rendered, (panel.x + 8, panel.y + 28 + index * 20))
+        return y_cursor + panel_h + 6
+
+    def _draw_inventory_strip(
+        self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession, y_cursor: int
+    ) -> int:
+        panel_h = 44
+        panel = pygame.Rect(rect.x + 6, y_cursor, rect.width - 12, panel_h)
+        pygame.draw.rect(surface, (24, 24, 34), panel)
+        pygame.draw.rect(surface, (95, 105, 140), panel, 1)
+        title = self.menu_font.render("Inventory:", True, (220, 220, 180))
+        surface.blit(title, (panel.x + 8, panel.y + 10))
+
+        icons_x = panel.x + 128
+        icon_size = 24
+        spacing = 6
+        max_icons = 10
+        for item in session.party.inventory[-max_icons:]:
+            icon = pygame.transform.scale(self.atlas.get(item_sprite_key(item)), (icon_size, icon_size))
+            surface.blit(icon, (icons_x, panel.y + 9))
+            icons_x += icon_size + spacing
+            if icons_x + icon_size >= panel.right - 8:
+                break
         return y_cursor + panel_h + 6
 
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:

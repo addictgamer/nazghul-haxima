@@ -37,7 +37,7 @@ def run() -> int:
     renderer = Renderer(
         map_view=MapView(atlas),
         hud=HudPane(),
-        text_ui=TextUi(),
+        text_ui=TextUi(atlas),
     )
     keymap = KeyMap()
     input_controller = InputController(keymap=keymap, renderer=renderer)

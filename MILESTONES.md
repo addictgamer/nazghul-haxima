@@ -33,6 +33,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Parser-backed quest converter now exports `quests-*.scm` metadata/update scaffolds into `converted_data/quests/*.quests.json` plus index coverage.
 - Sprite parity workstream is now tracked explicitly (entity/object key parity, runtime coverage diagnostics, and fallback quality gates).
 - Post-port conversation UX enhancement is logged: modal interactable dialogue vs anchored fade popups for one-off NPC utterances.
+- Inventory UI now renders item icons in the console panel, and ground-item rendering shares the same item-to-sprite mapping helper.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -158,6 +159,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Expanded sprite definition parsing to scan world `.scm` files beyond `sprites.scm`, enabling canonical item sprite keys from modules like `arms.scm` and `potions.scm`.
 - Started item sprite parity implementation: chest-spilled ground items now render with item-key mapping (`s_dagger`, `s_leather_armor`, `s_healing_potion` fallbacks).
 - Logged post-port dialogue UX split: modal conversations for interactables, anchored fade popups for one-off NPC lines.
+- Added inventory icon strip in UI and unified item sprite lookup between map ground-item rendering and UI item display.
 
 ## Suggested Delivery Sequence
 
