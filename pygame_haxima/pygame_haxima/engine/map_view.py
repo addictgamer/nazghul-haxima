@@ -112,12 +112,34 @@ class MapView:
         drawables.extend(
             ("s_chest", chest.x, chest.y) for chest in session.place.chests if not chest.opened
         )
+        drawables.extend(
+            (self._item_sprite_key(items[0]), x, y)
+            for (x, y), items in session.place.ground_items.items()
+            if items
+        )
         for sprite_key, x, y in drawables:
             if x < start_x or y < start_y:
                 continue
             px = viewport.x + (x - start_x) * self.tile_w
             py = viewport.y + (y - start_y) * self.tile_h
             surface.blit(self.atlas.get(sprite_key), (px, py))
+
+    def _item_sprite_key(self, item) -> str:
+        explicit = getattr(item, "sprite_key", None)
+        if isinstance(explicit, str) and explicit:
+            return explicit
+        item_id = str(getattr(item, "item_id", "")).lower()
+        name = str(getattr(item, "name", "")).lower()
+        token = f"{item_id} {name}"
+        if "dagger" in token:
+            return "s_dagger"
+        if "armor" in token or "armour" in token:
+            return "s_leather_armor"
+        if "potion" in token:
+            return "s_healing_potion"
+        if "coin" in token or "gold" in token:
+            return "s_gold_coins"
+        return "s_gem"
 
     def _draw_target_cursor(
         self,

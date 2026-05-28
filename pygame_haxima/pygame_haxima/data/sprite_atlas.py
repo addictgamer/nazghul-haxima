@@ -81,7 +81,19 @@ class SpriteAtlas:
             elif reason == "out_of_bounds":
                 self.out_of_bounds_keys.add(key)
 
-        for fallback in ("s_grass", "s_wall", "s_wanderer", "s_old_townsman", "s_chest", "s_wolf"):
+        for fallback in (
+            "s_grass",
+            "s_wall",
+            "s_wanderer",
+            "s_old_townsman",
+            "s_chest",
+            "s_wolf",
+            "s_dagger",
+            "s_leather_armor",
+            "s_healing_potion",
+            "s_gold_coins",
+            "s_gem",
+        ):
             self.surfaces.setdefault(fallback, self._fallback_surface(fallback))
 
     def _active_lines(self, path: Path) -> list[str]:
@@ -97,35 +109,39 @@ class SpriteAtlas:
         return lines
 
     def _parse_sprite_sets(self) -> None:
-        sprite_sets_path = self.project_root.parent / "worlds" / "haxima-1.002" / "sprite-sets.scm"
-        for line in self._active_lines(sprite_sets_path):
-            match = SPRITE_SET_RE.match(line)
-            if not match:
-                continue
-            ref = SpriteSetRef(
-                name=match.group("name"),
-                tile_w=int(match.group("tile_w")),
-                tile_h=int(match.group("tile_h")),
-                cols=int(match.group("cols")),
-                rows=int(match.group("rows")),
-                xoff=int(match.group("xoff")),
-                yoff=int(match.group("yoff")),
-                filename=match.group("filename"),
-            )
-            self.sprite_sets[ref.name] = ref
+        for scm_path in self._iter_world_scm_paths():
+            for line in self._active_lines(scm_path):
+                match = SPRITE_SET_RE.match(line)
+                if not match:
+                    continue
+                ref = SpriteSetRef(
+                    name=match.group("name"),
+                    tile_w=int(match.group("tile_w")),
+                    tile_h=int(match.group("tile_h")),
+                    cols=int(match.group("cols")),
+                    rows=int(match.group("rows")),
+                    xoff=int(match.group("xoff")),
+                    yoff=int(match.group("yoff")),
+                    filename=match.group("filename"),
+                )
+                self.sprite_sets[ref.name] = ref
 
     def _parse_sprite_refs(self) -> None:
-        sprites_path = self.project_root.parent / "worlds" / "haxima-1.002" / "sprites.scm"
-        for line in self._active_lines(sprites_path):
-            match = SPRITE_RE.match(line)
-            if not match:
-                continue
-            key = match.group("name")
-            self.refs[key] = SpriteRef(
-                key=key,
-                sprite_set=match.group("set"),
-                tile_index=int(match.group("index")),
-            )
+        for scm_path in self._iter_world_scm_paths():
+            for line in self._active_lines(scm_path):
+                match = SPRITE_RE.match(line)
+                if not match:
+                    continue
+                key = match.group("name")
+                self.refs[key] = SpriteRef(
+                    key=key,
+                    sprite_set=match.group("set"),
+                    tile_index=int(match.group("index")),
+                )
+
+    def _iter_world_scm_paths(self) -> list[Path]:
+        world_dir = self.project_root.parent / "worlds" / "haxima-1.002"
+        return sorted(world_dir.rglob("*.scm"))
 
     def _extract_surface(self, key: str) -> tuple[pygame.Surface | None, str | None]:
         sprite_ref = self.refs.get(key)

@@ -31,6 +31,7 @@ class Item:
     item_id: str
     name: str
     value: int = 0
+    sprite_key: str | None = None
 
 
 @dataclass

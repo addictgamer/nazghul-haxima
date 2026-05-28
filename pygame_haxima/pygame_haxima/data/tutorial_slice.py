@@ -80,9 +80,9 @@ def build_tutorial_place() -> tuple[Place, Party]:
         x=5,
         y=11,
         items=[
-            Item("dagger", "Dagger", 8),
-            Item("leather_armor", "Leather Armor", 12),
-            Item("red_potion", "Red Potion", 15),
+            Item("t_dagger", "Dagger", 8, sprite_key="s_dagger"),
+            Item("t_armor_leather", "Leather Armor", 12, sprite_key="s_leather_armor"),
+            Item("t_heal_potion", "Red Potion", 15, sprite_key="s_healing_potion"),
         ],
     )
     wolf = Entity(
