@@ -718,10 +718,6 @@ class TurnLoop:
             return
         cast_spell_id = self._cast_spell_id(action)
         if cast_spell_id is not None:
-            monster = session.place.monster_at(x, y)
-            if monster is None:
-                session.append_log("No enemy there to cast at.")
-                return
             spell = get_spell(cast_spell_id)
             if spell is None:
                 return
@@ -731,6 +727,17 @@ class TurnLoop:
             if not self._has_reagents_for_spell(session, cast_spell_id):
                 session.append_log(f"You lack reagents for {spell.name}.")
                 self._end_targeting(session)
+                return
+            if spell.effect_kind in {"blink", "teleport"}:
+                if not self._is_blink_target_tile(session, x, y):
+                    session.append_log("Blink failed: impassable terrain.")
+                    return
+                self._cast_blink_spell(session, spell, x, y)
+                self._end_targeting(session)
+                return
+            monster = session.place.monster_at(x, y)
+            if monster is None:
+                session.append_log("No enemy there to cast at.")
                 return
             self._cast_targeted_spell(session, spell, monster)
             self._end_targeting(session)
@@ -767,6 +774,11 @@ class TurnLoop:
             if spell is None or not spell.targeted:
                 return False
             targeted_tiles = self._tiles_in_range(px, py, spell.range_tiles)
+            if spell.effect_kind in {"blink", "teleport"}:
+                return any(
+                    self._is_blink_target_tile(session, x, y) and (x, y) != (px, py)
+                    for x, y in targeted_tiles
+                )
             return any(session.place.monster_at(x, y) is not None for x, y in targeted_tiles)
         return True
 
@@ -788,6 +800,13 @@ class TurnLoop:
             if spell is None or not spell.targeted:
                 return px, py
             extended = self._tiles_in_range(px, py, spell.range_tiles)
+            if spell.effect_kind in {"blink", "teleport"}:
+                matches = [
+                    (x, y)
+                    for x, y in extended
+                    if self._is_blink_target_tile(session, x, y) and (x, y) != (px, py)
+                ]
+                return matches[0] if matches else (px, py)
             matches = [(x, y) for x, y in extended if session.place.monster_at(x, y) is not None]
             return matches[0] if matches else (px, py)
         return px, py
@@ -857,6 +876,9 @@ class TurnLoop:
             return
         if spell.effect_kind == "poison":
             self._cast_poison_targeted(session, spell, monster)
+            return
+        if spell.effect_kind == "charm":
+            self._cast_charm_targeted(session, spell, monster)
             return
         self._consume_reagents(session, spell.spell_id)
         damage = random.randint(1 + spell.circle, 2 + spell.circle * 2)
@@ -999,6 +1021,14 @@ class TurnLoop:
         if spell.effect_kind == "cure_poison":
             self._consume_reagents(session, spell.spell_id)
             self._cast_cure_poison(session, spell.name, spell.spell_id, spell.circle)
+            return
+        if spell.effect_kind == "fear":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_fear(session, spell.name, spell.circle)
+            return
+        if spell.effect_kind == "turn_undead":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_turn_undead(session, spell.name, spell.circle)
             return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
@@ -1167,11 +1197,12 @@ class TurnLoop:
             for key in sensed_keys:
                 session.quest_flags.pop(key, None)
             dispelled.append("sensed traces")
-        sleep_keys = [key for key in session.quest_flags if key.startswith("sleep:")]
-        if sleep_keys:
-            for key in sleep_keys:
-                session.quest_flags.pop(key, None)
-            dispelled.append("sleep")
+        for prefix, label in (("sleep:", "sleep"), ("fear:", "fear"), ("charm:", "charm")):
+            keys = [key for key in session.quest_flags if key.startswith(prefix)]
+            if keys:
+                for key in keys:
+                    session.quest_flags.pop(key, None)
+                dispelled.append(label)
         monster_poison_keys = [key for key in session.quest_flags if key.startswith("poison:")]
         if monster_poison_keys:
             for key in monster_poison_keys:
@@ -1312,6 +1343,12 @@ class TurnLoop:
         if self._monster_sleep_turns(session, monster.entity_id) > 0:
             session.append_log(f"{monster.name} is asleep and cannot attack.")
             return
+        if self._monster_charm_turns(session, monster.entity_id) > 0:
+            session.append_log(f"{monster.name} is charmed and will not attack.")
+            return
+        if self._monster_fear_turns(session, monster.entity_id) > 0:
+            session.append_log(f"{monster.name} flees in terror and cannot attack.")
+            return
         target = session.party.lead()
         attack_roll = random.randint(1, 6) + monster.attack
         quickness_turns = session.quest_flags.get("buff:quickness_turns")
@@ -1385,7 +1422,20 @@ class TurnLoop:
                 continue
             if self._monster_sleep_turns(session, monster.entity_id) > 0:
                 continue
-            if abs(monster.x - session.party.x) + abs(monster.y - session.party.y) < 6:
+            if self._monster_charm_turns(session, monster.entity_id) > 0:
+                continue
+            distance = abs(monster.x - session.party.x) + abs(monster.y - session.party.y)
+            if self._monster_fear_turns(session, monster.entity_id) > 0:
+                if distance < 8:
+                    step_x = -1 if session.party.x > monster.x else 1 if session.party.x < monster.x else 0
+                    step_y = -1 if session.party.y > monster.y else 1 if session.party.y < monster.y else 0
+                    nx, ny = monster.x + step_x, monster.y + step_y
+                    if self._monster_can_enter_tile(session, monster, nx, ny):
+                        monster.x, monster.y = nx, ny
+                        monster.facing = self._facing_from_delta(step_x, step_y, monster.facing)
+                        self._apply_tile_field_entry(session, nx, ny, monster, monster.name)
+                continue
+            if distance < 6:
                 step_x = 1 if session.party.x > monster.x else -1 if session.party.x < monster.x else 0
                 step_y = 1 if session.party.y > monster.y else -1 if session.party.y < monster.y else 0
                 nx, ny = monster.x + step_x, monster.y + step_y
@@ -1409,6 +1459,66 @@ class TurnLoop:
 
     def _clear_monster_sleep(self, session: GameSession, entity_id: str) -> None:
         session.quest_flags.pop(self._sleep_flag_key(entity_id), None)
+
+    def _fear_flag_key(self, entity_id: str) -> str:
+        return f"fear:{entity_id}"
+
+    def _charm_flag_key(self, entity_id: str) -> str:
+        return f"charm:{entity_id}"
+
+    def _monster_fear_turns(self, session: GameSession, entity_id: str) -> int:
+        turns = session.quest_flags.get(self._fear_flag_key(entity_id))
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _monster_charm_turns(self, session: GameSession, entity_id: str) -> int:
+        turns = session.quest_flags.get(self._charm_flag_key(entity_id))
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _set_monster_fear(self, session: GameSession, entity_id: str, turns: int) -> None:
+        current = self._monster_fear_turns(session, entity_id)
+        session.quest_flags[self._fear_flag_key(entity_id)] = max(current, turns)
+
+    def _set_monster_charm(self, session: GameSession, entity_id: str, turns: int) -> None:
+        current = self._monster_charm_turns(session, entity_id)
+        session.quest_flags[self._charm_flag_key(entity_id)] = max(current, turns)
+
+    def _is_undead_monster(self, monster: Entity) -> bool:
+        token = f"{monster.entity_id} {monster.name}".lower()
+        undead_terms = (
+            "skeleton",
+            "lich",
+            "ghast",
+            "zombie",
+            "ghost",
+            "wraith",
+            "ghoul",
+            "undead",
+            "vampire",
+        )
+        return any(term in token for term in undead_terms)
+
+    def _magic_contest(self, session: GameSession, monster: Entity, power: int, bonus: int = 0) -> bool:
+        attack_roll = random.randint(1, 6) + power + bonus
+        defense_roll = random.randint(1, 6) + monster.defense + 2
+        return attack_roll >= defense_roll
+
+    def _is_blink_target_tile(self, session: GameSession, x: int, y: int) -> bool:
+        if not session.place.in_bounds(x, y):
+            return False
+        if not self._party_can_enter_tile(session, x, y):
+            return False
+        if session.place.monster_at(x, y) is not None:
+            return False
+        return True
+
+    def _relocate_party(self, session: GameSession, x: int, y: int) -> None:
+        session.party.x, session.party.y = x, y
+        for member in session.party.members:
+            member.x, member.y = x, y
 
     def _cast_sleep_targeted(self, session: GameSession, spell, monster: Entity) -> None:
         self._consume_reagents(session, spell.spell_id)
@@ -1445,6 +1555,97 @@ class TurnLoop:
         if adjacent is not None and self._monster_sleep_turns(session, adjacent.entity_id) <= 0:
             self._enemy_counterattack(session, adjacent)
         session.advance_turn()
+
+    def _cast_charm_targeted(self, session: GameSession, spell, monster: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        if self._magic_contest(session, monster, spell.circle, bonus=1):
+            charm_turns = max(5, min(12, spell.circle + 2))
+            self._set_monster_charm(session, monster.entity_id, charm_turns)
+            session.append_log(f"You cast {spell.name}. {monster.name} is charmed ({charm_turns} turns).")
+        else:
+            session.append_log(f"You cast {spell.name}. {monster.name} resists charm.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell.name}", (255, 180, 220), world_pos=(monster.x, monster.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if (
+            adjacent is not None
+            and adjacent.entity_id == monster.entity_id
+            and self._monster_charm_turns(session, monster.entity_id) <= 0
+        ):
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_fear(self, session: GameSession, spell_name: str, circle: int) -> None:
+        fear_turns = max(4, min(12, circle + 2))
+        affected = 0
+        for monster in session.place.monsters:
+            if not monster.is_alive() or not monster.hostile:
+                continue
+            if self._magic_contest(session, monster, circle, bonus=8):
+                self._set_monster_fear(session, monster.entity_id, fear_turns)
+                session.append_log(f"{monster.name} flees in terror!")
+                affected += 1
+            else:
+                session.append_log(f"{monster.name} resists your fear.")
+        if affected:
+            session.append_log(f"You cast {spell_name}. {affected} foe(s) flee ({fear_turns} turns).")
+        else:
+            session.append_log(f"You cast {spell_name}, but no foe succumbs to fear.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (210, 190, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None and self._monster_fear_turns(session, adjacent.entity_id) <= 0:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_turn_undead(self, session: GameSession, spell_name: str, circle: int) -> None:
+        fear_turns = max(5, min(14, circle * 2 + 1))
+        affected = 0
+        for monster in session.place.monsters:
+            if not monster.is_alive() or not monster.hostile:
+                continue
+            if not self._is_undead_monster(monster):
+                continue
+            if self._magic_contest(session, monster, circle, bonus=3):
+                self._set_monster_fear(session, monster.entity_id, fear_turns)
+                session.append_log(f"{monster.name} is turned!")
+                affected += 1
+            else:
+                session.append_log(f"{monster.name} resists turn undead.")
+        if affected:
+            session.append_log(f"You cast {spell_name}. {affected} undead flee ({fear_turns} turns).")
+        else:
+            session.append_log(f"You cast {spell_name}. No undead are repelled.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (220, 235, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None and self._monster_fear_turns(session, adjacent.entity_id) <= 0:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_blink_spell(self, session: GameSession, spell, x: int, y: int) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        old_x, old_y = session.party.x, session.party.y
+        self._relocate_party(session, x, y)
+        lead = session.party.lead()
+        self._apply_tile_field_entry(session, x, y, lead, "You")
+        label = "blink" if spell.effect_kind == "blink" else "teleport"
+        session.append_log(f"You cast {spell.name} and {label} to ({x}, {y}).")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell.name}", (180, 220, 255), world_pos=(x, y)
+        )
+        session.advance_turn()
+        session.party.food = max(0, session.party.food - 1)
+        if (old_x, old_y) != (x, y):
+            self._check_auto_combat(session)
+            self._npc_turn(session)
 
     def _party_poison_turns(self, session: GameSession) -> int:
         turns = session.quest_flags.get("buff:poison_turns")

@@ -235,16 +235,22 @@ class GameSession:
                 expired_fields.append(pos)
         for pos in expired_fields:
             self.place.tile_fields.pop(pos, None)
-        expired_sleep: list[str] = []
+        expired_mind: list[str] = []
         for key, value in self.quest_flags.items():
-            if not key.startswith("sleep:") or not isinstance(value, int) or isinstance(value, bool):
+            if not (
+                key.startswith("sleep:")
+                or key.startswith("fear:")
+                or key.startswith("charm:")
+            ):
+                continue
+            if not isinstance(value, int) or isinstance(value, bool):
                 continue
             remaining = max(0, value - 1)
             if remaining > 0:
                 self.quest_flags[key] = remaining
             else:
-                expired_sleep.append(key)
-        for key in expired_sleep:
+                expired_mind.append(key)
+        for key in expired_mind:
             self.quest_flags.pop(key, None)
         expired_monster_poison: list[str] = []
         monsters_by_id = {monster.entity_id: monster for monster in self.place.monsters}

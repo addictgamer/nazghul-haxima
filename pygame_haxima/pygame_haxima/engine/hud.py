@@ -55,6 +55,26 @@ class HudPane:
         )
         if asleep_nearby:
             effects.append(f"Asleep({asleep_nearby})")
+        feared_nearby = sum(
+            1
+            for monster in session.place.monsters
+            if monster.is_alive()
+            and abs(monster.x - session.party.x) + abs(monster.y - session.party.y) <= 6
+            and isinstance(session.quest_flags.get(f"fear:{monster.entity_id}"), int)
+            and session.quest_flags.get(f"fear:{monster.entity_id}", 0) > 0
+        )
+        if feared_nearby:
+            effects.append(f"Fear({feared_nearby})")
+        charmed_nearby = sum(
+            1
+            for monster in session.place.monsters
+            if monster.is_alive()
+            and abs(monster.x - session.party.x) + abs(monster.y - session.party.y) <= 6
+            and isinstance(session.quest_flags.get(f"charm:{monster.entity_id}"), int)
+            and session.quest_flags.get(f"charm:{monster.entity_id}", 0) > 0
+        )
+        if charmed_nearby:
+            effects.append(f"Charm({charmed_nearby})")
         party_poison = session.quest_flags.get("buff:poison_turns")
         if isinstance(party_poison, int) and party_poison > 0:
             effects.append(f"Poison({party_poison})")

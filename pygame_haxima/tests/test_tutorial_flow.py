@@ -357,6 +357,132 @@ def test_sleep_status_expires_after_turns(tmp_path) -> None:
     assert "sleep:wolf_1" not in session.quest_flags
 
 
+def test_cast_charm_prevents_adjacent_counterattack(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "an_xen_ex"
+    session.party.reagents["black_pearl"] = 1
+    session.party.reagents["nightshade"] = 1
+    session.party.reagents["spider_silk"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 13
+    wolf.y = 9
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 6)
+
+    loop.process_events(session, [_action("cast"), _action("confirm")])
+
+    assert session.quest_flags.get("charm:wolf_1", 0) >= 5
+    loop.process_events(session, [_action("attack"), _action("confirm")])
+    assert any("charmed and will not attack" in line.lower() for line in session.log_lines)
+
+
+def test_cast_fear_applies_flee_status(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.selected_spell = "in_quas_corp"
+    session.party.reagents["nightshade"] = 1
+    session.party.reagents["mandrake"] = 1
+    session.party.reagents["garlic"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 14
+    wolf.y = 9
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 6)
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.quest_flags.get("fear:wolf_1", 0) >= 4
+    assert any("flees in terror" in line.lower() for line in session.log_lines)
+
+
+def test_cast_turn_undead_only_repels_undead(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.selected_spell = "an_xen_corp"
+    session.party.reagents["garlic"] = 1
+    session.party.reagents["sulphurous_ash"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 14
+    wolf.y = 9
+    skeleton = Entity(
+        entity_id="skeleton_1",
+        name="Skeleton",
+        x=15,
+        y=9,
+        sprite_key="s_skeleton",
+        hostile=True,
+        hp=8,
+        max_hp=8,
+        attack=2,
+        defense=1,
+    )
+    session.place.monsters.append(skeleton)
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 6)
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.quest_flags.get("fear:skeleton_1", 0) >= 4
+    assert "fear:wolf_1" not in session.quest_flags
+    assert any("is turned" in line.lower() for line in session.log_lines)
+
+
+def test_cast_blink_relocates_party(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 10
+    session.party.y = 9
+    session.party.members[0].x = 10
+    session.party.members[0].y = 9
+    session.party.selected_spell = "bet_por"
+    session.party.reagents["black_pearl"] = 1
+    session.party.reagents["blood_moss"] = 1
+
+    loop.process_events(session, [_action("cast")])
+    session.target_cursor = (11, 9)
+    loop.process_events(session, [_action("confirm")])
+
+    assert session.party.x == 11
+    assert session.party.y == 9
+    assert any("blink" in line.lower() for line in session.log_lines)
+
+
+def test_cast_teleport_party_relocates_party(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 10
+    session.party.y = 9
+    session.party.members[0].x = 10
+    session.party.members[0].y = 9
+    session.party.selected_spell = "vas_por"
+    session.party.reagents["mandrake"] = 1
+    session.party.reagents["black_pearl"] = 1
+    session.party.reagents["blood_moss"] = 1
+    session.targeting_action = "cast_vas_por"
+    session.target_cursor = (12, 9)
+
+    loop.process_events(session, [_action("confirm")])
+
+    assert session.party.x == 12
+    assert session.party.y == 9
+    assert any("teleport" in line.lower() for line in session.log_lines)
+
+
+def test_fear_status_expires_after_turns(tmp_path) -> None:
+    session = ContentRegistry().make_new_session()
+    session.quest_flags["fear:wolf_1"] = 1
+
+    session.advance_turn()
+
+    assert "fear:wolf_1" not in session.quest_flags
+
+
 def test_tile_fields_expire_after_turns(tmp_path) -> None:
     session = ContentRegistry().make_new_session()
     session.place.tile_fields[(5, 5)] = TileField(x=5, y=5, field_kind="fire", turns_remaining=1)

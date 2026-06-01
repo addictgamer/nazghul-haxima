@@ -71,6 +71,16 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "cure_poison", False, 0
     if "poison bolt" in token or spell_id == "in_nox_por":
         return "poison", True, max(2, min(6, circle + 1))
+    if "turn undead" in token or spell_id == "an_xen_corp":
+        return "turn_undead", False, 0
+    if spell_id == "in_quas_corp" or "fear" in token:
+        return "fear", False, 0
+    if "charm" in token or spell_id == "an_xen_ex":
+        return "charm", True, max(3, min(8, circle // 3 + 3))
+    if spell_id == "bet_por" or ("blink" in token and "teleport party" not in token):
+        return "blink", True, max(4, circle + 3)
+    if spell_id == "vas_por" or "teleport party" in token:
+        return "teleport", True, max(4, min(15, int(circle * 0.75) + 2))
     attack_terms = (
         "bolt",
         "ball",
