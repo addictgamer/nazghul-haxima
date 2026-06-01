@@ -61,6 +61,12 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
     field_terms = ("fire field", "poison field", "sleep field")
     if any(term in token for term in field_terms):
         return "field", True, max(2, min(8, circle + 1))
+    if "mass sleep" in token or spell_id == "in_zu":
+        return "sleep_area", False, 0
+    if "awaken" in token:
+        return "awaken", False, 0
+    if "sleep" in token:
+        return "sleep", True, max(2, min(6, circle + 1))
     attack_terms = (
         "bolt",
         "ball",

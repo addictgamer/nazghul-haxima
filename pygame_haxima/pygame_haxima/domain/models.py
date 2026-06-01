@@ -235,6 +235,17 @@ class GameSession:
                 expired_fields.append(pos)
         for pos in expired_fields:
             self.place.tile_fields.pop(pos, None)
+        expired_sleep: list[str] = []
+        for key, value in self.quest_flags.items():
+            if not key.startswith("sleep:") or not isinstance(value, int) or isinstance(value, bool):
+                continue
+            remaining = max(0, value - 1)
+            if remaining > 0:
+                self.quest_flags[key] = remaining
+            else:
+                expired_sleep.append(key)
+        for key in expired_sleep:
+            self.quest_flags.pop(key, None)
         self.party.turn_count += 1
         total = self.clock_hours * 60 + self.clock_minutes + minutes
         self.clock_hours = (total // 60) % 24

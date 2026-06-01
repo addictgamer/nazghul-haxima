@@ -45,6 +45,16 @@ class HudPane:
         quickness_turns = session.quest_flags.get("buff:quickness_turns")
         if isinstance(quickness_turns, int) and quickness_turns > 0:
             effects.append(f"Quick({quickness_turns})")
+        asleep_nearby = sum(
+            1
+            for monster in session.place.monsters
+            if monster.is_alive()
+            and abs(monster.x - session.party.x) + abs(monster.y - session.party.y) <= 6
+            and isinstance(session.quest_flags.get(f"sleep:{monster.entity_id}"), int)
+            and session.quest_flags.get(f"sleep:{monster.entity_id}", 0) > 0
+        )
+        if asleep_nearby:
+            effects.append(f"Asleep({asleep_nearby})")
         if effects:
             status_parts.append(f"Effects: {', '.join(effects)}")
         if status_parts:

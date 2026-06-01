@@ -852,6 +852,9 @@ class TurnLoop:
         if spell.effect_kind == "field":
             self._cast_field_spell(session, spell, monster)
             return
+        if spell.effect_kind == "sleep":
+            self._cast_sleep_targeted(session, spell, monster)
+            return
         self._consume_reagents(session, spell.spell_id)
         damage = random.randint(1 + spell.circle, 2 + spell.circle * 2)
         monster.hp = max(0, monster.hp - damage)
@@ -981,6 +984,14 @@ class TurnLoop:
         if spell.effect_kind == "dispel_field":
             self._consume_reagents(session, spell.spell_id)
             self._cast_dispel_field(session, spell.name, spell.circle)
+            return
+        if spell.effect_kind == "sleep_area":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_sleep_area(session, spell.name, spell.circle)
+            return
+        if spell.effect_kind == "awaken":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_awaken(session, spell.name, spell.circle)
             return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
@@ -1145,6 +1156,11 @@ class TurnLoop:
             for key in sensed_keys:
                 session.quest_flags.pop(key, None)
             dispelled.append("sensed traces")
+        sleep_keys = [key for key in session.quest_flags if key.startswith("sleep:")]
+        if sleep_keys:
+            for key in sleep_keys:
+                session.quest_flags.pop(key, None)
+            dispelled.append("sleep")
         if dispelled:
             session.append_log(f"You cast {spell_name}. Dispelled: {', '.join(dispelled)}.")
         else:
@@ -1277,6 +1293,9 @@ class TurnLoop:
     def _enemy_counterattack(self, session: GameSession, monster: Entity) -> None:
         if not monster.is_alive():
             return
+        if self._monster_sleep_turns(session, monster.entity_id) > 0:
+            session.append_log(f"{monster.name} is asleep and cannot attack.")
+            return
         target = session.party.lead()
         attack_roll = random.randint(1, 6) + monster.attack
         quickness_turns = session.quest_flags.get("buff:quickness_turns")
@@ -1348,6 +1367,8 @@ class TurnLoop:
         for monster in session.place.monsters:
             if not monster.is_alive():
                 continue
+            if self._monster_sleep_turns(session, monster.entity_id) > 0:
+                continue
             if abs(monster.x - session.party.x) + abs(monster.y - session.party.y) < 6:
                 step_x = 1 if session.party.x > monster.x else -1 if session.party.x < monster.x else 0
                 step_y = 1 if session.party.y > monster.y else -1 if session.party.y < monster.y else 0
@@ -1356,6 +1377,81 @@ class TurnLoop:
                     monster.x, monster.y = nx, ny
                     monster.facing = self._facing_from_delta(step_x, step_y, monster.facing)
                     self._apply_tile_field_entry(session, nx, ny, monster, monster.name)
+
+    def _sleep_flag_key(self, entity_id: str) -> str:
+        return f"sleep:{entity_id}"
+
+    def _monster_sleep_turns(self, session: GameSession, entity_id: str) -> int:
+        turns = session.quest_flags.get(self._sleep_flag_key(entity_id))
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _set_monster_sleep(self, session: GameSession, entity_id: str, turns: int) -> None:
+        current = self._monster_sleep_turns(session, entity_id)
+        session.quest_flags[self._sleep_flag_key(entity_id)] = max(current, turns)
+
+    def _clear_monster_sleep(self, session: GameSession, entity_id: str) -> None:
+        session.quest_flags.pop(self._sleep_flag_key(entity_id), None)
+
+    def _cast_sleep_targeted(self, session: GameSession, spell, monster: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        sleep_turns = max(3, min(12, spell.circle * 2 + 1))
+        self._set_monster_sleep(session, monster.entity_id, sleep_turns)
+        session.append_log(f"You cast {spell.name}. {monster.name} falls asleep ({sleep_turns} turns).")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell.name}", (200, 200, 255), world_pos=(monster.x, monster.y)
+        )
+        session.advance_turn()
+
+    def _cast_sleep_area(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(2, min(8, circle))
+        affected = 0
+        sleep_turns = max(4, min(14, circle * 2))
+        for monster in session.place.monsters:
+            if not monster.is_alive():
+                continue
+            if self._distance_from_party(session, monster.x, monster.y) <= radius:
+                self._set_monster_sleep(session, monster.entity_id, sleep_turns)
+                affected += 1
+        if affected:
+            session.append_log(
+                f"You cast {spell_name}. {affected} creature(s) fall asleep ({sleep_turns} turns)."
+            )
+        else:
+            session.append_log(f"You cast {spell_name}. No creatures are close enough to affect.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (200, 200, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None and self._monster_sleep_turns(session, adjacent.entity_id) <= 0:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_awaken(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(3, min(10, circle + 2))
+        awakened = 0
+        for monster in session.place.monsters:
+            if self._monster_sleep_turns(session, monster.entity_id) <= 0:
+                continue
+            if self._distance_from_party(session, monster.x, monster.y) <= radius:
+                self._clear_monster_sleep(session, monster.entity_id)
+                awakened += 1
+                session.append_log(f"{monster.name} awakens.")
+        if awakened:
+            session.append_log(f"You cast {spell_name}. {awakened} sleeping creature(s) awaken.")
+        else:
+            session.append_log(f"You cast {spell_name}. Nothing nearby is asleep.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (210, 230, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
 
     def _field_kind_for_spell(self, spell_id: str, spell_name: str) -> str:
         token = f"{spell_id} {spell_name}".lower()

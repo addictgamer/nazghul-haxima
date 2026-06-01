@@ -231,6 +231,83 @@ def test_cast_dispel_field_clears_lingering_fields(tmp_path) -> None:
     assert any("cleared 2 lingering field" in line.lower() for line in session.log_lines)
 
 
+def test_cast_sleep_prevents_adjacent_counterattack(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "xen_zu"
+    session.party.reagents["spider_silk"] = 1
+    session.party.reagents["ginseng"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 13
+    wolf.y = 9
+    wolf.hp = 12
+
+    loop.process_events(session, [_action("cast"), _action("confirm")])
+
+    assert session.quest_flags.get("sleep:wolf_1", 0) >= 3
+    assert session.party.turn_count == 1
+
+    loop.process_events(session, [_action("attack"), _action("confirm")])
+    assert any("asleep and cannot attack" in line.lower() for line in session.log_lines)
+
+
+def test_cast_mass_sleep_affects_nearby_monsters(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "in_zu"
+    session.party.reagents["nightshade"] = 1
+    session.party.reagents["spider_silk"] = 1
+    session.party.reagents["ginseng"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 13
+    wolf.y = 9
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.quest_flags.get(f"sleep:{wolf.entity_id}", 0) >= 4
+    assert any("fall asleep" in line.lower() for line in session.log_lines)
+
+
+def test_cast_awaken_clears_sleep_status(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "an_zu"
+    session.party.reagents["garlic"] = 1
+    session.party.reagents["ginseng"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 13
+    wolf.y = 9
+    session.quest_flags["sleep:wolf_1"] = 6
+
+    loop.process_events(session, [_action("cast")])
+
+    assert "sleep:wolf_1" not in session.quest_flags
+    assert any("awaken" in line.lower() for line in session.log_lines)
+
+
+def test_sleep_status_expires_after_turns(tmp_path) -> None:
+    session = ContentRegistry().make_new_session()
+    session.quest_flags["sleep:wolf_1"] = 1
+
+    session.advance_turn()
+
+    assert "sleep:wolf_1" not in session.quest_flags
+
+
 def test_tile_fields_expire_after_turns(tmp_path) -> None:
     session = ContentRegistry().make_new_session()
     session.place.tile_fields[(5, 5)] = TileField(x=5, y=5, field_kind="fire", turns_remaining=1)
