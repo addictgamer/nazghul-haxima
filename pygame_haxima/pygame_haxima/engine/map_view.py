@@ -4,7 +4,7 @@ import pygame
 
 from pygame_haxima.config import DISPLAY
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
-from pygame_haxima.domain.models import GameSession
+from pygame_haxima.domain.models import GameSession, TileField
 from pygame_haxima.engine.item_sprites import item_sprite_key
 from pygame_haxima.engine.spells import get_spell
 
@@ -37,6 +37,7 @@ class MapView:
                 pygame.draw.rect(surface, (20, 20, 20), cell, 1)
                 if session.debug_terrain_ids:
                     self._draw_terrain_debug(surface, cell, terrain.terrain_id)
+                self._draw_tile_field_overlay(surface, cell, place.field_at(x, y))
 
         self._draw_entities(surface, viewport, start_x, start_y, session)
         self._draw_encounter_indicators(surface, viewport, start_x, start_y, session)
@@ -164,6 +165,21 @@ class MapView:
         shadow = self.debug_font.render(terrain_id[:5], True, (20, 20, 20))
         surface.blit(shadow, (cell.x + 2, cell.y + 2))
         surface.blit(tag, (cell.x + 1, cell.y + 1))
+
+    def _draw_tile_field_overlay(
+        self, surface: pygame.Surface, cell: pygame.Rect, tile_field: TileField | None
+    ) -> None:
+        if tile_field is None:
+            return
+        colors = {
+            "fire": (255, 120, 60, 90),
+            "poison": (120, 220, 90, 90),
+            "sleep": (170, 140, 255, 90),
+        }
+        color = colors.get(tile_field.field_kind, (200, 200, 220, 80))
+        overlay = pygame.Surface((cell.width, cell.height), pygame.SRCALPHA)
+        overlay.fill(color)
+        surface.blit(overlay, cell.topleft)
 
     def _draw_target_trail(
         self,

@@ -54,6 +54,8 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "lock", False, 0
     if "vision" in token or "reveal" in token or "detect" in token:
         return "sight", False, 0
+    if "dispel field" in token:
+        return "dispel_field", False, 0
     if "dispel" in token or "negate magic" in token:
         return "dispel", False, 0
     field_terms = ("fire field", "poison field", "sleep field")

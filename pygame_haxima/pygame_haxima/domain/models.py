@@ -98,6 +98,14 @@ class Chest:
 
 
 @dataclass
+class TileField:
+    x: int
+    y: int
+    field_kind: str
+    turns_remaining: int
+
+
+@dataclass
 class Place:
     place_id: str
     name: str
@@ -109,7 +117,11 @@ class Place:
     monsters: list[Entity] = field(default_factory=list)
     chests: list[Chest] = field(default_factory=list)
     ground_items: dict[tuple[int, int], list[Item]] = field(default_factory=dict)
+    tile_fields: dict[tuple[int, int], TileField] = field(default_factory=dict)
     spell_context: str = "context-town"
+
+    def field_at(self, x: int, y: int) -> TileField | None:
+        return self.tile_fields.get((x, y))
 
     def in_bounds(self, x: int, y: int) -> bool:
         return 0 <= x < self.width and 0 <= y < self.height
@@ -216,6 +228,13 @@ class GameSession:
                     self.quest_flags[buff_key] = remaining
                 else:
                     self.quest_flags.pop(buff_key, None)
+        expired_fields: list[tuple[int, int]] = []
+        for pos, tile_field in self.place.tile_fields.items():
+            tile_field.turns_remaining -= 1
+            if tile_field.turns_remaining <= 0:
+                expired_fields.append(pos)
+        for pos in expired_fields:
+            self.place.tile_fields.pop(pos, None)
         self.party.turn_count += 1
         total = self.clock_hours * 60 + self.clock_minutes + minutes
         self.clock_hours = (total // 60) % 24

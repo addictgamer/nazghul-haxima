@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pygame_haxima.data.content_registry import ContentRegistry
 from pygame_haxima.data.save_manager import SaveManager
-from pygame_haxima.domain.models import Entity
+from pygame_haxima.domain.models import Entity, TileField
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.loop import TurnLoop
 
@@ -185,6 +185,59 @@ def test_cast_fire_field_hits_multiple_adjacent_hostiles(tmp_path, monkeypatch) 
     assert spider.hp == 5
     assert any("in flam grav" in line.lower() and "wolf" in line.lower() for line in session.log_lines)
     assert any("in flam grav" in line.lower() and "spider" in line.lower() for line in session.log_lines)
+    assert len(session.place.tile_fields) >= 3
+    assert any(field.field_kind == "fire" for field in session.place.tile_fields.values())
+
+
+def test_party_stepping_on_fire_field_takes_damage(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 10
+    session.party.y = 10
+    session.party.members[0].x = 10
+    session.party.members[0].y = 10
+    session.party.lead().hp = 20
+    session.place.tile_fields[(10, 11)] = TileField(x=10, y=11, field_kind="fire", turns_remaining=5)
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 3)
+
+    loop.process_events(session, [_action("move_s")])
+
+    assert session.party.y == 11
+    assert session.party.lead().hp == 17
+    assert any("burned by a fire field" in line.lower() for line in session.log_lines)
+
+
+def test_cast_dispel_field_clears_lingering_fields(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.x = 10
+    session.party.y = 10
+    session.party.members[0].x = 10
+    session.party.members[0].y = 10
+    session.party.selected_spell = "an_grav"
+    session.party.reagents["black_pearl"] = 1
+    session.party.reagents["sulphurous_ash"] = 1
+    session.place.tile_fields[(10, 10)] = TileField(x=10, y=10, field_kind="fire", turns_remaining=6)
+    session.place.tile_fields[(11, 10)] = TileField(x=11, y=10, field_kind="poison", turns_remaining=6)
+    session.place.tile_fields[(20, 20)] = TileField(x=20, y=20, field_kind="fire", turns_remaining=6)
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.party.reagents["black_pearl"] == 0
+    assert session.party.reagents["sulphurous_ash"] == 0
+    assert (10, 10) not in session.place.tile_fields
+    assert (11, 10) not in session.place.tile_fields
+    assert (20, 20) in session.place.tile_fields
+    assert any("cleared 2 lingering field" in line.lower() for line in session.log_lines)
+
+
+def test_tile_fields_expire_after_turns(tmp_path) -> None:
+    session = ContentRegistry().make_new_session()
+    session.place.tile_fields[(5, 5)] = TileField(x=5, y=5, field_kind="fire", turns_remaining=1)
+
+    session.advance_turn()
+
+    assert (5, 5) not in session.place.tile_fields
 
 
 def test_cast_spark_requires_reagent(tmp_path) -> None:

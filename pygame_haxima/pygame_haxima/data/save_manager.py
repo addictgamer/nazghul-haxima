@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from pygame_haxima.domain.models import CombatState, Entity, GameSession, Item, Mode
+from pygame_haxima.domain.models import CombatState, Entity, GameSession, Item, Mode, TileField
 from pygame_haxima.engine.spells import known_spell_ids
 
 CURRENT_SAVE_VERSION = 1
@@ -84,6 +84,15 @@ class SaveManager:
                 f"{x},{y}": [asdict(item) for item in items]
                 for (x, y), items in session.place.ground_items.items()
             },
+            "tile_fields": [
+                {
+                    "x": tile_field.x,
+                    "y": tile_field.y,
+                    "field_kind": tile_field.field_kind,
+                    "turns_remaining": tile_field.turns_remaining,
+                }
+                for tile_field in session.place.tile_fields.values()
+            ],
         }
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return path
@@ -231,6 +240,25 @@ class SaveManager:
                     if not isinstance(items, list):
                         continue
                     session.place.ground_items[xy] = [Item(**item) for item in items if isinstance(item, dict)]
+            session.place.tile_fields.clear()
+            for field_payload in payload.get("tile_fields", []):
+                if not isinstance(field_payload, dict):
+                    continue
+                x = field_payload.get("x")
+                y = field_payload.get("y")
+                field_kind = field_payload.get("field_kind")
+                turns = field_payload.get("turns_remaining")
+                if (
+                    isinstance(x, int)
+                    and isinstance(y, int)
+                    and isinstance(field_kind, str)
+                    and isinstance(turns, int)
+                    and session.place.in_bounds(x, y)
+                    and turns > 0
+                ):
+                    session.place.tile_fields[(x, y)] = TileField(
+                        x=x, y=y, field_kind=field_kind, turns_remaining=turns
+                    )
             self._normalize_loaded_session(session)
             return True
         except (KeyError, TypeError, ValueError):

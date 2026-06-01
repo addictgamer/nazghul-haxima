@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 
 from pygame_haxima.data.save_manager import SaveManager
-from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode
+from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode, TileField
 from pygame_haxima.engine.audio import AudioManager
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.renderer import Renderer
@@ -157,6 +157,7 @@ class TurnLoop:
         session.party.x, session.party.y = nx, ny
         session.party.members[0].x, session.party.members[0].y = nx, ny
         session.party.members[0].facing = self._facing_from_delta(dx, dy, session.party.members[0].facing)
+        self._apply_tile_field_entry(session, nx, ny, session.party.lead(), "You")
         session.advance_turn()
         session.party.food = max(0, session.party.food - 1)
         self._check_auto_combat(session)
@@ -881,6 +882,11 @@ class TurnLoop:
         ]
         if not targets:
             session.append_log(f"You cast {spell.name}, but the field catches nothing.")
+            field_kind = self._field_kind_for_spell(spell.spell_id, spell.name)
+            field_turns = max(4, min(12, spell.circle + 3))
+            placed = self._place_field_tiles(session, center.x, center.y, field_kind, field_turns)
+            if placed:
+                session.append_log(f"{spell.name} lingers on {placed} tile(s) ({field_turns} turns).")
             self._clear_combat_feedback(session)
             self._set_feedback(
                 session, f"You: {spell.name}", (255, 205, 160), world_pos=(center.x, center.y)
@@ -899,6 +905,11 @@ class TurnLoop:
                 session.append_log(f"{monster.name} is defeated.")
                 session.quest_flags[f"defeated:{monster.entity_id}"] = True
         session.victory = all(not monster.is_alive() for monster in session.place.monsters)
+        field_kind = self._field_kind_for_spell(spell.spell_id, spell.name)
+        field_turns = max(4, min(12, spell.circle + 3))
+        placed = self._place_field_tiles(session, center.x, center.y, field_kind, field_turns)
+        if placed:
+            session.append_log(f"{spell.name} lingers on {placed} tile(s) ({field_turns} turns).")
         self._clear_combat_feedback(session)
         self._set_feedback(
             session, f"You: {spell.name} x{hit_count}", (255, 190, 145), world_pos=(center.x, center.y)
@@ -966,6 +977,10 @@ class TurnLoop:
         if spell.effect_kind == "dispel":
             self._consume_reagents(session, spell.spell_id)
             self._cast_dispel(session, spell.name)
+            return
+        if spell.effect_kind == "dispel_field":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_dispel_field(session, spell.name, spell.circle)
             return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
@@ -1090,6 +1105,22 @@ class TurnLoop:
         self._clear_combat_feedback(session)
         self._set_feedback(
             session, f"You: {spell_name}", (210, 225, 255), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _cast_dispel_field(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(3, min(10, circle + 2))
+        cleared = self._clear_tile_fields_in_radius(session, session.party.x, session.party.y, radius)
+        if cleared:
+            session.append_log(f"You cast {spell_name}. Cleared {cleared} lingering field(s).")
+        else:
+            session.append_log(f"You cast {spell_name}. No lingering fields nearby.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (210, 230, 255), world_pos=(session.party.x, session.party.y)
         )
         adjacent = self._adjacent_monster(session)
         if adjacent is not None:
@@ -1324,6 +1355,64 @@ class TurnLoop:
                 if self._monster_can_enter_tile(session, monster, nx, ny):
                     monster.x, monster.y = nx, ny
                     monster.facing = self._facing_from_delta(step_x, step_y, monster.facing)
+                    self._apply_tile_field_entry(session, nx, ny, monster, monster.name)
+
+    def _field_kind_for_spell(self, spell_id: str, spell_name: str) -> str:
+        token = f"{spell_id} {spell_name}".lower()
+        if "poison field" in token:
+            return "poison"
+        if "sleep field" in token:
+            return "sleep"
+        return "fire"
+
+    def _place_field_tiles(
+        self, session: GameSession, center_x: int, center_y: int, field_kind: str, turns: int
+    ) -> int:
+        placed = 0
+        for x, y in self._tiles_in_range(center_x, center_y, 1):
+            if not session.place.in_bounds(x, y):
+                continue
+            if not session.place.terrain_at(x, y).passable:
+                continue
+            session.place.tile_fields[(x, y)] = TileField(
+                x=x, y=y, field_kind=field_kind, turns_remaining=turns
+            )
+            placed += 1
+        return placed
+
+    def _clear_tile_fields_in_radius(
+        self, session: GameSession, center_x: int, center_y: int, radius: int
+    ) -> int:
+        to_clear = [
+            pos
+            for pos in session.place.tile_fields
+            if abs(pos[0] - center_x) + abs(pos[1] - center_y) <= radius
+        ]
+        for pos in to_clear:
+            session.place.tile_fields.pop(pos, None)
+        return len(to_clear)
+
+    def _apply_tile_field_entry(
+        self, session: GameSession, x: int, y: int, entity: Entity, label: str
+    ) -> None:
+        tile_field = session.place.field_at(x, y)
+        if tile_field is None or not entity.is_alive():
+            return
+        if tile_field.field_kind == "sleep":
+            session.append_log(f"{label} stumbles in a sleep field.")
+            return
+        if tile_field.field_kind == "poison":
+            damage = random.randint(1, 3)
+            verb = "is poisoned by"
+        else:
+            damage = random.randint(2, 4)
+            verb = "is burned by"
+        entity.hp = max(0, entity.hp - damage)
+        session.append_log(f"{label} {verb} a {tile_field.field_kind} field for {damage}.")
+        if not entity.is_alive() and entity.entity_id != session.party.lead().entity_id:
+            session.append_log(f"{entity.name} is defeated.")
+            session.quest_flags[f"defeated:{entity.entity_id}"] = True
+            session.victory = all(not monster.is_alive() for monster in session.place.monsters)
 
     def _party_can_enter_tile(self, session: GameSession, x: int, y: int) -> bool:
         if not session.place.passable(x, y):
