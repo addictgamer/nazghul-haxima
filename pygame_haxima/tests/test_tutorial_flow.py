@@ -299,6 +299,55 @@ def test_cast_awaken_clears_sleep_status(tmp_path) -> None:
     assert any("awaken" in line.lower() for line in session.log_lines)
 
 
+def test_cast_poison_bolt_applies_monster_poison(tmp_path, monkeypatch) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 12
+    session.party.y = 9
+    session.party.members[0].x = 12
+    session.party.members[0].y = 9
+    session.party.selected_spell = "in_nox_por"
+    session.party.reagents["nightshade"] = 1
+    session.party.reagents["blood_moss"] = 1
+    session.party.reagents["black_pearl"] = 1
+    wolf = session.place.monsters[0]
+    wolf.x = 13
+    wolf.y = 9
+    wolf.hp = 12
+    monkeypatch.setattr("pygame_haxima.engine.loop.random.randint", lambda _a, _b: 4)
+
+    loop.process_events(session, [_action("cast"), _action("confirm")])
+
+    assert session.quest_flags.get("poison:wolf_1", 0) >= 3
+    assert wolf.hp == 8
+
+
+def test_cast_cure_poison_clears_party_affliction(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "an_nox"
+    session.party.reagents["garlic"] = 1
+    session.party.reagents["ginseng"] = 1
+    session.quest_flags["buff:poison_turns"] = 5
+
+    loop.process_events(session, [_action("cast")])
+
+    assert "buff:poison_turns" not in session.quest_flags
+    assert any("cured your poison" in line.lower() for line in session.log_lines)
+
+
+def test_party_poison_ticks_damage_on_turn(tmp_path) -> None:
+    session = ContentRegistry().make_new_session()
+    session.quest_flags["buff:poison_turns"] = 2
+    session.party.lead().hp = 20
+
+    session.advance_turn()
+
+    assert session.party.lead().hp == 19
+    assert session.quest_flags.get("buff:poison_turns") == 1
+
+
 def test_sleep_status_expires_after_turns(tmp_path) -> None:
     session = ContentRegistry().make_new_session()
     session.quest_flags["sleep:wolf_1"] = 1

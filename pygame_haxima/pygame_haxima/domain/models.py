@@ -246,7 +246,39 @@ class GameSession:
                 expired_sleep.append(key)
         for key in expired_sleep:
             self.quest_flags.pop(key, None)
+        expired_monster_poison: list[str] = []
+        monsters_by_id = {monster.entity_id: monster for monster in self.place.monsters}
+        for key, value in self.quest_flags.items():
+            if not key.startswith("poison:") or not isinstance(value, int) or isinstance(value, bool):
+                continue
+            entity_id = key.removeprefix("poison:")
+            monster = monsters_by_id.get(entity_id)
+            if monster is not None and monster.is_alive():
+                monster.hp = max(0, monster.hp - 1)
+                self.append_log(f"{monster.name} suffers 1 poison damage.")
+                if not monster.is_alive():
+                    self.append_log(f"{monster.name} is defeated.")
+                    self.quest_flags[f"defeated:{entity_id}"] = True
+            remaining = max(0, value - 1)
+            if remaining > 0:
+                self.quest_flags[key] = remaining
+            else:
+                expired_monster_poison.append(key)
+        for key in expired_monster_poison:
+            self.quest_flags.pop(key, None)
+        if any(not monster.is_alive() for monster in self.place.monsters):
+            self.victory = all(not monster.is_alive() for monster in self.place.monsters)
         self.party.turn_count += 1
+        party_poison = self.quest_flags.get("buff:poison_turns")
+        if isinstance(party_poison, int) and not isinstance(party_poison, bool) and party_poison > 0:
+            lead = self.party.lead()
+            lead.hp = max(0, lead.hp - 1)
+            self.append_log(f"You take 1 poison damage. HP: {lead.hp}/{lead.max_hp}")
+            remaining = party_poison - 1
+            if remaining > 0:
+                self.quest_flags["buff:poison_turns"] = remaining
+            else:
+                self.quest_flags.pop("buff:poison_turns", None)
         total = self.clock_hours * 60 + self.clock_minutes + minutes
         self.clock_hours = (total // 60) % 24
         self.clock_minutes = total % 60

@@ -55,6 +55,9 @@ class HudPane:
         )
         if asleep_nearby:
             effects.append(f"Asleep({asleep_nearby})")
+        party_poison = session.quest_flags.get("buff:poison_turns")
+        if isinstance(party_poison, int) and party_poison > 0:
+            effects.append(f"Poison({party_poison})")
         if effects:
             status_parts.append(f"Effects: {', '.join(effects)}")
         if status_parts:

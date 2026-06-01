@@ -67,6 +67,10 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "awaken", False, 0
     if "sleep" in token:
         return "sleep", True, max(2, min(6, circle + 1))
+    if "cure poison" in token:
+        return "cure_poison", False, 0
+    if "poison bolt" in token or spell_id == "in_nox_por":
+        return "poison", True, max(2, min(6, circle + 1))
     attack_terms = (
         "bolt",
         "ball",
@@ -74,7 +78,6 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         "missile",
         "fire",
         "flame",
-        "poison",
         "lightning",
         "death",
         "tremor",

@@ -855,6 +855,9 @@ class TurnLoop:
         if spell.effect_kind == "sleep":
             self._cast_sleep_targeted(session, spell, monster)
             return
+        if spell.effect_kind == "poison":
+            self._cast_poison_targeted(session, spell, monster)
+            return
         self._consume_reagents(session, spell.spell_id)
         damage = random.randint(1 + spell.circle, 2 + spell.circle * 2)
         monster.hp = max(0, monster.hp - damage)
@@ -992,6 +995,10 @@ class TurnLoop:
         if spell.effect_kind == "awaken":
             self._consume_reagents(session, spell.spell_id)
             self._cast_awaken(session, spell.name, spell.circle)
+            return
+        if spell.effect_kind == "cure_poison":
+            self._consume_reagents(session, spell.spell_id)
+            self._cast_cure_poison(session, spell.name, spell.spell_id, spell.circle)
             return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
@@ -1143,6 +1150,10 @@ class TurnLoop:
         if session.party.ward_charges > 0:
             session.party.ward_charges = 0
             dispelled.append("ward")
+        party_poison = session.quest_flags.get("buff:poison_turns")
+        if isinstance(party_poison, int) and party_poison > 0:
+            session.quest_flags.pop("buff:poison_turns", None)
+            dispelled.append("poison")
         for buff_key, label in (
             ("buff:light_turns", "light"),
             ("buff:quickness_turns", "quickness"),
@@ -1161,6 +1172,11 @@ class TurnLoop:
             for key in sleep_keys:
                 session.quest_flags.pop(key, None)
             dispelled.append("sleep")
+        monster_poison_keys = [key for key in session.quest_flags if key.startswith("poison:")]
+        if monster_poison_keys:
+            for key in monster_poison_keys:
+                session.quest_flags.pop(key, None)
+            dispelled.append("monster poison")
         if dispelled:
             session.append_log(f"You cast {spell_name}. Dispelled: {', '.join(dispelled)}.")
         else:
@@ -1430,6 +1446,86 @@ class TurnLoop:
             self._enemy_counterattack(session, adjacent)
         session.advance_turn()
 
+    def _party_poison_turns(self, session: GameSession) -> int:
+        turns = session.quest_flags.get("buff:poison_turns")
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _set_party_poison(self, session: GameSession, turns: int) -> None:
+        current = self._party_poison_turns(session)
+        session.quest_flags["buff:poison_turns"] = max(current, turns)
+
+    def _monster_poison_turns(self, session: GameSession, entity_id: str) -> int:
+        turns = session.quest_flags.get(f"poison:{entity_id}")
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _set_monster_poison(self, session: GameSession, entity_id: str, turns: int) -> None:
+        current = self._monster_poison_turns(session, entity_id)
+        session.quest_flags[f"poison:{entity_id}"] = max(current, turns)
+
+    def _cast_poison_targeted(self, session: GameSession, spell, monster: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        damage = random.randint(2 + spell.circle, 4 + spell.circle)
+        monster.hp = max(0, monster.hp - damage)
+        poison_turns = max(3, min(10, spell.circle * 2 + 1))
+        session.append_log(
+            f"You cast {spell.name} on {monster.name} for {damage} damage and poison ({poison_turns} turns)."
+        )
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell.name} {damage}", (150, 220, 140), world_pos=(monster.x, monster.y)
+        )
+        if not monster.is_alive():
+            session.append_log(f"{monster.name} is defeated.")
+            session.quest_flags[f"defeated:{monster.entity_id}"] = True
+            session.victory = True
+            session.advance_turn()
+            return
+        if self._distance_from_party(session, monster.x, monster.y) <= 1:
+            if self._monster_sleep_turns(session, monster.entity_id) <= 0:
+                self._enemy_counterattack(session, monster)
+        session.advance_turn()
+        if monster.is_alive():
+            self._set_monster_poison(session, monster.entity_id, poison_turns)
+
+    def _cast_cure_poison(
+        self, session: GameSession, spell_name: str, spell_id: str, circle: int
+    ) -> None:
+        cured_party = False
+        if self._party_poison_turns(session) > 0:
+            session.quest_flags.pop("buff:poison_turns", None)
+            cured_party = True
+        cured_monsters = 0
+        for monster in session.place.monsters:
+            if self._monster_poison_turns(session, monster.entity_id) > 0:
+                session.quest_flags.pop(f"poison:{monster.entity_id}", None)
+                cured_monsters += 1
+        if spell_id == "vas_an_nox":
+            heal = random.randint(4, 8 + circle)
+            lead = session.party.lead()
+            lead.hp = min(lead.max_hp, lead.hp + heal)
+            session.append_log(f"{spell_name} restores {heal} HP.")
+        if cured_party or cured_monsters:
+            parts: list[str] = []
+            if cured_party:
+                parts.append("your poison")
+            if cured_monsters:
+                parts.append(f"{cured_monsters} poisoned foe(s)")
+            session.append_log(f"You cast {spell_name}. Cured {', '.join(parts)}.")
+        else:
+            session.append_log(f"You cast {spell_name}. No poison afflictions to cure.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(
+            session, f"You: {spell_name}", (170, 230, 180), world_pos=(session.party.x, session.party.y)
+        )
+        adjacent = self._adjacent_monster(session)
+        if adjacent is not None and self._monster_sleep_turns(session, adjacent.entity_id) <= 0:
+            self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
     def _cast_awaken(self, session: GameSession, spell_name: str, circle: int) -> None:
         radius = max(3, min(10, circle + 2))
         awakened = 0
@@ -1500,6 +1596,10 @@ class TurnLoop:
         if tile_field.field_kind == "poison":
             damage = random.randint(1, 3)
             verb = "is poisoned by"
+            if entity.entity_id == session.party.lead().entity_id:
+                self._set_party_poison(session, max(4, tile_field.turns_remaining))
+            else:
+                self._set_monster_poison(session, entity.entity_id, max(4, tile_field.turns_remaining))
         else:
             damage = random.randint(2, 4)
             verb = "is burned by"
