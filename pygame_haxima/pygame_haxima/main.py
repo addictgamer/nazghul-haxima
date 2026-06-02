@@ -44,8 +44,15 @@ def run() -> int:
     keymap = KeyMap()
     input_controller = InputController(keymap=keymap, renderer=renderer)
     save_manager = SaveManager(project_root / "saves")
-    loop = TurnLoop(renderer=renderer, audio=AudioManager(assets), save_manager=save_manager)
-    session = ContentRegistry().make_new_session()
+    content_registry = ContentRegistry(project_root)
+    loop = TurnLoop(
+        renderer=renderer,
+        audio=AudioManager(assets),
+        save_manager=save_manager,
+        quest_engine=content_registry.quest_engine,
+        content_registry=content_registry,
+    )
+    session = content_registry.make_new_session()
     sprite_profile = load_sprite_profile(project_root / "converted_data")
     runtime_sprite_keys = _runtime_sprite_keys(session)
     runtime_sprite_keys.update(converted_runtime_sprite_keys(project_root / "converted_data", sprite_profile))

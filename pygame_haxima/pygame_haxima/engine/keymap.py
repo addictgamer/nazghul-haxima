@@ -30,6 +30,7 @@ class KeyMap:
             "debug_terrain": [pygame.K_F2],
             "debug_sprite_warnings": [pygame.K_F3],
             "debug_runtime_state": [pygame.K_F4],
+            "travel_zone": [pygame.K_F6],
         }
 
     def action_for_key(self, key: int) -> str | None:

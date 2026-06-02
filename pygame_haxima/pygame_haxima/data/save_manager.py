@@ -58,6 +58,8 @@ class SaveManager:
             "dialogue_lines": list(session.dialogue_lines),
             "npc_states": session.npc_states,
             "quest_flags": session.quest_flags,
+            "quest_progress": session.quest_progress,
+            "place_id": session.place.place_id,
             "combat": {
                 "active": session.combat.active,
                 "message": session.combat.message,
@@ -193,6 +195,9 @@ class SaveManager:
             session.npc_states = self._sanitize_nested_state(npc_states)
             quest_flags = payload.get("quest_flags", {})
             session.quest_flags = self._sanitize_flat_state(quest_flags)
+            quest_progress = payload.get("quest_progress", {})
+            if isinstance(quest_progress, dict):
+                session.quest_progress = quest_progress
             combat_payload = payload.get("combat", {})
             session.combat = self._sanitize_combat_state(combat_payload)
             chests_by_id = {ch.chest_id: ch for ch in session.place.chests}

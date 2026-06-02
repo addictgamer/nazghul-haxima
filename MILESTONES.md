@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 54% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 62% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -106,8 +106,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [x] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry loaded from `spells.scm` with per-spell `effect_kind` routing for every known spell—traps, summons, cones, tremor, resurrection/time-stop, invisibility/confusion, telekinesis/clone/gate, and remaining utility families; persistent tile fields, mind-control statuses, dispel cleanup, and save/load field persistence are wired; zone-specific quest hooks like `Raise Ship` set quest flags only)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
-- [ ] Implement quest engine and scripted world events.
-- [ ] Implement broader world map + zone transitions.
+- [~] Implement quest engine and scripted world events *(quest registry loads from converted `quests/*.quests.json`, bootstrap/active/completed tracking, talk/chest/place-entry/flag hooks, HUD quest line, save/load `quest_progress`; full Scheme callback parity still pending)*
+- [~] Implement broader world map + zone transitions *(converted **Cloviskeep** (`p_cloviskeep` + `m_cloviskeep`) loads from JSON via palette/terrain/map pipeline; `HAXIMA_PLACE=cloviskeep` or **F6** travel between tutorial and Cloviskeep; full neighbor graph and entrance placement still pending)*
 - [ ] Reach “main quest playable” milestone from migrated content.
 
 ### M8: Packaging + distribution
@@ -229,6 +229,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added blink/teleport handling: targeted `Blink` (`Bet Por`) and `Teleport Party` (`Vas Por`) relocate the party to passable tiles within circle-based range (tile targeting, impassable rejection, field step-on after arrival).
 - Completed remaining `spells.scm` families: trap detect/disarm, web/smoke/force-field tiles, summons (`In Bet Xen`/`Kal Xen`/`Kal Xen Corp`/`Kal Xen Nox`), calm spiders, wind/confusion/invisibility, telekinesis/clone/illusion, cone winds (fire/poison/sleep), tremor/time-stop/resurrection, gate travel, and raise-ship quest flag—no spells remain on generic utility fallback.
 - Added held-movement input repeat for `W/A/S/D` + arrow movement with tuned delay/interval so party movement continues smoothly after hold threshold, then aligned movement repeat timing to exactly match spellbook repeat timing and extended spellbook held-repeat to support both up/down directions with matching `W/S` + arrow key behavior (while preserving modal/targeting guards).
+- Added converted-zone loader: `palette.scm` → `palettes.runtime.json`, terrain registry, and `place_loader` build **Cloviskeep** (64×64) from converted map/place JSON with passable spawn + guard NPC.
+- Added quest engine scaffold: loads converted quest metadata, bootstraps `Where am I?`, assigns on Cloviskeep entry hook, completes on guard talk, persists `quest_progress` in saves, shows active quests in HUD.
+- Added zone travel: **F6** toggles tutorial ↔ Cloviskeep when using default session; `HAXIMA_PLACE=cloviskeep` starts directly in the converted keep.
 
 ## Suggested Delivery Sequence
 
@@ -241,7 +244,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 All must be true:
 
-- [ ] One authentic converted Haxima zone loads from converted data.
+- [x] One authentic converted Haxima zone loads from converted data.
 - [ ] Dialogue, looting, and combat loop works without manual data patches.
 - [ ] Save/load survives full gameplay cycle in that zone.
 - [ ] Basic automated tests pass locally.

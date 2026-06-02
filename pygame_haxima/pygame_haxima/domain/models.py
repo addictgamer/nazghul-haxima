@@ -129,6 +129,7 @@ class Place:
     ground_items: dict[tuple[int, int], list[Item]] = field(default_factory=dict)
     tile_fields: dict[tuple[int, int], TileField] = field(default_factory=dict)
     spell_context: str = "context-town"
+    on_entry_hooks: list[str] = field(default_factory=list)
 
     def field_at(self, x: int, y: int) -> TileField | None:
         return self.tile_fields.get((x, y))
@@ -221,6 +222,7 @@ class GameSession:
     dialogue_lines: list[str] = field(default_factory=list)
     npc_states: dict[str, dict[str, object]] = field(default_factory=dict)
     quest_flags: dict[str, object] = field(default_factory=dict)
+    quest_progress: dict[str, object] = field(default_factory=dict)
     combat_feedback_text: str | None = None
     combat_feedback_ticks: int = 0
     combat_feedback_color: tuple[int, int, int] = (240, 220, 150)

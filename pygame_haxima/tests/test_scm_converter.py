@@ -31,6 +31,29 @@ def test_convert_terrains_parses_entries_and_passability(tmp_path) -> None:
     assert payload["terrains"][1]["passable"] is False
 
 
+def test_convert_palette_file_extracts_glyph_tokens(tmp_path) -> None:
+    src = tmp_path / "palette.scm"
+    dst = tmp_path / "palettes.runtime.json"
+    src.write_text(
+        """
+        (kern-mk-palette 'pal_test
+          (list
+            (list "dd" 't_dirt)
+            (list "cc" 't_cobblestone)))
+        """,
+        encoding="utf-8",
+    )
+
+    converted = ScmConverter().convert_palette_file(src, dst)
+    payload = json.loads(dst.read_text(encoding="utf-8"))
+
+    assert converted == 1
+    palette = payload["palettes"][0]
+    assert palette["id"] == "pal_test"
+    assert palette["tokens"]["dd"] == "t_dirt"
+    assert palette["tokens"]["cc"] == "t_cobblestone"
+
+
 def test_convert_map_file_extracts_rows_and_tokens(tmp_path) -> None:
     src = tmp_path / "map.scm"
     dst = tmp_path / "map.json"

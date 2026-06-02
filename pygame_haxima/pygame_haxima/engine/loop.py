@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import random
+from pathlib import Path
 
+from pygame_haxima.data.content_registry import ContentRegistry
+from pygame_haxima.data.quest_engine import QuestEngine
 from pygame_haxima.data.save_manager import SaveManager
 from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode, TileField, Trap
 from pygame_haxima.engine.audio import AudioManager
@@ -15,10 +18,21 @@ LIGHT_SPELL_IDS = {"in_lor", "vas_lor"}
 
 
 class TurnLoop:
-    def __init__(self, renderer: Renderer, audio: AudioManager, save_manager: SaveManager) -> None:
+    def __init__(
+        self,
+        renderer: Renderer,
+        audio: AudioManager,
+        save_manager: SaveManager,
+        quest_engine: QuestEngine | None = None,
+        content_registry: ContentRegistry | None = None,
+    ) -> None:
         self.renderer = renderer
         self.audio = audio
         self.save_manager = save_manager
+        project_root = Path(__file__).resolve().parents[2]
+        converted = project_root / "converted_data"
+        self.quest_engine = quest_engine or QuestEngine.load(converted)
+        self.content_registry = content_registry
 
     def process_events(self, session: GameSession, events: list[EngineEvent]) -> None:
         for event in events:
@@ -112,6 +126,8 @@ class TurnLoop:
                 self._open_save_load_menu(session, "load")
             elif action == "help":
                 self._help(session)
+            elif action == "travel_zone":
+                self._travel_zone(session)
             elif action == "cancel":
                 self._end_targeting(session)
             elif action == "fullscreen":
@@ -235,9 +251,19 @@ class TurnLoop:
             "Move: arrows/WASD | t talk | o open | g get | f attack | c cast | v cycle spell | b spellbook | x examine"
         )
         session.append_log(
-            "F5 save | F9 load | R reagents | F10 options | F11 fullscreen | F2 terrain IDs | F3 sprite warnings | F4 runtime state"
+            "F5 save | F9 load | R reagents | F6 travel zone | F10 options | F11 fullscreen | F2/F3/F4 debug"
         )
         session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
+        session.append_log("Set HAXIMA_PLACE=cloviskeep to start in converted Cloviskeep.")
+
+    def _travel_zone(self, session: GameSession) -> None:
+        if self.content_registry is None:
+            session.append_log("Zone travel is unavailable.")
+            return
+        if session.place.place_id == "tutorial_wilderness":
+            self.content_registry.travel_to(session, "cloviskeep")
+            return
+        self.content_registry.travel_to(session, "tutorial")
 
     def _toggle_options_menu(self, session: GameSession) -> None:
         if session.show_save_load_menu:
@@ -675,6 +701,7 @@ class TurnLoop:
             npc_state["talk_count"] = talk_count
             npc_state["last_turn"] = session.party.turn_count
             session.quest_flags[f"talked:{npc.npc_id}"] = True
+            self.quest_engine.on_talk(session, npc.npc_id)
             line_name = npc.keywords.get("name", "Greetings.")
             line_job = npc.keywords.get("job", "I wander.")
             line_bye = npc.keywords.get("bye", "Farewell.")
@@ -705,6 +732,7 @@ class TurnLoop:
             if chest.items:
                 session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
             session.quest_flags[f"opened:{chest.chest_id}"] = True
+            self.quest_engine.on_chest_opened(session, chest.chest_id)
             session.append_log("You open the chest. Items spill onto the ground.")
             session.advance_turn()
             self._end_targeting(session)
@@ -1117,6 +1145,7 @@ class TurnLoop:
         if chest.items:
             session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
         session.quest_flags[f"opened:{chest.chest_id}"] = True
+        self.quest_engine.on_chest_opened(session, chest.chest_id)
         session.append_log(f"You cast {spell_name}. The chest clicks open.")
         self._clear_combat_feedback(session)
         self._set_feedback(
@@ -1969,6 +1998,7 @@ class TurnLoop:
 
     def _cast_raise_ship(self, session: GameSession, spell_name: str) -> None:
         session.quest_flags["quest:ship_raiseable"] = True
+        self.quest_engine.on_quest_flag(session, "quest:ship_raiseable")
         session.append_log(
             f"You cast {spell_name}. Distant waters stir—perhaps a sunken hull can be raised."
         )

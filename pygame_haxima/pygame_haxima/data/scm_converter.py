@@ -67,6 +67,27 @@ class ScmConverter:
         dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return len(converted)
 
+    def convert_palette_file(self, src: Path, dst: Path) -> int:
+        text = src.read_text(encoding="utf-8", errors="ignore")
+        expressions = self.parser.parse_file(text)
+        palettes: list[dict[str, object]] = []
+        for expr in expressions:
+            if not isinstance(expr, list) or not expr:
+                continue
+            if self._symbol_name(expr[0]) != "kern-mk-palette":
+                continue
+            parsed = self._convert_kern_mk_palette(expr, src)
+            if parsed is not None:
+                palettes.append(parsed)
+        payload = {
+            "source": str(src),
+            "palette_count": len(palettes),
+            "palettes": palettes,
+        }
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return len(palettes)
+
     def convert_map_file(self, src: Path, dst: Path) -> int:
         text = src.read_text(encoding="utf-8", errors="ignore")
         expressions = self.parser.parse_file(text)
@@ -227,6 +248,31 @@ class ScmConverter:
             "light": light,
             "step_on": step_on,
             "passable": pclass not in self.BLOCKING_PCLASSES,
+        }
+
+    def _convert_kern_mk_palette(self, expr: list[Expr], src: Path) -> dict[str, object] | None:
+        if len(expr) < 3:
+            return None
+        palette_id = self._resolve_to_symbol_string(expr[1], {})
+        entries_expr = expr[2]
+        if palette_id is None:
+            return None
+        tokens: dict[str, str] = {}
+        if isinstance(entries_expr, list) and entries_expr and self._symbol_name(entries_expr[0]) == "list":
+            for entry in entries_expr[1:]:
+                if not isinstance(entry, list) or len(entry) < 3:
+                    continue
+                if self._symbol_name(entry[0]) != "list":
+                    continue
+                glyph = entry[1] if isinstance(entry[1], str) else None
+                terrain = self._resolve_to_symbol_string(entry[2], {})
+                if glyph and terrain:
+                    tokens[glyph] = terrain
+        return {
+            "id": palette_id,
+            "token_count": len(tokens),
+            "tokens": tokens,
+            "source_file": src.name,
         }
 
     def _convert_kern_mk_map(self, expr: list[Expr], src: Path) -> dict[str, object] | None:

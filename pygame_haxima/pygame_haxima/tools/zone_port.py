@@ -17,6 +17,7 @@ def main() -> int:
 
     targets = {
         "terrains.scm": ("terrains.runtime.json", converter.convert_terrains),
+        "palette.scm": ("palettes.runtime.json", converter.convert_palette_file),
         "zones.scm": ("zones.defines.json", converter.convert_defines),
         "world-map.scm": ("world-map.defines.json", converter.convert_defines),
     }

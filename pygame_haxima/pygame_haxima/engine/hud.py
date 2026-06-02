@@ -86,6 +86,9 @@ class HudPane:
             effects.append(f"Web({ensnare})")
         if effects:
             status_parts.append(f"Effects: {', '.join(effects)}")
+        quest_lines = self._active_quest_titles(session)
+        if quest_lines:
+            status_parts.append(f"Quests: {', '.join(quest_lines[:2])}")
         if status_parts:
             status_text = " | ".join(status_parts)
             y = self._blit_wrapped_line(
@@ -114,6 +117,18 @@ class HudPane:
                 max_width,
                 rect.bottom - 4,
             )
+
+    def _active_quest_titles(self, session: GameSession) -> list[str]:
+        active = session.quest_progress.get("active")
+        if not isinstance(active, dict):
+            return []
+        titles: list[str] = []
+        for quest_id, state in active.items():
+            if not isinstance(state, dict) or state.get("stage") == "completed":
+                continue
+            label = str(quest_id).removeprefix("questentry-").replace("-", " ").title()
+            titles.append(label)
+        return titles
 
     def _adjacent_hostile_names(self, session: GameSession) -> list[str]:
         names: list[str] = []
