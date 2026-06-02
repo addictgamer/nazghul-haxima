@@ -3,13 +3,13 @@ from __future__ import annotations
 import random
 
 from pygame_haxima.data.save_manager import SaveManager
-from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode, TileField
+from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode, TileField, Trap
 from pygame_haxima.engine.audio import AudioManager
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.renderer import Renderer
 from pygame_haxima.engine.spells import get_spell, spell_context_available
 
-HEAL_SPELL_IDS = {"heal", "mani", "vas_mani", "in_mani_corp"}
+HEAL_SPELL_IDS = {"heal", "mani", "vas_mani"}
 WARD_SPELL_IDS = {"ward", "sanct_nox", "vas_sanct_nox", "in_flam_sanct", "in_sanct"}
 LIGHT_SPELL_IDS = {"in_lor", "vas_lor"}
 
@@ -149,6 +149,10 @@ class TurnLoop:
 
     def _move_party(self, session: GameSession, dx: int, dy: int) -> None:
         if dx == 0 and dy == 0:
+            return
+        ensnare = session.quest_flags.get("buff:ensnare_turns")
+        if isinstance(ensnare, int) and ensnare > 0:
+            session.append_log("You are ensnared and cannot move.")
             return
         nx, ny = session.party.x + dx, session.party.y + dy
         if not self._party_can_enter_tile(session, nx, ny):
@@ -728,11 +732,16 @@ class TurnLoop:
                 session.append_log(f"You lack reagents for {spell.name}.")
                 self._end_targeting(session)
                 return
-            if spell.effect_kind in {"blink", "teleport"}:
+            if spell.effect_kind in {"blink", "teleport", "gate"}:
                 if not self._is_blink_target_tile(session, x, y):
                     session.append_log("Blink failed: impassable terrain.")
                     return
                 self._cast_blink_spell(session, spell, x, y)
+                return
+            if spell.effect_kind == "telekinesis":
+                self._cast_telekinesis(session, spell, x, y)
+                self._end_targeting(session)
+                return
                 self._end_targeting(session)
                 return
             monster = session.place.monster_at(x, y)
@@ -774,10 +783,14 @@ class TurnLoop:
             if spell is None or not spell.targeted:
                 return False
             targeted_tiles = self._tiles_in_range(px, py, spell.range_tiles)
-            if spell.effect_kind in {"blink", "teleport"}:
+            if spell.effect_kind in {"blink", "teleport", "gate"}:
                 return any(
                     self._is_blink_target_tile(session, x, y) and (x, y) != (px, py)
                     for x, y in targeted_tiles
+                )
+            if spell.effect_kind == "telekinesis":
+                return any(
+                    self._is_telekinesis_target(session, x, y) for x, y in targeted_tiles
                 )
             return any(session.place.monster_at(x, y) is not None for x, y in targeted_tiles)
         return True
@@ -800,11 +813,16 @@ class TurnLoop:
             if spell is None or not spell.targeted:
                 return px, py
             extended = self._tiles_in_range(px, py, spell.range_tiles)
-            if spell.effect_kind in {"blink", "teleport"}:
+            if spell.effect_kind in {"blink", "teleport", "gate"}:
                 matches = [
                     (x, y)
                     for x, y in extended
                     if self._is_blink_target_tile(session, x, y) and (x, y) != (px, py)
+                ]
+                return matches[0] if matches else (px, py)
+            if spell.effect_kind == "telekinesis":
+                matches = [
+                    (x, y) for x, y in extended if self._is_telekinesis_target(session, x, y)
                 ]
                 return matches[0] if matches else (px, py)
             matches = [(x, y) for x, y in extended if session.place.monster_at(x, y) is not None]
@@ -879,6 +897,15 @@ class TurnLoop:
             return
         if spell.effect_kind == "charm":
             self._cast_charm_targeted(session, spell, monster)
+            return
+        if spell.effect_kind == "web":
+            self._cast_web_targeted(session, spell, monster)
+            return
+        if spell.effect_kind == "illusion":
+            self._cast_illusion_targeted(session, spell, monster)
+            return
+        if spell.effect_kind == "clone":
+            self._cast_clone_targeted(session, spell, monster)
             return
         self._consume_reagents(session, spell.spell_id)
         damage = random.randint(1 + spell.circle, 2 + spell.circle * 2)
@@ -967,20 +994,12 @@ class TurnLoop:
                 max_charges=8,
             )
             return
-        if spell.spell_id in LIGHT_SPELL_IDS:
+        if spell.spell_id in LIGHT_SPELL_IDS or spell.effect_kind == "light":
             self._consume_reagents(session, spell.spell_id)
             light_turns = 10 if spell.spell_id == "in_lor" else 24
-            # Add one extra step so the immediate end-of-action advance lands on the displayed duration.
             session.quest_flags["buff:light_turns"] = light_turns + 1
             session.append_log(f"You cast {spell.name}. The area brightens ({light_turns} turns).")
-            self._clear_combat_feedback(session)
-            self._set_feedback(
-                session, f"You: {spell.name}", (235, 235, 150), world_pos=(session.party.x, session.party.y)
-            )
-            adjacent = self._adjacent_monster(session)
-            if adjacent is not None:
-                self._enemy_counterattack(session, adjacent)
-            session.advance_turn()
+            self._finish_spell_cast(session, spell.name, (235, 235, 150))
             return
         if spell.effect_kind == "locate":
             self._consume_reagents(session, spell.spell_id)
@@ -1030,16 +1049,32 @@ class TurnLoop:
             self._consume_reagents(session, spell.spell_id)
             self._cast_turn_undead(session, spell.name, spell.circle)
             return
+        extra_handlers = {
+            "trap_detect": lambda: self._cast_trap_detect(session, spell.name, spell.circle),
+            "trap_disarm": lambda: self._cast_trap_disarm(session, spell.name, spell.circle),
+            "smoke": lambda: self._cast_smoke(session, spell.name, spell.circle),
+            "summon": lambda: self._cast_summon(session, spell),
+            "calm_spiders": lambda: self._cast_calm_spiders(session, spell.name, spell.circle),
+            "force_field": lambda: self._cast_force_field(session, spell.name, spell.circle),
+            "invisibility": lambda: self._cast_invisibility(session, spell.name, spell.circle),
+            "confusion": lambda: self._cast_confusion(session, spell.name, spell.circle),
+            "wind": lambda: self._cast_wind(session, spell.name),
+            "resurrection": lambda: self._cast_resurrection(session, spell.name, spell.circle),
+            "time_stop": lambda: self._cast_time_stop(session, spell.name, spell.circle),
+            "raise_ship": lambda: self._cast_raise_ship(session, spell.name),
+            "tremor": lambda: self._cast_tremor(session, spell.name, spell.circle),
+            "cone_poison": lambda: self._cast_cone_spell(session, spell, "poison"),
+            "cone_sleep": lambda: self._cast_cone_spell(session, spell, "sleep"),
+            "cone_fire": lambda: self._cast_cone_spell(session, spell, "fire"),
+        }
+        handler = extra_handlers.get(spell.effect_kind)
+        if handler is not None:
+            self._consume_reagents(session, spell.spell_id)
+            handler()
+            return
         self._consume_reagents(session, spell.spell_id)
         session.append_log(f"You cast {spell.name}.")
-        self._clear_combat_feedback(session)
-        self._set_feedback(
-            session, f"You: {spell.name}", (175, 220, 255), world_pos=(session.party.x, session.party.y)
-        )
-        adjacent = self._adjacent_monster(session)
-        if adjacent is not None:
-            self._enemy_counterattack(session, adjacent)
-        session.advance_turn()
+        self._finish_spell_cast(session, spell.name, (175, 220, 255))
 
     def _cast_locate(self, session: GameSession, spell_name: str) -> None:
         nearest = self._nearest_alive_monster(session)
@@ -1197,12 +1232,36 @@ class TurnLoop:
             for key in sensed_keys:
                 session.quest_flags.pop(key, None)
             dispelled.append("sensed traces")
-        for prefix, label in (("sleep:", "sleep"), ("fear:", "fear"), ("charm:", "charm")):
+        for prefix, label in (
+            ("sleep:", "sleep"),
+            ("fear:", "fear"),
+            ("charm:", "charm"),
+            ("ensnare:", "ensnare"),
+            ("confuse:", "confusion"),
+        ):
             keys = [key for key in session.quest_flags if key.startswith(prefix)]
             if keys:
                 for key in keys:
                     session.quest_flags.pop(key, None)
                 dispelled.append(label)
+        for buff_key, label in (
+            ("buff:invisible_turns", "invisibility"),
+            ("buff:ensnare_turns", "ensnare"),
+        ):
+            value = session.quest_flags.get(buff_key)
+            if isinstance(value, int) and value > 0:
+                session.quest_flags.pop(buff_key, None)
+                dispelled.append(label)
+        summon_keys = [key for key in session.quest_flags if key.startswith("summon:")]
+        if summon_keys:
+            monsters_by_id = {monster.entity_id: monster for monster in session.place.monsters}
+            for key in summon_keys:
+                entity_id = key.removeprefix("summon:")
+                monster = monsters_by_id.get(entity_id)
+                if monster is not None and not monster.hostile:
+                    monster.hp = 0
+                session.quest_flags.pop(key, None)
+            dispelled.append("summons")
         monster_poison_keys = [key for key in session.quest_flags if key.startswith("poison:")]
         if monster_poison_keys:
             for key in monster_poison_keys:
@@ -1349,6 +1408,9 @@ class TurnLoop:
         if self._monster_fear_turns(session, monster.entity_id) > 0:
             session.append_log(f"{monster.name} flees in terror and cannot attack.")
             return
+        if self._monster_confuse_turns(session, monster.entity_id) > 0 and random.randint(1, 6) <= 3:
+            session.append_log(f"{monster.name} is too confused to attack.")
+            return
         target = session.party.lead()
         attack_roll = random.randint(1, 6) + monster.attack
         quickness_turns = session.quest_flags.get("buff:quickness_turns")
@@ -1422,9 +1484,21 @@ class TurnLoop:
                 continue
             if self._monster_sleep_turns(session, monster.entity_id) > 0:
                 continue
+            if self._monster_ensnare_turns(session, monster.entity_id) > 0:
+                continue
             if self._monster_charm_turns(session, monster.entity_id) > 0:
                 continue
+            invisible = session.quest_flags.get("buff:invisible_turns")
             distance = abs(monster.x - session.party.x) + abs(monster.y - session.party.y)
+            if isinstance(invisible, int) and invisible > 0 and distance > 2:
+                continue
+            if self._monster_confuse_turns(session, monster.entity_id) > 0:
+                options = [(1, 0), (-1, 0), (0, 1), (0, -1), (0, 0)]
+                step_x, step_y = random.choice(options)
+                nx, ny = monster.x + step_x, monster.y + step_y
+                if self._monster_can_enter_tile(session, monster, nx, ny):
+                    monster.x, monster.y = nx, ny
+                continue
             if self._monster_fear_turns(session, monster.entity_id) > 0:
                 if distance < 8:
                     step_x = -1 if session.party.x > monster.x else 1 if session.party.x < monster.x else 0
@@ -1635,7 +1709,12 @@ class TurnLoop:
         self._relocate_party(session, x, y)
         lead = session.party.lead()
         self._apply_tile_field_entry(session, x, y, lead, "You")
-        label = "blink" if spell.effect_kind == "blink" else "teleport"
+        if spell.effect_kind == "gate":
+            label = "gate travel"
+        elif spell.effect_kind == "teleport":
+            label = "teleport"
+        else:
+            label = "blink"
         session.append_log(f"You cast {spell.name} and {label} to ({x}, {y}).")
         self._clear_combat_feedback(session)
         self._set_feedback(
@@ -1646,6 +1725,391 @@ class TurnLoop:
         if (old_x, old_y) != (x, y):
             self._check_auto_combat(session)
             self._npc_turn(session)
+
+    def _finish_spell_cast(
+        self,
+        session: GameSession,
+        spell_name: str,
+        color: tuple[int, int, int],
+        *,
+        counterattack: bool = True,
+    ) -> None:
+        self._clear_combat_feedback(session)
+        self._set_feedback(session, f"You: {spell_name}", color, world_pos=(session.party.x, session.party.y))
+        if counterattack:
+            adjacent = self._adjacent_monster(session)
+            if adjacent is not None:
+                self._enemy_counterattack(session, adjacent)
+        session.advance_turn()
+
+    def _monster_ensnare_turns(self, session: GameSession, entity_id: str) -> int:
+        turns = session.quest_flags.get(f"ensnare:{entity_id}")
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _monster_confuse_turns(self, session: GameSession, entity_id: str) -> int:
+        turns = session.quest_flags.get(f"confuse:{entity_id}")
+        if isinstance(turns, int) and not isinstance(turns, bool) and turns > 0:
+            return turns
+        return 0
+
+    def _set_monster_ensnare(self, session: GameSession, entity_id: str, turns: int) -> None:
+        key = f"ensnare:{entity_id}"
+        current = self._monster_ensnare_turns(session, entity_id)
+        session.quest_flags[key] = max(current, turns)
+
+    def _set_monster_confuse(self, session: GameSession, entity_id: str, turns: int) -> None:
+        key = f"confuse:{entity_id}"
+        current = self._monster_confuse_turns(session, entity_id)
+        session.quest_flags[key] = max(current, turns)
+
+    def _is_spider_monster(self, monster: Entity) -> bool:
+        token = f"{monster.entity_id} {monster.name}".lower()
+        return "spider" in token
+
+    def _traps_in_radius(self, session: GameSession, radius: int) -> list[tuple[Trap, int]]:
+        found: list[tuple[Trap, int]] = []
+        for trap in session.place.traps:
+            if trap.disarmed:
+                continue
+            distance = self._distance_from_party(session, trap.x, trap.y)
+            if distance <= radius:
+                found.append((trap, distance))
+        found.sort(key=lambda pair: pair[1])
+        return found
+
+    def _cone_tiles_from_facing(
+        self, session: GameSession, x: int, y: int, facing: str, depth: int
+    ) -> list[tuple[int, int]]:
+        vectors = {
+            "n": ((0, -1), (1, 0)),
+            "s": ((0, 1), (-1, 0)),
+            "e": ((1, 0), (0, -1)),
+            "w": ((-1, 0), (0, 1)),
+        }
+        forward, perpendicular = vectors.get(facing, vectors["s"])
+        tiles: list[tuple[int, int]] = []
+        for distance in range(1, depth + 1):
+            cx = x + forward[0] * distance
+            cy = y + forward[1] * distance
+            tiles.append((cx, cy))
+            for side in (-1, 1):
+                tiles.append((cx + perpendicular[0] * side, cy + perpendicular[1] * side))
+        return [
+            (tx, ty)
+            for tx, ty in tiles
+            if session.place.in_bounds(tx, ty) and (tx, ty) != (x, y)
+        ]
+
+    def _adjacent_passable_tile(
+        self, session: GameSession, x: int, y: int
+    ) -> tuple[int, int] | None:
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if self._party_can_enter_tile(session, nx, ny) and session.place.monster_at(nx, ny) is None:
+                return nx, ny
+        return None
+
+    def _is_telekinesis_target(self, session: GameSession, x: int, y: int) -> bool:
+        if session.place.ground_items.get((x, y)):
+            return True
+        if session.place.chest_at(x, y) is not None:
+            return True
+        if session.place.monster_at(x, y) is not None:
+            return True
+        return False
+
+    def _cast_trap_detect(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(4, min(12, circle * 2 + 2))
+        traps = self._traps_in_radius(session, radius)
+        for trap, _ in traps:
+            trap.detected = True
+        if traps:
+            nearest, distance = traps[0]
+            session.append_log(
+                f"You cast {spell_name}. Detected {len(traps)} trap(s) (nearest {distance} tiles)."
+            )
+        else:
+            session.append_log(f"You cast {spell_name}. No traps sensed nearby.")
+        self._finish_spell_cast(session, spell_name, (210, 225, 255))
+
+    def _cast_trap_disarm(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(2, min(6, circle + 1))
+        disarmed = 0
+        for trap, distance in self._traps_in_radius(session, radius):
+            if distance > 1:
+                continue
+            trap.detected = True
+            trap.disarmed = True
+            disarmed += 1
+        if disarmed:
+            session.append_log(f"You cast {spell_name}. Disarmed {disarmed} trap(s).")
+        else:
+            session.append_log(f"You cast {spell_name}. No adjacent traps to disarm.")
+        self._finish_spell_cast(session, spell_name, (220, 230, 255))
+
+    def _cast_smoke(self, session: GameSession, spell_name: str, circle: int) -> None:
+        turns = max(4, min(10, circle + 3))
+        placed = self._place_field_tiles(session, session.party.x, session.party.y, "smoke", turns)
+        session.append_log(f"You cast {spell_name}. Smoke spreads across {placed} tile(s).")
+        self._finish_spell_cast(session, spell_name, (190, 190, 200))
+
+    def _cast_summon(self, session: GameSession, spell) -> None:
+        profiles = {
+            "in_bet_xen": ("summon_rat", "Summoned Rat", "s_rat", 5, 5, 2, 1),
+            "kal_xen": ("summon_beast", "Summoned Beast", "s_wolf", 8, 8, 3, 2),
+            "kal_xen_corp": ("summon_skeleton", "Summoned Skeleton", "s_skeleton", 7, 7, 2, 1),
+            "kal_xen_nox": ("summon_slime", "Summoned Slime", "s_slime", 6, 6, 2, 1),
+        }
+        profile = profiles.get(spell.spell_id)
+        if profile is None:
+            session.append_log(f"You cast {spell.name}, but nothing answers.")
+            self._finish_spell_cast(session, spell.name, (200, 220, 255))
+            return
+        entity_id, name, sprite, hp, max_hp, attack, defense = profile
+        spawn = self._adjacent_passable_tile(session, session.party.x, session.party.y)
+        if spawn is None:
+            session.append_log(f"You cast {spell.name}, but there is no room to summon.")
+            self._finish_spell_cast(session, spell.name, (200, 220, 255))
+            return
+        sx, sy = spawn
+        if any(monster.entity_id == entity_id for monster in session.place.monsters):
+            entity_id = f"{entity_id}_{session.party.turn_count}"
+        ally = Entity(
+            entity_id=entity_id,
+            name=name,
+            x=sx,
+            y=sy,
+            sprite_key=sprite,
+            hostile=False,
+            hp=hp,
+            max_hp=max_hp,
+            attack=attack,
+            defense=defense,
+        )
+        session.place.monsters.append(ally)
+        duration = max(6, min(16, spell.circle * 2 + 2))
+        session.quest_flags[f"summon:{entity_id}"] = duration
+        session.append_log(f"You cast {spell.name}. {name} appears ({duration} turns).")
+        self._finish_spell_cast(session, spell.name, (210, 235, 255))
+
+    def _cast_calm_spiders(self, session: GameSession, spell_name: str, circle: int) -> None:
+        calm_turns = max(5, min(12, circle * 2 + 1))
+        affected = 0
+        for monster in session.place.monsters:
+            if not monster.is_alive() or not self._is_spider_monster(monster):
+                continue
+            self._set_monster_charm(session, monster.entity_id, calm_turns)
+            affected += 1
+        if affected:
+            session.append_log(f"You cast {spell_name}. {affected} spider(s) calm down.")
+        else:
+            session.append_log(f"You cast {spell_name}. No spiders are nearby.")
+        self._finish_spell_cast(session, spell_name, (220, 210, 255))
+
+    def _cast_force_field(self, session: GameSession, spell_name: str, circle: int) -> None:
+        turns = max(5, min(14, circle + 4))
+        placed = self._place_field_tiles(session, session.party.x, session.party.y, "energy", turns)
+        added = max(2, min(6, circle // 2 + 2))
+        session.party.ward_charges = min(12, session.party.ward_charges + added)
+        session.append_log(
+            f"You cast {spell_name}. Energy fields cover {placed} tile(s); ward +{added}."
+        )
+        self._finish_spell_cast(session, spell_name, (180, 210, 255))
+
+    def _cast_invisibility(self, session: GameSession, spell_name: str, circle: int) -> None:
+        duration = max(6, min(18, circle * 2 + 2))
+        session.quest_flags["buff:invisible_turns"] = duration + 1
+        session.append_log(f"You cast {spell_name}. You fade from sight ({duration} turns).")
+        self._finish_spell_cast(session, spell_name, (200, 200, 240))
+
+    def _cast_confusion(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(3, min(10, circle + 2))
+        confuse_turns = max(4, min(12, circle + 2))
+        affected = 0
+        for monster, distance in self._hostiles_in_radius(session, radius):
+            if self._magic_contest(session, monster, circle):
+                self._set_monster_confuse(session, monster.entity_id, confuse_turns)
+                affected += 1
+        if affected:
+            session.append_log(f"You cast {spell_name}. {affected} foe(s) are confused.")
+        else:
+            session.append_log(f"You cast {spell_name}. No foe is confused.")
+        self._finish_spell_cast(session, spell_name, (230, 210, 255))
+
+    def _cast_wind(self, session: GameSession, spell_name: str) -> None:
+        directions = ("north", "east", "south", "west")
+        direction = random.choice(directions)
+        session.quest_flags["world:wind_direction"] = direction
+        session.append_log(f"You cast {spell_name}. The wind shifts to the {direction}.")
+        self._finish_spell_cast(session, spell_name, (210, 230, 255))
+
+    def _cast_resurrection(self, session: GameSession, spell_name: str, circle: int) -> None:
+        lead = session.party.lead()
+        if lead.hp <= 0:
+            lead.hp = lead.max_hp
+            session.append_log(f"You cast {spell_name}. The Wanderer is restored to life.")
+        else:
+            heal = random.randint(8, 12 + circle * 2)
+            lead.hp = min(lead.max_hp, lead.hp + heal)
+            session.append_log(f"You cast {spell_name} and restore {heal} HP.")
+        self._finish_spell_cast(session, spell_name, (190, 255, 210))
+
+    def _cast_time_stop(self, session: GameSession, spell_name: str, circle: int) -> None:
+        stop_turns = max(5, min(14, circle + 3))
+        affected = 0
+        for monster in session.place.monsters:
+            if not monster.is_alive() or not monster.hostile:
+                continue
+            self._set_monster_sleep(session, monster.entity_id, stop_turns)
+            affected += 1
+        session.append_log(f"You cast {spell_name}. Time freezes for {affected} hostile creature(s).")
+        self._finish_spell_cast(session, spell_name, (220, 220, 255))
+
+    def _cast_raise_ship(self, session: GameSession, spell_name: str) -> None:
+        session.quest_flags["quest:ship_raiseable"] = True
+        session.append_log(
+            f"You cast {spell_name}. Distant waters stir—perhaps a sunken hull can be raised."
+        )
+        self._finish_spell_cast(session, spell_name, (200, 230, 255))
+
+    def _cast_tremor(self, session: GameSession, spell_name: str, circle: int) -> None:
+        radius = max(4, min(10, circle + 2))
+        sleep_turns = max(3, min(8, circle))
+        damaged = 0
+        for monster, _ in self._hostiles_in_radius(session, radius):
+            damage = random.randint(2, 4 + circle)
+            monster.hp = max(0, monster.hp - damage)
+            damaged += 1
+            self._set_monster_sleep(session, monster.entity_id, sleep_turns)
+            if not monster.is_alive():
+                session.quest_flags[f"defeated:{monster.entity_id}"] = True
+        session.victory = all(not monster.is_alive() for monster in session.place.monsters)
+        session.append_log(
+            f"You cast {spell_name}. The ground shakes; {damaged} foe(s) are struck and knocked down."
+        )
+        self._finish_spell_cast(session, spell_name, (255, 200, 150))
+
+    def _cast_cone_spell(self, session: GameSession, spell, cone_kind: str) -> None:
+        facing = session.party.lead().facing
+        depth = max(3, min(7, spell.circle + 2))
+        tiles = self._cone_tiles_from_facing(session, session.party.x, session.party.y, facing, depth)
+        hit = 0
+        for monster in session.place.monsters:
+            if not monster.is_alive() or (monster.x, monster.y) not in tiles:
+                continue
+            hit += 1
+            if cone_kind == "fire":
+                damage = random.randint(2, 4 + spell.circle)
+                monster.hp = max(0, monster.hp - damage)
+                session.append_log(f"{spell.name} burns {monster.name} for {damage}.")
+            elif cone_kind == "poison":
+                damage = random.randint(1, 3 + spell.circle)
+                monster.hp = max(0, monster.hp - damage)
+                self._set_monster_poison(session, monster.entity_id, max(3, spell.circle))
+                session.append_log(f"{spell.name} poisons {monster.name} for {damage}.")
+            else:
+                self._set_monster_sleep(session, monster.entity_id, max(3, spell.circle + 1))
+                session.append_log(f"{spell.name} lulls {monster.name} toward sleep.")
+            if not monster.is_alive():
+                session.quest_flags[f"defeated:{monster.entity_id}"] = True
+        session.victory = all(not monster.is_alive() for monster in session.place.monsters)
+        if not hit:
+            session.append_log(f"You cast {spell.name}, but the wind finds no foes.")
+        else:
+            session.append_log(f"You cast {spell.name}. The wind affects {hit} creature(s).")
+        self._finish_spell_cast(session, spell.name, (255, 205, 170))
+
+    def _cast_web_targeted(self, session: GameSession, spell, monster: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        ensnare_turns = max(4, min(10, spell.circle + 2))
+        if self._magic_contest(session, monster, spell.circle):
+            self._set_monster_ensnare(session, monster.entity_id, ensnare_turns)
+            session.append_log(f"You cast {spell.name}. {monster.name} is ensnared ({ensnare_turns} turns).")
+        else:
+            session.append_log(f"You cast {spell.name}. {monster.name} breaks free of the web.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(session, f"You: {spell.name}", (210, 230, 200), world_pos=(monster.x, monster.y))
+        if self._distance_from_party(session, monster.x, monster.y) <= 1:
+            self._enemy_counterattack(session, monster)
+        session.advance_turn()
+
+    def _cast_illusion_targeted(self, session: GameSession, spell, monster: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        if self._magic_contest(session, monster, spell.circle):
+            charm_turns = max(4, min(10, spell.circle + 1))
+            self._set_monster_charm(session, monster.entity_id, charm_turns)
+            session.append_log(f"You cast {spell.name}. {monster.name} is fooled by the illusion.")
+        else:
+            session.append_log(f"You cast {spell.name}. {monster.name} sees through the illusion.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(session, f"You: {spell.name}", (230, 210, 255), world_pos=(monster.x, monster.y))
+        if (
+            self._distance_from_party(session, monster.x, monster.y) <= 1
+            and self._monster_charm_turns(session, monster.entity_id) <= 0
+        ):
+            self._enemy_counterattack(session, monster)
+        session.advance_turn()
+
+    def _cast_clone_targeted(self, session: GameSession, spell, monster: Entity) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        spawn = self._adjacent_passable_tile(session, monster.x, monster.y)
+        if spawn is None:
+            session.append_log(f"You cast {spell.name}, but there is no space for a clone.")
+            self._finish_spell_cast(session, spell.name, (220, 220, 255), counterattack=False)
+            return
+        sx, sy = spawn
+        clone_id = f"clone_{monster.entity_id}_{session.party.turn_count}"
+        clone = Entity(
+            entity_id=clone_id,
+            name=f"Clone of {monster.name}",
+            x=sx,
+            y=sy,
+            sprite_key=monster.sprite_key,
+            hostile=monster.hostile,
+            hp=max(1, monster.hp // 2),
+            max_hp=max(1, monster.max_hp // 2),
+            attack=monster.attack,
+            defense=monster.defense,
+        )
+        session.place.monsters.append(clone)
+        duration = max(5, min(12, spell.circle + 2))
+        session.quest_flags[f"summon:{clone_id}"] = duration
+        session.append_log(f"You cast {spell.name}. A clone of {monster.name} appears.")
+        self._clear_combat_feedback(session)
+        self._set_feedback(session, f"You: {spell.name}", (220, 230, 255), world_pos=(sx, sy))
+        if self._distance_from_party(session, monster.x, monster.y) <= 1:
+            self._enemy_counterattack(session, monster)
+        session.advance_turn()
+
+    def _cast_telekinesis(self, session: GameSession, spell, x: int, y: int) -> None:
+        self._consume_reagents(session, spell.spell_id)
+        items = session.place.ground_items.pop((x, y), None)
+        if items:
+            session.party.inventory.extend(items)
+            session.append_log(f"You cast {spell.name} and draw {len(items)} item(s) to hand.")
+        else:
+            chest = session.place.chest_at(x, y)
+            monster = session.place.monster_at(x, y)
+            if chest is not None and not chest.opened:
+                chest.opened = True
+                if chest.items:
+                    session.place.ground_items[(chest.x, chest.y)] = list(chest.items)
+                session.quest_flags[f"opened:{chest.chest_id}"] = True
+                session.append_log(f"You cast {spell.name} and wrench the chest open.")
+            elif monster is not None and monster.is_alive():
+                step_x = 1 if session.party.x > monster.x else -1 if session.party.x < monster.x else 0
+                step_y = 1 if session.party.y > monster.y else -1 if session.party.y < monster.y else 0
+                nx, ny = monster.x + step_x, monster.y + step_y
+                if self._monster_can_enter_tile(session, monster, nx, ny):
+                    monster.x, monster.y = nx, ny
+                    session.append_log(f"You cast {spell.name} and drag {monster.name} closer.")
+                else:
+                    session.append_log(f"You cast {spell.name}, but {monster.name} holds firm.")
+            else:
+                session.append_log(f"You cast {spell.name}, but nothing moves.")
+        self._finish_spell_cast(session, spell.name, (200, 220, 255))
 
     def _party_poison_turns(self, session: GameSession) -> int:
         turns = session.quest_flags.get("buff:poison_turns")
@@ -1791,8 +2255,11 @@ class TurnLoop:
         tile_field = session.place.field_at(x, y)
         if tile_field is None or not entity.is_alive():
             return
-        if tile_field.field_kind == "sleep":
-            session.append_log(f"{label} stumbles in a sleep field.")
+        if tile_field.field_kind in {"sleep", "smoke"}:
+            session.append_log(f"{label} stumbles in a {tile_field.field_kind} field.")
+            return
+        if tile_field.field_kind == "energy":
+            session.append_log(f"{label} is repelled by an energy field.")
             return
         if tile_field.field_kind == "poison":
             damage = random.randint(1, 3)

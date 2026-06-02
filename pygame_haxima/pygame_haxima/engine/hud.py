@@ -78,6 +78,12 @@ class HudPane:
         party_poison = session.quest_flags.get("buff:poison_turns")
         if isinstance(party_poison, int) and party_poison > 0:
             effects.append(f"Poison({party_poison})")
+        invisible = session.quest_flags.get("buff:invisible_turns")
+        if isinstance(invisible, int) and invisible > 0:
+            effects.append(f"Invis({invisible})")
+        ensnare = session.quest_flags.get("buff:ensnare_turns")
+        if isinstance(ensnare, int) and ensnare > 0:
+            effects.append(f"Web({ensnare})")
         if effects:
             status_parts.append(f"Effects: {', '.join(effects)}")
         if status_parts:

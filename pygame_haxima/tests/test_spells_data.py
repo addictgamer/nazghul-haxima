@@ -23,3 +23,10 @@ def test_new_session_uses_data_driven_spellbook() -> None:
     session = ContentRegistry().make_new_session()
     assert "grav_por" in session.party.spells_known
     assert session.party.selected_spell == "spark"
+
+
+def test_all_world_spells_have_scripted_effect_kinds() -> None:
+    for spell_id in known_spell_ids():
+        spell = get_spell(spell_id)
+        assert spell is not None
+        assert spell.effect_kind != "utility", spell_id

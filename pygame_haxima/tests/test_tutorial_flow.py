@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pygame_haxima.data.content_registry import ContentRegistry
 from pygame_haxima.data.save_manager import SaveManager
-from pygame_haxima.domain.models import Entity, TileField
+from pygame_haxima.domain.models import Entity, TileField, Trap
 from pygame_haxima.engine.events import EngineEvent, EngineEventType
 from pygame_haxima.engine.loop import TurnLoop
 
@@ -472,6 +472,58 @@ def test_cast_teleport_party_relocates_party(tmp_path) -> None:
     assert session.party.x == 12
     assert session.party.y == 9
     assert any("teleport" in line.lower() for line in session.log_lines)
+
+
+def test_cast_trap_detect_marks_nearby_traps(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 10
+    session.party.y = 9
+    session.party.members[0].x = 10
+    session.party.members[0].y = 9
+    session.party.selected_spell = "wis_sanct"
+    session.party.reagents["sulphurous_ash"] = 1
+    session.place.traps.append(Trap(trap_id="t1", x=11, y=9))
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.place.traps[0].detected is True
+    assert any("detected" in line.lower() for line in session.log_lines)
+
+
+def test_cast_time_stop_puts_hostiles_to_sleep(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.party.selected_spell = "an_tym"
+    session.party.reagents["mandrake"] = 1
+    session.party.reagents["garlic"] = 1
+    session.party.reagents["blood_moss"] = 1
+    wolf = session.place.monsters[0]
+
+    loop.process_events(session, [_action("cast")])
+
+    assert session.quest_flags.get(f"sleep:{wolf.entity_id}", 0) >= 5
+
+
+def test_cast_summon_adds_friendly_ally(tmp_path) -> None:
+    loop = _make_loop(tmp_path)
+    session = ContentRegistry().make_new_session()
+    session.place.spell_context = "context-town"
+    session.party.x = 10
+    session.party.y = 9
+    session.party.members[0].x = 10
+    session.party.members[0].y = 9
+    session.party.selected_spell = "in_bet_xen"
+    session.party.reagents["spider_silk"] = 1
+    session.party.reagents["blood_moss"] = 1
+    session.party.reagents["sulphurous_ash"] = 1
+    before = len(session.place.monsters)
+
+    loop.process_events(session, [_action("cast")])
+
+    assert len(session.place.monsters) == before + 1
+    assert any(m.hostile is False and "Summoned" in m.name for m in session.place.monsters)
 
 
 def test_fear_status_expires_after_turns(tmp_path) -> None:

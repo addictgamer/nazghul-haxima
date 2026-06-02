@@ -52,8 +52,16 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
         return "unlock", False, 0
     if "lock" in token:
         return "lock", False, 0
-    if "vision" in token or "reveal" in token or "detect" in token:
+    if spell_id == "wis_sanct" or "detect trap" in token:
+        return "trap_detect", False, 0
+    if spell_id == "an_sanct_ylem" or "disarm trap" in token:
+        return "trap_disarm", False, 0
+    if "vision" in token or "reveal" in token or "x-ray" in token:
         return "sight", False, 0
+    if spell_id in {"in_lor", "vas_lor"} or ("light" in token and "invisibility" not in token):
+        return "light", False, 0
+    if spell_id == "sanct_lor" or "invisibility" in token:
+        return "invisibility", False, 0
     if "dispel field" in token:
         return "dispel_field", False, 0
     if "dispel" in token or "negate magic" in token:
@@ -61,11 +69,47 @@ def _spell_profile(spell_id: str, name: str, circle: int) -> tuple[str, bool, in
     field_terms = ("fire field", "poison field", "sleep field")
     if any(term in token for term in field_terms):
         return "field", True, max(2, min(8, circle + 1))
+    if spell_id == "in_sanct_grav" or "force field" in token:
+        return "force_field", False, 0
+    if spell_id == "bet_ylem_hur" or "conjure smoke" in token:
+        return "smoke", False, 0
+    if spell_id == "ylem_an_ex" or "web" in token:
+        return "web", True, max(2, min(5, circle + 1))
+    if spell_id in {"in_bet_xen", "kal_xen", "kal_xen_corp", "kal_xen_nox"} or "summon" in token:
+        return "summon", False, 0
+    if spell_id == "an_xen_bet" or "calm spider" in token:
+        return "calm_spiders", False, 0
+    if spell_id == "rel_hur" or "change wind" in token:
+        return "wind", False, 0
+    if spell_id == "quas_an_wis" or "confusion" in token:
+        return "confusion", False, 0
+    if spell_id == "rel_xen_quas" or "illusion" in token:
+        return "illusion", True, max(3, min(8, circle // 3 + 3))
+    if spell_id == "in_rel_por" or "telekinesis" in token:
+        return "telekinesis", True, max(3, min(8, circle + 2))
+    if spell_id == "in_quas_xen" or "clone" in token:
+        return "clone", True, max(2, min(12, circle + 2))
+    if spell_id == "in_mani_corp" or "resurrect" in token:
+        return "resurrection", False, 0
+    if spell_id == "an_tym" or "time stop" in token:
+        return "time_stop", False, 0
+    if spell_id == "vas_uus_ylem" or "raise ship" in token:
+        return "raise_ship", False, 0
+    if spell_id == "vas_rel_por" or spell_id == "gate":
+        return "gate", True, max(6, min(15, int(circle * 0.75) + 4))
+    if spell_id == "in_vas_por_ylem" or "tremor" in token:
+        return "tremor", False, 0
+    if spell_id == "in_nox_hur" or "poison wind" in token:
+        return "cone_poison", False, 0
+    if spell_id == "in_zu_hur" or "wind of sleep" in token:
+        return "cone_sleep", False, 0
+    if spell_id == "bet_flam_hur" or "fire spray" in token:
+        return "cone_fire", False, 0
     if "mass sleep" in token or spell_id == "in_zu":
         return "sleep_area", False, 0
     if "awaken" in token:
         return "awaken", False, 0
-    if "sleep" in token:
+    if spell_id == "xen_zu" or ("sleep" in token and "field" not in token):
         return "sleep", True, max(2, min(6, circle + 1))
     if "cure poison" in token:
         return "cure_poison", False, 0

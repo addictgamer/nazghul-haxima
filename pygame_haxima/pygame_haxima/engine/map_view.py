@@ -175,6 +175,8 @@ class MapView:
             "fire": (255, 120, 60, 90),
             "poison": (120, 220, 90, 90),
             "sleep": (170, 140, 255, 90),
+            "smoke": (140, 140, 150, 100),
+            "energy": (120, 200, 255, 100),
         }
         color = colors.get(tile_field.field_kind, (200, 200, 220, 80))
         overlay = pygame.Surface((cell.width, cell.height), pygame.SRCALPHA)

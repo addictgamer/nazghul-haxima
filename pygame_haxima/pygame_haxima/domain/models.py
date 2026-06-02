@@ -98,6 +98,15 @@ class Chest:
 
 
 @dataclass
+class Trap:
+    trap_id: str
+    x: int
+    y: int
+    detected: bool = False
+    disarmed: bool = False
+
+
+@dataclass
 class TileField:
     x: int
     y: int
@@ -116,6 +125,7 @@ class Place:
     npcs: list[Npc] = field(default_factory=list)
     monsters: list[Entity] = field(default_factory=list)
     chests: list[Chest] = field(default_factory=list)
+    traps: list[Trap] = field(default_factory=list)
     ground_items: dict[tuple[int, int], list[Item]] = field(default_factory=dict)
     tile_fields: dict[tuple[int, int], TileField] = field(default_factory=dict)
     spell_context: str = "context-town"
@@ -145,6 +155,12 @@ class Place:
         for chest in self.chests:
             if (chest.x, chest.y) == (x, y):
                 return chest
+        return None
+
+    def trap_at(self, x: int, y: int) -> Trap | None:
+        for trap in self.traps:
+            if (trap.x, trap.y) == (x, y) and not trap.disarmed:
+                return trap
         return None
 
     def npc_at(self, x: int, y: int) -> Npc | None:
@@ -220,7 +236,12 @@ class GameSession:
         self.log_lines = self.log_lines[-100:]
 
     def advance_turn(self, minutes: int = 5) -> None:
-        for buff_key in ("buff:light_turns", "buff:quickness_turns"):
+        for buff_key in (
+            "buff:light_turns",
+            "buff:quickness_turns",
+            "buff:invisible_turns",
+            "buff:ensnare_turns",
+        ):
             buff_turns = self.quest_flags.get(buff_key)
             if isinstance(buff_turns, int) and not isinstance(buff_turns, bool):
                 remaining = max(0, buff_turns - 1)
@@ -228,6 +249,34 @@ class GameSession:
                     self.quest_flags[buff_key] = remaining
                 else:
                     self.quest_flags.pop(buff_key, None)
+        expired_confuse: list[str] = []
+        for key, value in self.quest_flags.items():
+            if not key.startswith("confuse:") or not isinstance(value, int) or isinstance(value, bool):
+                continue
+            remaining = max(0, value - 1)
+            if remaining > 0:
+                self.quest_flags[key] = remaining
+            else:
+                expired_confuse.append(key)
+        for key in expired_confuse:
+            self.quest_flags.pop(key, None)
+        expired_summons: list[str] = []
+        monsters_by_id = {monster.entity_id: monster for monster in self.place.monsters}
+        for key, value in self.quest_flags.items():
+            if not key.startswith("summon:") or not isinstance(value, int) or isinstance(value, bool):
+                continue
+            entity_id = key.removeprefix("summon:")
+            remaining = max(0, value - 1)
+            if remaining > 0:
+                self.quest_flags[key] = remaining
+            else:
+                expired_summons.append(entity_id)
+        for entity_id in expired_summons:
+            self.quest_flags.pop(f"summon:{entity_id}", None)
+            monster = monsters_by_id.get(entity_id)
+            if monster is not None and not monster.hostile:
+                monster.hp = 0
+                self.append_log(f"{monster.name} fades away.")
         expired_fields: list[tuple[int, int]] = []
         for pos, tile_field in self.place.tile_fields.items():
             tile_field.turns_remaining -= 1
@@ -241,6 +290,7 @@ class GameSession:
                 key.startswith("sleep:")
                 or key.startswith("fear:")
                 or key.startswith("charm:")
+                or key.startswith("ensnare:")
             ):
                 continue
             if not isinstance(value, int) or isinstance(value, bool):
