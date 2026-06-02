@@ -92,7 +92,8 @@ class InputController:
 
     def _movement_repeat_enabled(self, session: GameSession) -> bool:
         return not (
-            session.show_options_menu
+            session.show_main_menu
+            or session.show_options_menu
             or session.show_save_load_menu
             or session.show_reagents_menu
             or session.show_spellbook_menu

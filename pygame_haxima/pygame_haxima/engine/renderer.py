@@ -73,6 +73,17 @@ class Renderer:
     def render(self, session: GameSession) -> None:
         target = self.virtual_surface
         target.fill((0, 0, 0))
+        if session.show_main_menu:
+            self.text_ui.draw_main_menu_screen(target, session)
+            if self.scale == 1:
+                self.window.blit(target, (0, 0))
+            else:
+                scaled = pygame.transform.scale(
+                    target, (DISPLAY.base_width * self.scale, DISPLAY.base_height * self.scale)
+                )
+                self.window.blit(scaled, (0, 0))
+            pygame.display.flip()
+            return
         self.map_view.draw(target, self.rects["map"], session)
         self.hud.draw(target, self.rects["hud"], session)
         self.text_ui.draw_console(target, self.rects["console"], session)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from pygame_haxima.data.menu_session import build_menu_session
 from pygame_haxima.data.place_loader import build_place_by_key
 from pygame_haxima.data.place_placements import place_key_from_id
 from pygame_haxima.data.quest_engine import QuestEngine
@@ -19,6 +20,20 @@ class ContentRegistry:
 
     def default_place_key(self) -> str:
         return os.environ.get("HAXIMA_PLACE", "tutorial").strip().lower() or "tutorial"
+
+    def make_menu_session(
+        self,
+        *,
+        option_scale: int = 1,
+        option_fullscreen: bool = False,
+        save_slot_labels: list[str] | None = None,
+    ) -> GameSession:
+        session = build_menu_session()
+        session.option_scale = max(1, min(4, option_scale))
+        session.option_fullscreen = option_fullscreen
+        if save_slot_labels is not None:
+            session.save_slot_labels = list(save_slot_labels)
+        return session
 
     def make_new_session(self, place_key: str | None = None) -> GameSession:
         key = (place_key or self.default_place_key()).strip().lower()

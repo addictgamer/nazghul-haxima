@@ -233,6 +233,8 @@ class GameSession:
     debug_runtime_state: bool = False
     terrain_fallback_key_count: int = 0
     terrain_fallback_keys: list[str] = field(default_factory=list)
+    show_main_menu: bool = False
+    main_menu_selected_index: int = 0
     show_options_menu: bool = False
     options_selected_index: int = 0
     show_save_load_menu: bool = False

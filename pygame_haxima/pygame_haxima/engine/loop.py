@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 
 from pygame_haxima.data.content_registry import ContentRegistry
+from pygame_haxima.engine.main_menu import MAIN_MENU_ITEMS, main_menu_hit_test
 from pygame_haxima.data.quest_engine import QuestEngine
 from pygame_haxima.data.save_manager import SaveManager
 from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode, TileField, Trap
@@ -33,6 +34,7 @@ class TurnLoop:
         converted = project_root / "converted_data"
         self.quest_engine = quest_engine or QuestEngine.load(converted)
         self.content_registry = content_registry
+        self.session_replacement: GameSession | None = None
 
     def process_events(self, session: GameSession, events: list[EngineEvent]) -> None:
         for event in events:
@@ -42,6 +44,9 @@ class TurnLoop:
             if event.kind == EngineEventType.ANIMATION_TICK:
                 self._tick_feedback(session)
                 continue
+            if session.show_main_menu:
+                if self._process_main_menu_event(session, event):
+                    continue
             if event.kind == EngineEventType.MOUSE_CLICK:
                 if session.show_save_load_menu:
                     self._handle_save_load_menu_click(session, event.payload["ui_pos"])
@@ -262,6 +267,99 @@ class TurnLoop:
         session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
         session.append_log("Set HAXIMA_PLACE=cloviskeep to start in converted Cloviskeep.")
 
+    def _process_main_menu_event(self, session: GameSession, event: EngineEvent) -> bool:
+        if event.kind == EngineEventType.ANIMATION_TICK:
+            return True
+        if event.kind in {
+            EngineEventType.MOUSE_TILE,
+            EngineEventType.MOUSE_MOVE,
+            EngineEventType.MOUSE_WHEEL,
+        }:
+            return True
+        if event.kind == EngineEventType.MOUSE_CLICK:
+            if session.show_save_load_menu:
+                self._handle_save_load_menu_click(session, event.payload["ui_pos"])
+                return True
+            if session.show_options_menu:
+                return True
+            action_id = main_menu_hit_test(event.payload["ui_pos"])
+            if action_id is not None:
+                self._activate_main_menu_item(session, action_id)
+            return True
+        if event.kind != EngineEventType.ACTION:
+            return False
+        action = event.payload["action"]
+        if session.show_save_load_menu:
+            self._handle_save_load_menu_action(session, action)
+            return True
+        if session.show_options_menu:
+            self._handle_options_menu_action(session, action)
+            return True
+        if action in {"move_n", "move_s"}:
+            count = len(MAIN_MENU_ITEMS)
+            delta = -1 if action == "move_n" else 1
+            session.main_menu_selected_index = (session.main_menu_selected_index + delta) % count
+            return True
+        if action == "confirm":
+            if session.main_menu_selected_index < len(MAIN_MENU_ITEMS):
+                action_id = MAIN_MENU_ITEMS[session.main_menu_selected_index][0]
+                self._activate_main_menu_item(session, action_id)
+            return True
+        if action == "options_menu":
+            self._open_main_menu_options(session)
+            return True
+        if action == "cancel":
+            if session.show_options_menu:
+                self._toggle_options_menu(session)
+            elif session.show_save_load_menu:
+                self._close_save_load_menu(session)
+            return True
+        return True
+
+    def _activate_main_menu_item(self, session: GameSession, action_id: str) -> None:
+        if action_id == "new_game":
+            self._start_new_game_from_menu(session)
+            return
+        if action_id == "load_game":
+            session.save_slot_labels = self.save_manager.list_slots()
+            self._open_save_load_menu(session, "load")
+            session.command_prompt = "Load Menu> select slot, Enter load, Esc back"
+            return
+        if action_id == "options":
+            self._open_main_menu_options(session)
+            return
+        if action_id == "quit":
+            session.running = False
+
+    def _open_main_menu_options(self, session: GameSession) -> None:
+        session.show_options_menu = True
+        session.options_selected_index = 0
+        session.option_scale = self.renderer.scale
+        session.option_fullscreen = self.renderer.is_fullscreen
+        session.command_prompt = "Options> arrows navigate, left/right change, Esc back"
+
+    def _start_new_game_from_menu(self, current: GameSession) -> None:
+        if self.content_registry is None:
+            return
+        fresh = self.content_registry.make_new_session()
+        fresh.option_scale = current.option_scale
+        fresh.option_fullscreen = current.option_fullscreen
+        fresh.show_main_menu = False
+        self.renderer.set_scale(max(1, min(4, fresh.option_scale)))
+        if fresh.option_fullscreen != self.renderer.is_fullscreen:
+            self.renderer.toggle_fullscreen()
+        self.session_replacement = fresh
+
+    def _return_to_main_menu(self, session: GameSession) -> None:
+        if self.content_registry is None:
+            return
+        menu = self.content_registry.make_menu_session(
+            option_scale=self.renderer.scale,
+            option_fullscreen=self.renderer.is_fullscreen,
+            save_slot_labels=self.save_manager.list_slots(),
+        )
+        self.session_replacement = menu
+
     def _travel_zone(self, session: GameSession) -> None:
         if self.content_registry is None:
             session.append_log("Zone travel is unavailable.")
@@ -281,8 +379,13 @@ class TurnLoop:
             session.command_prompt = "Options> arrows navigate, left/right change, Esc/F10 close"
             session.append_log("Opened options menu.")
         else:
-            session.command_prompt = "Command> (H help, F10 options)"
+            session.command_prompt = self._default_command_prompt(session)
             session.append_log("Closed options menu.")
+
+    def _default_command_prompt(self, session: GameSession) -> str:
+        if session.show_main_menu:
+            return "Main Menu> Up/Down select, Enter confirm, mouse click"
+        return "Command> (H help, F10 options)"
 
     def _toggle_reagents_menu(self, session: GameSession) -> None:
         if session.show_save_load_menu:
@@ -429,8 +532,11 @@ class TurnLoop:
         self._toggle_spellbook_menu(session)
         self._start_cast(session)
 
+    def _options_menu_count(self, session: GameSession) -> int:
+        return 4 if session.show_main_menu else 5
+
     def _handle_options_menu_action(self, session: GameSession, action: str) -> None:
-        option_count = 4
+        option_count = self._options_menu_count(session)
         if action == "cancel":
             self._toggle_options_menu(session)
             return
@@ -465,6 +571,10 @@ class TurnLoop:
             state = "ON" if session.debug_sprite_warnings else "OFF"
             session.append_log(f"Sprite warning overlay {state}.")
             return
+        if option == 4 and not session.show_main_menu:
+            self._toggle_options_menu(session)
+            self._return_to_main_menu(session)
+            return
 
     def _open_save_load_menu(self, session: GameSession, mode: str) -> None:
         session.show_save_load_menu = True
@@ -477,7 +587,7 @@ class TurnLoop:
     def _close_save_load_menu(self, session: GameSession) -> None:
         session.show_save_load_menu = False
         session.save_load_mode = None
-        session.command_prompt = "Command> (H help, F10 options)"
+        session.command_prompt = self._default_command_prompt(session)
 
     def _handle_save_load_menu_action(self, session: GameSession, action: str) -> None:
         if action == "cancel":
@@ -515,6 +625,8 @@ class TurnLoop:
         if loaded:
             self._post_load_sync(session)
             session.append_log("Loaded saved game.")
+            if session.show_main_menu:
+                session.show_main_menu = False
             self._close_save_load_menu(session)
             return
         if self.save_manager.last_error == "corrupt_save":

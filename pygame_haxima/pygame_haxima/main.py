@@ -52,10 +52,13 @@ def run() -> int:
         quest_engine=content_registry.quest_engine,
         content_registry=content_registry,
     )
-    session = content_registry.make_new_session()
+    session = content_registry.make_menu_session(
+        option_scale=renderer.scale,
+        option_fullscreen=renderer.is_fullscreen,
+        save_slot_labels=save_manager.list_slots(),
+    )
     sprite_profile = load_sprite_profile(project_root / "converted_data")
-    runtime_sprite_keys = _runtime_sprite_keys(session)
-    runtime_sprite_keys.update(converted_runtime_sprite_keys(project_root / "converted_data", sprite_profile))
+    runtime_sprite_keys = converted_runtime_sprite_keys(project_root / "converted_data", sprite_profile)
     runtime_report_text = atlas.format_runtime_coverage_report(runtime_sprite_keys)
     print(report_text, end="")
     print(runtime_report_text, end="")
@@ -64,6 +67,46 @@ def run() -> int:
     with coverage_path.open("a", encoding="utf-8") as handle:
         handle.write("\n")
         handle.write(runtime_report_text)
+
+    while session.running:
+        events = input_controller.poll(session)
+        loop.process_events(session, events)
+        replacement = loop.session_replacement
+        if replacement is not None:
+            session = replacement
+            loop.session_replacement = None
+            prepare_play_session(
+                session,
+                atlas=atlas,
+                save_manager=save_manager,
+                renderer=renderer,
+                keymap=keymap,
+                project_root=project_root,
+                sprite_profile=sprite_profile,
+            )
+        renderer.render(session)
+        clock.tick(DISPLAY.target_fps)
+
+    pygame.quit()
+    return 0
+
+
+def prepare_play_session(
+    session: GameSession,
+    *,
+    atlas: SpriteAtlas,
+    save_manager: SaveManager,
+    renderer: Renderer,
+    keymap: KeyMap,
+    project_root: Path,
+    sprite_profile,
+) -> None:
+    if session.show_main_menu:
+        return
+    runtime_sprite_keys = _runtime_sprite_keys(session)
+    runtime_sprite_keys.update(
+        converted_runtime_sprite_keys(project_root / "converted_data", sprite_profile)
+    )
     terrain_sprite_keys = {
         terrain.sprite_key for terrain in session.place.terrain_defs.values() if terrain.sprite_key
     }
@@ -94,15 +137,6 @@ def run() -> int:
         for action, label in keybind_order
     ]
 
-    while session.running:
-        events = input_controller.poll(session)
-        loop.process_events(session, events)
-        renderer.render(session)
-        clock.tick(DISPLAY.target_fps)
-
-    pygame.quit()
-    return 0
-
 
 def _runtime_sprite_keys(session: GameSession) -> set[str]:
     keys: set[str] = set()
@@ -120,3 +154,4 @@ def _runtime_sprite_keys(session: GameSession) -> set[str]:
     for item in session.party.inventory:
         keys.add(item_sprite_key(item))
     return {key for key in keys if key}
+

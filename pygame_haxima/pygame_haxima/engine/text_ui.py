@@ -5,6 +5,7 @@ import pygame
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
 from pygame_haxima.domain.models import GameSession, Item
 from pygame_haxima.engine.item_sprites import item_sprite_key
+from pygame_haxima.engine.main_menu import draw_main_menu
 from pygame_haxima.engine.spells import get_spell, spell_context_available
 
 
@@ -278,6 +279,19 @@ class TextUi:
                 more = self.small_font.render(f"+{len(ordered) - max_rows} more", True, (140, 155, 180))
                 surface.blit(more, (rect.x + 8, rect.bottom - self.small_font.get_height() - 4))
 
+    def draw_main_menu_screen(self, surface: pygame.Surface, session: GameSession) -> None:
+        draw_main_menu(
+            surface,
+            selected_index=session.main_menu_selected_index,
+            title_font=self.cmd_font,
+            menu_font=self.menu_font,
+            small_font=self.small_font,
+        )
+        if session.show_save_load_menu:
+            self.draw_save_load_menu(surface, session)
+        elif session.show_options_menu:
+            self.draw_options_menu(surface, session)
+
     def draw_command(self, surface: pygame.Surface, rect: pygame.Rect, session: GameSession) -> None:
         pygame.draw.rect(surface, (16, 16, 22), rect)
         pygame.draw.rect(surface, (110, 110, 140), rect, 1)
@@ -307,6 +321,8 @@ class TextUi:
             f"Terrain IDs (F2): {'On' if session.debug_terrain_ids else 'Off'}",
             f"Sprite warnings (F3): {'On' if session.debug_sprite_warnings else 'Off'}",
         ]
+        if not session.show_main_menu:
+            options.append("Return to Main Menu")
         for index, text in enumerate(options):
             color = (240, 240, 255) if index == session.options_selected_index else (170, 180, 200)
             prefix = ">" if index == session.options_selected_index else " "

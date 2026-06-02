@@ -5,8 +5,8 @@ Sprite Coverage Report
 - fallback_keys: 0
 
 Runtime Sprite Coverage
-- runtime_keys: 21
-- direct_resolved: 17
+- runtime_keys: 19
+- direct_resolved: 15
 - alias_resolved: 0
 - unresolved_aliases: 0
 - fallback_runtime_keys: 0
