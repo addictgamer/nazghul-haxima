@@ -19,6 +19,8 @@ def test_critical_sprite_keys_are_not_fallbacks() -> None:
         "s_wanderer",
         "s_old_townsman",
         "s_wolf",
+        # terrain (Cloviskeep dirt uses ss_addon index 137)
+        "s_dirt",
         # object categories
         "s_chest",
         "s_door",

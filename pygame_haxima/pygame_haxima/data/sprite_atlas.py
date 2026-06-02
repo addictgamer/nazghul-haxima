@@ -173,17 +173,24 @@ class SpriteAtlas:
             self.missing_sheet_files.add(sprite_set.filename)
             return None, "missing_sheet"
         tile_index = sprite_ref.tile_index + max(0, frame_offset)
+        if sprite_set.cols <= 0 or sprite_set.rows <= 0:
+            return None, "out_of_bounds"
         col = tile_index % sprite_set.cols
         row = tile_index // sprite_set.cols
-        if row >= sprite_set.rows:
-            return None, "out_of_bounds"
         src = pygame.Rect(
             sprite_set.xoff + col * sprite_set.tile_w,
             sprite_set.yoff + row * sprite_set.tile_h,
             sprite_set.tile_w,
             sprite_set.tile_h,
         )
-        if src.right > sheet.get_width() or src.bottom > sheet.get_height():
+        # Nazghul indexes tiles with declared cols only; sheets may be taller
+        # than kern-mk-sprite-set rows (e.g. addons.png has 19 rows, scm says 16).
+        if (
+            src.left < 0
+            or src.top < 0
+            or src.right > sheet.get_width()
+            or src.bottom > sheet.get_height()
+        ):
             return None, "out_of_bounds"
         tile = pygame.Surface((self._tile_w, self._tile_h), pygame.SRCALPHA)
         tile.blit(sheet, (0, 0), src)
