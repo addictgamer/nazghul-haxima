@@ -4,7 +4,7 @@ import random
 from pathlib import Path
 
 from pygame_haxima.data.content_registry import ContentRegistry
-from pygame_haxima.engine.main_menu import MAIN_MENU_ITEMS, main_menu_hit_test
+from pygame_haxima.engine.main_menu import MAIN_MENU_ITEMS, main_menu_hit_test, main_menu_index_at
 from pygame_haxima.data.quest_engine import QuestEngine
 from pygame_haxima.data.save_manager import SaveManager
 from pygame_haxima.domain.models import Chest, Entity, GameSession, Mode, TileField, Trap
@@ -55,7 +55,9 @@ class TurnLoop:
                     self._handle_spellbook_menu_click(session, event.payload["ui_pos"])
                 continue
             if event.kind == EngineEventType.MOUSE_MOVE:
-                if session.show_spellbook_menu:
+                if session.show_save_load_menu:
+                    self._handle_save_load_menu_hover(session, event.payload["ui_pos"])
+                elif session.show_spellbook_menu:
                     self._handle_spellbook_menu_hover(session, event.payload["ui_pos"])
                 continue
             if event.kind == EngineEventType.MOUSE_WHEEL:
@@ -267,14 +269,23 @@ class TurnLoop:
         session.append_log("Target mode: arrows move cursor | Enter confirm | Esc cancel")
         session.append_log("Set HAXIMA_PLACE=cloviskeep to start in converted Cloviskeep.")
 
+    def _handle_main_menu_hover(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
+        if session.show_save_load_menu or session.show_options_menu:
+            return
+        index = main_menu_index_at(ui_pos)
+        if index is not None:
+            session.main_menu_selected_index = index
+
     def _process_main_menu_event(self, session: GameSession, event: EngineEvent) -> bool:
         if event.kind == EngineEventType.ANIMATION_TICK:
             return True
-        if event.kind in {
-            EngineEventType.MOUSE_TILE,
-            EngineEventType.MOUSE_MOVE,
-            EngineEventType.MOUSE_WHEEL,
-        }:
+        if event.kind == EngineEventType.MOUSE_MOVE:
+            if session.show_save_load_menu:
+                self._handle_save_load_menu_hover(session, event.payload["ui_pos"])
+            else:
+                self._handle_main_menu_hover(session, event.payload["ui_pos"])
+            return True
+        if event.kind in {EngineEventType.MOUSE_TILE, EngineEventType.MOUSE_WHEEL}:
             return True
         if event.kind == EngineEventType.MOUSE_CLICK:
             if session.show_save_load_menu:
@@ -643,6 +654,14 @@ class TurnLoop:
         session.option_scale = self.renderer.scale
         session.option_fullscreen = self.renderer.is_fullscreen
         session.save_slot_labels = self.save_manager.list_slots()
+
+    def _handle_save_load_menu_hover(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
+        hit = self.renderer.text_ui.save_load_hit_test(ui_pos, session)
+        if hit is None:
+            return
+        target, index = hit
+        if target == "slot" and index is not None:
+            session.save_load_selected_slot = index
 
     def _handle_save_load_menu_click(self, session: GameSession, ui_pos: tuple[int, int]) -> None:
         hit = self.renderer.text_ui.save_load_hit_test(ui_pos, session)

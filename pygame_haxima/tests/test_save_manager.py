@@ -3,8 +3,43 @@ from __future__ import annotations
 import json
 
 from pygame_haxima.data.content_registry import ContentRegistry
+from pygame_haxima.data.menu_session import build_menu_session
 from pygame_haxima.data.save_manager import SaveManager
 from pygame_haxima.domain.models import CombatState, Item, Mode
+from pygame_haxima.engine.loop import TurnLoop
+from pygame_haxima.engine.text_ui import TextUi
+
+
+class _AtlasStub:
+    def has_key(self, _key: str) -> bool:
+        return False
+
+    def get(self, _key: str) -> object:
+        raise AssertionError("atlas get not used in save/load hover test")
+
+
+class _RendererStub:
+    def __init__(self) -> None:
+        self.text_ui = TextUi(_AtlasStub())  # type: ignore[arg-type]
+
+
+def test_save_load_hover_updates_selected_slot() -> None:
+    import pygame
+
+    pygame.init()
+    session = build_menu_session()
+    session.show_save_load_menu = True
+    session.save_load_mode = "load"
+    session.save_slot_labels = [f"Slot {i + 1}: (empty)" for i in range(6)]
+    loop = TurnLoop(
+        renderer=_RendererStub(),  # type: ignore[arg-type]
+        audio=object(),  # type: ignore[arg-type]
+        save_manager=object(),  # type: ignore[arg-type]
+    )
+    row = loop.renderer.text_ui._save_slot_row_rect(3)
+    loop._handle_save_load_menu_hover(session, (row.centerx, row.centery))
+    assert session.save_load_selected_slot == 3
+    pygame.quit()
 
 
 def test_save_load_round_trip_persists_runtime_state(tmp_path) -> None:

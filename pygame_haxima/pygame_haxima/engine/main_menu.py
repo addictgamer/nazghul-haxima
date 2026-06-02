@@ -25,12 +25,19 @@ def main_menu_row_rect(index: int) -> pygame.Rect:
     )
 
 
-def main_menu_hit_test(ui_pos: tuple[int, int]) -> str | None:
+def main_menu_index_at(ui_pos: tuple[int, int]) -> int | None:
     x, y = ui_pos
-    for index, (action_id, _label) in enumerate(MAIN_MENU_ITEMS):
+    for index, _entry in enumerate(MAIN_MENU_ITEMS):
         if main_menu_row_rect(index).collidepoint((x, y)):
-            return action_id
+            return index
     return None
+
+
+def main_menu_hit_test(ui_pos: tuple[int, int]) -> str | None:
+    index = main_menu_index_at(ui_pos)
+    if index is None:
+        return None
+    return MAIN_MENU_ITEMS[index][0]
 
 
 def draw_main_menu(
@@ -77,7 +84,7 @@ def draw_main_menu(
         surface.blit(text, (row.x + 14, row.y + (row.height - text.get_height()) // 2))
 
     hint = small_font.render(
-        "Arrows / W-S: navigate   Enter: select   F10: options from game   Esc: back",
+        "Arrows / W-S or mouse hover: navigate   Enter / click: select   Esc: back",
         True,
         (140, 155, 180),
     )

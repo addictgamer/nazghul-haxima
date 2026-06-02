@@ -347,7 +347,7 @@ class TextUi:
         title = self.cmd_font.render(f"{mode} SLOTS", True, (245, 235, 180))
         surface.blit(title, (panel.x + 16, panel.y + 12))
         hint = self.menu_font.render(
-            "Arrows/mouse: select slot | Enter or Confirm button | Esc/Close button", True, (200, 210, 225)
+            "Arrows / mouse hover: select slot | Enter or Confirm | Esc/Close", True, (200, 210, 225)
         )
         surface.blit(hint, (panel.x + 16, panel.y + 46))
 
