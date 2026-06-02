@@ -3,6 +3,13 @@ from __future__ import annotations
 import pygame
 
 from pygame_haxima.config import DISPLAY
+from pygame_haxima.engine.title_screen import (
+    TITLE_HUD_HEIGHT,
+    TITLE_SIDEBAR_WIDTH,
+    blit_splash_in_rect,
+    draw_title_backdrop,
+    title_art_rect,
+)
 
 MAIN_MENU_ITEMS: tuple[tuple[str, str], ...] = (
     ("new_game", "New Game"),
@@ -11,16 +18,21 @@ MAIN_MENU_ITEMS: tuple[tuple[str, str], ...] = (
     ("quit", "Quit"),
 )
 
-MAIN_MENU_PANEL = pygame.Rect(390, 260, 500, 340)
+# Menu list in the right sidebar, matching in-game layout proportions.
+MAIN_MENU_PANEL = pygame.Rect(
+    DISPLAY.base_width - TITLE_SIDEBAR_WIDTH + 16,
+    TITLE_HUD_HEIGHT + 24,
+    TITLE_SIDEBAR_WIDTH - 32,
+    380,
+)
 MAIN_MENU_ROW_HEIGHT = 52
-MAIN_MENU_TITLE_Y = 120
 
 
 def main_menu_row_rect(index: int) -> pygame.Rect:
     return pygame.Rect(
-        MAIN_MENU_PANEL.x + 24,
-        MAIN_MENU_PANEL.y + 72 + index * MAIN_MENU_ROW_HEIGHT,
-        MAIN_MENU_PANEL.width - 48,
+        MAIN_MENU_PANEL.x + 8,
+        MAIN_MENU_PANEL.y + 56 + index * MAIN_MENU_ROW_HEIGHT,
+        MAIN_MENU_PANEL.width - 16,
         MAIN_MENU_ROW_HEIGHT - 8,
     )
 
@@ -47,29 +59,47 @@ def draw_main_menu(
     title_font: pygame.font.Font,
     menu_font: pygame.font.Font,
     small_font: pygame.font.Font,
+    splash: pygame.Surface | None = None,
 ) -> None:
     width, height = DISPLAY.base_width, DISPLAY.base_height
     surface.fill((8, 10, 18))
-    vignette = pygame.Surface((width, height), pygame.SRCALPHA)
-    for band in range(8):
-        alpha = 12 + band * 4
-        pygame.draw.rect(
-            vignette,
-            (30, 38, 70, alpha),
-            pygame.Rect(0, band * (height // 8), width, height // 8),
-        )
-    surface.blit(vignette, (0, 0))
 
-    title = title_font.render("Pygame Haxima", True, (245, 228, 160))
-    subtitle = menu_font.render("A Nazghul-inspired redesign prototype", True, (170, 185, 215))
-    tx = (width - title.get_width()) // 2
-    surface.blit(title, (tx, MAIN_MENU_TITLE_Y))
-    surface.blit(subtitle, ((width - subtitle.get_width()) // 2, MAIN_MENU_TITLE_Y + 40))
+    # Top bar (title strip, like the in-game HUD band).
+    hud = pygame.Rect(0, 0, width, TITLE_HUD_HEIGHT)
+    pygame.draw.rect(surface, (18, 22, 34), hud)
+    pygame.draw.rect(surface, (110, 120, 150), hud, 1)
+    if splash is not None:
+        header = title_font.render("Haxima", True, (245, 228, 160))
+    else:
+        header = title_font.render("Pygame Haxima", True, (245, 228, 160))
+    surface.blit(header, (20, 18))
+
+    art_area = title_art_rect(width, height)
+    draw_title_backdrop(surface, art_area)
+    if splash is not None:
+        blit_splash_in_rect(surface, splash, art_area)
+    else:
+        fallback = menu_font.render(
+            "(splash.png not found in worlds/haxima-1.002)",
+            True,
+            (140, 150, 170),
+        )
+        surface.blit(
+            fallback,
+            (
+                art_area.x + (art_area.width - fallback.get_width()) // 2,
+                art_area.centery - fallback.get_height() // 2,
+            ),
+        )
+
+    sidebar = pygame.Rect(width - TITLE_SIDEBAR_WIDTH, TITLE_HUD_HEIGHT, TITLE_SIDEBAR_WIDTH, height - TITLE_HUD_HEIGHT)
+    pygame.draw.rect(surface, (14, 16, 26), sidebar)
+    pygame.draw.rect(surface, (90, 100, 130), sidebar, 1)
 
     pygame.draw.rect(surface, (22, 26, 42), MAIN_MENU_PANEL)
     pygame.draw.rect(surface, (150, 165, 210), MAIN_MENU_PANEL, 2)
     panel_title = menu_font.render("Main Menu", True, (230, 220, 170))
-    surface.blit(panel_title, (MAIN_MENU_PANEL.x + 20, MAIN_MENU_PANEL.y + 16))
+    surface.blit(panel_title, (MAIN_MENU_PANEL.x + 12, MAIN_MENU_PANEL.y + 12))
 
     for index, (_action_id, label) in enumerate(MAIN_MENU_ITEMS):
         row = main_menu_row_rect(index)
@@ -84,8 +114,8 @@ def draw_main_menu(
         surface.blit(text, (row.x + 14, row.y + (row.height - text.get_height()) // 2))
 
     hint = small_font.render(
-        "Arrows / W-S or mouse hover: navigate   Enter / click: select   Esc: back",
+        "Arrows / W-S or hover: navigate   Enter / click: select",
         True,
         (140, 155, 180),
     )
-    surface.blit(hint, ((width - hint.get_width()) // 2, height - 36))
+    surface.blit(hint, ((width - hint.get_width()) // 2, height - 32))

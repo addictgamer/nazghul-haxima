@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import pygame
 
+from pygame_haxima.data.asset_loader import AssetLoader
 from pygame_haxima.data.sprite_atlas import SpriteAtlas
+from pygame_haxima.engine.title_screen import load_title_splash
 from pygame_haxima.domain.models import GameSession, Item
 from pygame_haxima.engine.item_sprites import item_sprite_key
 from pygame_haxima.engine.main_menu import draw_main_menu
@@ -20,8 +22,9 @@ class TextUi:
         ("missing", "Missing Reagents"),
     )
 
-    def __init__(self, atlas: SpriteAtlas) -> None:
+    def __init__(self, atlas: SpriteAtlas, asset_loader: AssetLoader | None = None) -> None:
         self.atlas = atlas
+        self.title_splash = load_title_splash(asset_loader) if asset_loader is not None else None
         self.console_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
         self.cmd_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 22, bold=True)
         self.menu_font = self._choose_font(["consolas", "dejavusansmono", "menlo"], 20)
@@ -286,6 +289,7 @@ class TextUi:
             title_font=self.cmd_font,
             menu_font=self.menu_font,
             small_font=self.small_font,
+            splash=self.title_splash,
         )
         if session.show_save_load_menu:
             self.draw_save_load_menu(surface, session)

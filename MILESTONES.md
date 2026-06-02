@@ -40,6 +40,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Save/load slot modal now supports mouse click interactions and distinct row-card styling for clearer slot separation.
 - Quest/NPC debug state display is now gated behind a dedicated runtime debug toggle key (`F4`).
 - UI layering fix: save/load modal now renders above the sidebar instead of being occluded by it.
+- **Main menu** at startup: New Game, Load Game, Options, Quit; authentic layout with `splash.png` in the map region and menu in the right sidebar (matches Nazghul `nazghul_splash()` + `main_menu()`).
+- Main menu and save/load slot modal support **mouse hover** selection (same highlight as keyboard Up/Down).
+- In-game **Options → Return to Main Menu** returns to the title screen; save/load restores the correct zone via `place_id`.
 - Content migration pipeline is only a starter scaffold (not full Scheme compatibility).
 - Full Haxima content parity is **not** implemented yet.
 
@@ -54,7 +57,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 70% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 74% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -103,6 +106,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
   - [~] Pass 4: extend coverage report to include non-terrain runtime keys and classify unresolved aliases *(runtime coverage now combines tutorial runtime plus converted places/townsfolk/quests probe keys, with alias and unresolved classification; full zone runtime sessions still pending)*.
   - [x] Pass 5: add quality gate test for critical fallbacks (player/NPC/monster/chest/door/item categories).
   - [~] Pass 6: directional/animation variants where source art supports it *(multi-frame sprite animation and directional key probing are now wired in runtime rendering; broader content-specific variant mapping still pending)*.
+  - [x] Pass 7: addon/terrain tile indices use PNG pixel bounds (not only `sprite-sets.scm` row counts); `s_dirt` and other high-index `ss_addon` sprites resolve.
 - [x] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry loaded from `spells.scm` with per-spell `effect_kind` routing for every known spell—traps, summons, cones, tremor, resurrection/time-stop, invisibility/confusion, telekinesis/clone/gate, and remaining utility families; persistent tile fields, mind-control statuses, dispel cleanup, and save/load field persistence are wired; zone-specific quest hooks like `Raise Ship` set quest flags only)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
@@ -110,6 +114,16 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [~] Implement broader world map + zone transitions *(converted **Cloviskeep** loads from JSON; `HAXIMA_PLACE=cloviskeep` or **F6** dev travel; place `entrances` exported and wired to `travel_to` when stepped on; full neighbor graph still pending)*
 - [~] Place object placement from converted SCM *(converter exports `(put …)` placements; Cloviskeep spawns wyrm, drawbridge gate tiles, and lever; **O** toggles lever to open/close bridge)*
 - [ ] Reach “main quest playable” milestone from migrated content.
+
+### Main menu and title screen (completed)
+
+- [x] Startup main menu (New Game / Load Game / Options / Quit) instead of dropping directly into gameplay.
+- [x] Title splash graphics from `worlds/haxima-1.002/splash.png` (1280×960) with `640x480_splash.png` fallback per `kern-init.scm`.
+- [x] Sidebar menu layout aligned with original Nazghul (art left, menu right).
+- [x] Mouse hover updates selected main-menu and save/load slot rows.
+- [x] Load Game from main menu uses slot modal; successful load starts the saved zone.
+- [x] Save/load persists `place_id` and rebuilds Cloviskeep vs tutorial on load.
+- [x] Return to Main Menu from in-game Options (5th option).
 
 ### M8: Packaging + distribution
 
@@ -120,15 +134,22 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 
 ## Technical Debt / Known Gaps
 
-- Sprite-sheet extraction is implemented, but asset availability/mapping coverage is incomplete and still falls back for missing files/keys.
+- Sprite-sheet extraction is implemented; addon sheets may be taller than declared in `sprite-sets.scm`—atlas now clips by PNG size. Other missing files/keys may still fall back.
 - Asset loading had a startup ordering bug (`convert_alpha()` before display init) and is now guarded; keep this invariant when refactoring init order.
 - Scheme bridge is currently an interface stub, not an embedded interpreter.
 - Content conversion now handles selected structured forms, but broad Scheme semantics/behavior are still not interpreted.
-- Test coverage is minimal.
+- Test suite is growing (102+ pytest cases) but does not yet cover full zone quest flows or main-menu E2E in CI.
 - Audio references exist but no verified asset compatibility matrix yet.
 
 ## Recent Updates
 
+- Added **main menu** and **title screen**: `menu_session.py`, `main_menu.py`, `title_screen.py`; game starts at menu; **New Game** / **Load Game** / **Options** / **Quit**; Options includes **Return to Main Menu** when in-game.
+- Added authentic **splash** rendering: loads `splash.png` (or `640x480_splash.png`) from `worlds/haxima-1.002`, centered in left map area per original `nazghul_splash()`.
+- Added **mouse hover** selection for main menu rows and save/load slot rows (updates `main_menu_selected_index` / `save_load_selected_slot` like keyboard navigation).
+- Fixed **dirt terrain graphics**: `SpriteAtlas` no longer rejects tiles past declared `sprite-sets.scm` row count when still inside the PNG (`s_dirt` index 137 on `addons.png`).
+- Extended **M7 Cloviskeep**: `(put …)` placement export in converter; runtime wyrm, drawbridge gate, lever (**O**); quest hook on wyrm defeat; **F6** zone travel; palette/terrain/place loader tests.
+- **Save/load**: `place_id` in save payload; `ContentRegistry.rebuild_place_for_load()`; levers/blocked tiles persisted; load from main menu enters saved zone.
+- Test suite **102** cases: `test_main_menu.py`, `test_title_screen.py`, `test_place_loader.py`, `test_quest_engine.py`, place placement converter test, save/load hover test.
 - Added cross-platform launch scripts and dependency bootstrap:
   - `pygame.sh`
   - `pygame.bat`
@@ -239,8 +260,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 ## Suggested Delivery Sequence
 
 1. Continue M7 sprite parity pass so entity/object visuals are data-driven and fallback-safe.
-2. Build M6 test/CI gates before larger compatibility work.
-3. Iterate M7 zone-by-zone until main quest path is reachable.
+2. Iterate M7 zone-by-zone until main quest path is reachable (Cloviskeep combat/quests as first converted loop).
+3. Align main menu entries with original where useful (Tutorial, Journey Onward, Credits, Settings parity).
 4. Close with M8 release packaging and release process docs.
 
 ## Practical Definition of “Playable Alpha”
@@ -248,9 +269,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 All must be true:
 
 - [x] One authentic converted Haxima zone loads from converted data.
-- [ ] Dialogue, looting, and combat loop works without manual data patches.
-- [ ] Save/load survives full gameplay cycle in that zone.
-- [ ] Basic automated tests pass locally.
+- [~] Dialogue, looting, and combat loop works without manual data patches *(tutorial complete; Cloviskeep has guard talk, wyrm combat, lever/bridge—broader loot/dialogue from converted townsfolk still pending)*.
+- [~] Save/load survives full gameplay cycle in that zone *(round-trip tests + `place_id` restore; full manual play-through in Cloviskeep still to verify)*.
+- [x] Basic automated tests pass locally (102+ pytest cases).
 - [ ] Linux + Windows launch scripts both verified.
 
 ## Practical Definition of “Full Port”
