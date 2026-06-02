@@ -73,6 +73,11 @@ class QuestEngine:
     def on_chest_opened(self, session: GameSession, chest_id: str) -> None:
         self._set_flag(session, "questentry-thiefrune", f"opened:{chest_id}", True)
 
+    def on_monster_defeated(self, session: GameSession, entity_id: str) -> None:
+        if "wyrm" in entity_id:
+            self._set_flag(session, "questentry-calltoarms", "defeated_wyrm", True)
+            session.append_log("The serpent in the keep is slain.")
+
     def on_quest_flag(self, session: GameSession, flag_key: str) -> None:
         if flag_key == "quest:ship_raiseable":
             self._assign(session, "questentry-rune-c")

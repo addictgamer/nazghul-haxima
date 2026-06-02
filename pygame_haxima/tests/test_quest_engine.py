@@ -34,3 +34,15 @@ def test_talk_to_guard_completes_whereami() -> None:
     active = session.quest_progress.get("active")
     assert isinstance(active, dict)
     assert active.get("questentry-whereami", {}).get("stage") == "completed"
+
+
+def test_wyrm_defeat_sets_call_to_arms_flag() -> None:
+    root = Path(__file__).resolve().parents[1]
+    engine = QuestEngine.load(root / "converted_data")
+    registry = ContentRegistry(root)
+    session = registry.make_new_session("cloviskeep")
+    engine.on_monster_defeated(session, "wyrm_1")
+    active = session.quest_progress.get("active")
+    assert isinstance(active, dict)
+    flags = active.get("questentry-calltoarms", {}).get("flags", {})
+    assert flags.get("defeated_wyrm") is True

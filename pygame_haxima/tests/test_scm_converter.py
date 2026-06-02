@@ -118,6 +118,46 @@ def test_convert_quest_file_extracts_qstmk_and_update_refs(tmp_path) -> None:
     ]
 
 
+def test_convert_place_file_extracts_put_placements(tmp_path) -> None:
+    src = tmp_path / "cloviskeep.scm"
+    dst = tmp_path / "cloviskeep.place.json"
+    src.write_text(
+        """
+        (kern-mk-place
+          'p_cloviskeep
+          "Cloviskeep"
+          s_castle
+          m_cloviskeep
+          #f #f #f #f
+          nil
+          nil
+          (list
+            (put (mk-monman) 0 0)
+            (put (spawn-pt2 'wyrm 'body 'segment 'tail) 22 53)
+            (put (kern-tag 'clovis-drawbridge (mk-drawbridge north)) 32 32)
+            (put (mk-lever 'clovis-drawbridge) 33 30))
+          (list 'on-entry-to-dungeon-room)
+          (list))
+        """,
+        encoding="utf-8",
+    )
+
+    converted = ScmConverter().convert_place_file(src, dst)
+    payload = json.loads(dst.read_text(encoding="utf-8"))
+
+    assert converted == 1
+    place = payload["places"][0]
+    assert place["objects_count"] == 4
+    kinds = [entry["kind"] for entry in place["placements"]]
+    assert kinds == ["monman", "monster_spawn", "drawbridge", "lever"]
+    wyrm = place["placements"][1]
+    assert wyrm["species"] == "wyrm"
+    assert wyrm["x"] == 22 and wyrm["y"] == 53
+    bridge = place["placements"][2]
+    assert bridge["bridge_id"] == "clovis-drawbridge"
+    assert bridge["direction"] == "north"
+
+
 def test_convert_townsfolk_resolves_load_chain_and_extracts_metadata(tmp_path) -> None:
     world_dir = tmp_path / "world"
     src_dir = world_dir / "townsfolk"

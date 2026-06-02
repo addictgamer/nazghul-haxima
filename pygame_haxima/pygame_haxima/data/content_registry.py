@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from pygame_haxima.data.place_loader import build_place_by_key
+from pygame_haxima.data.place_placements import place_key_from_id
 from pygame_haxima.data.quest_engine import QuestEngine
 from pygame_haxima.data.sprite_profile import load_sprite_profile
 from pygame_haxima.domain.models import GameSession, Mode
@@ -35,6 +36,14 @@ class ContentRegistry:
         self.quest_engine.bootstrap_new_game(session)
         self.quest_engine.on_place_enter(session)
         return session
+
+    def rebuild_place_for_load(self, session: GameSession, saved_place_id: str) -> None:
+        if session.place.place_id == saved_place_id:
+            return
+        key = place_key_from_id(saved_place_id)
+        sprite_profile = load_sprite_profile(self.converted_data_dir)
+        place, _ = build_place_by_key(key, self.converted_data_dir, sprite_profile)
+        session.place = place
 
     def travel_to(self, session: GameSession, place_key: str) -> None:
         sprite_profile = load_sprite_profile(self.converted_data_dir)

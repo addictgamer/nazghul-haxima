@@ -38,3 +38,23 @@ def test_cloviskeep_slice_spawns_party_on_passable_tile() -> None:
     assert place.passable(party.x, party.y)
     assert len(place.npcs) == 1
     assert party.members[0].x == party.x
+    assert any(monster.name == "Wyrm" for monster in place.monsters)
+    assert len(place.levers) == 1
+    assert place.levers[0].bridge_id == "clovis-drawbridge"
+    assert (32, 31) in place.blocked_tiles
+
+
+def test_cloviskeep_lever_opens_drawbridge() -> None:
+    root = Path(__file__).resolve().parents[1]
+    converted = root / "converted_data"
+    place, party = build_cloviskeep_slice(converted)
+    lever = place.levers[0]
+    gate = place.bridge_blocked[lever.bridge_id]
+    assert gate.issubset(place.blocked_tiles)
+
+    lever.activated = True
+    place.blocked_tiles.difference_update(gate)
+    assert place.passable(32, 31)
+
+    party.x, party.y = 32, 31
+    assert party.x == 32 and party.y == 31

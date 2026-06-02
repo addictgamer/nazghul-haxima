@@ -54,7 +54,7 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 | M4 | Content import pipeline | Completed | 100% | Reliable converters for terrain/map/place/NPC/quest data |
 | M5 | Save/load robustness | Completed | 100% | Stable schema versioning + full world state restore |
 | M6 | Testing + quality gates | Completed | 100% | Unit/integration tests + CI smoke run + regression suite |
-| M7 | Full Haxima compatibility | In Progress | 62% | Main quest path playable with migrated content/system parity |
+| M7 | Full Haxima compatibility | In Progress | 70% | Main quest path playable with migrated content/system parity |
 | M8 | Packaging + distribution | Not Started | 15% | Reproducible local builds, docs, release artifacts |
 
 ## What Remains To Implement
@@ -106,8 +106,9 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - [x] Implement spell system parity (`spells.scm` + reagents behavior) *(spell registry loaded from `spells.scm` with per-spell `effect_kind` routing for every known spell—traps, summons, cones, tremor, resurrection/time-stop, invisibility/confusion, telekinesis/clone/gate, and remaining utility families; persistent tile fields, mind-control statuses, dispel cleanup, and save/load field persistence are wired; zone-specific quest hooks like `Raise Ship` set quest flags only)*.
 - [ ] Implement vehicle system.
 - [ ] Implement diplomacy/faction mechanics.
-- [~] Implement quest engine and scripted world events *(quest registry loads from converted `quests/*.quests.json`, bootstrap/active/completed tracking, talk/chest/place-entry/flag hooks, HUD quest line, save/load `quest_progress`; full Scheme callback parity still pending)*
-- [~] Implement broader world map + zone transitions *(converted **Cloviskeep** (`p_cloviskeep` + `m_cloviskeep`) loads from JSON via palette/terrain/map pipeline; `HAXIMA_PLACE=cloviskeep` or **F6** travel between tutorial and Cloviskeep; full neighbor graph and entrance placement still pending)*
+- [~] Implement quest engine and scripted world events *(quest registry loads from converted `quests/*.quests.json`, bootstrap/active/completed tracking, talk/chest/place-entry/flag/monster-defeat hooks, HUD quest line, save/load `quest_progress`; full Scheme callback parity still pending)*
+- [~] Implement broader world map + zone transitions *(converted **Cloviskeep** loads from JSON; `HAXIMA_PLACE=cloviskeep` or **F6** dev travel; place `entrances` exported and wired to `travel_to` when stepped on; full neighbor graph still pending)*
+- [~] Place object placement from converted SCM *(converter exports `(put …)` placements; Cloviskeep spawns wyrm, drawbridge gate tiles, and lever; **O** toggles lever to open/close bridge)*
 - [ ] Reach “main quest playable” milestone from migrated content.
 
 ### M8: Packaging + distribution
@@ -232,6 +233,8 @@ This file tracks project status for the Pygame redesign of Nazghul/Haxima.
 - Added converted-zone loader: `palette.scm` → `palettes.runtime.json`, terrain registry, and `place_loader` build **Cloviskeep** (64×64) from converted map/place JSON with passable spawn + guard NPC.
 - Added quest engine scaffold: loads converted quest metadata, bootstraps `Where am I?`, assigns on Cloviskeep entry hook, completes on guard talk, persists `quest_progress` in saves, shows active quests in HUD.
 - Added zone travel: **F6** toggles tutorial ↔ Cloviskeep when using default session; `HAXIMA_PLACE=cloviskeep` starts directly in the converted keep.
+- Fixed dirt/addon sprite atlas bounds to match Nazghul (sheet taller than declared rows); `s_dirt` and 40 other addon indices now resolve.
+- Added place `(put …)` placement export/import: Cloviskeep wyrm at map coords, drawbridge blocked tile + lever (**O**), quest flag on wyrm defeat; save/load rebuilds place from `place_id` (tutorial ↔ keep).
 
 ## Suggested Delivery Sequence
 

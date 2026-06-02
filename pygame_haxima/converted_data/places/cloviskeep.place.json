@@ -14,10 +14,41 @@
       "subplaces": [],
       "neighbors": [],
       "objects_count": 4,
+      "placements": [
+        {
+          "kind": "monman",
+          "x": 0,
+          "y": 0,
+          "summary": "(mk-monman)"
+        },
+        {
+          "kind": "monster_spawn",
+          "x": 22,
+          "y": 53,
+          "species": "wyrm",
+          "summary": "(spawn-pt2 'wyrm 'serpentine-make-body 'wyrm-segment 'wyrm-tail)"
+        },
+        {
+          "kind": "drawbridge",
+          "x": 32,
+          "y": 32,
+          "bridge_id": "clovis-drawbridge",
+          "direction": "north",
+          "summary": "(kern-tag 'clovis-drawbridge (mk-drawbridge north))"
+        },
+        {
+          "kind": "lever",
+          "x": 33,
+          "y": 30,
+          "bridge_id": "clovis-drawbridge",
+          "summary": "(mk-lever 'clovis-drawbridge)"
+        }
+      ],
       "on_entry_hooks": [
         "on-entry-to-dungeon-room"
       ],
       "entrances_count": 0,
+      "entrances": [],
       "source_file": "cloviskeep.scm"
     }
   ]

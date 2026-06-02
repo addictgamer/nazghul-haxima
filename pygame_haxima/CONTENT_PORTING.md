@@ -13,7 +13,7 @@ This project keeps Phase 4 in-tree so Haxima content can be migrated incremental
 1. `worlds/haxima-1.002/terrains.scm` -> terrain registry JSON
 2. `worlds/haxima-1.002/palette.scm` -> palette token map JSON (`converted_data/palettes.runtime.json`)
 3. `worlds/haxima-1.002/maps/*.scm` -> static map JSON chunks (`converted_data/maps/*.map.json`)
-4. `worlds/haxima-1.002/places/*.scm` -> place metadata and placement (`converted_data/places/*.place.json`)
+4. `worlds/haxima-1.002/places/*.scm` -> place metadata and `(put …)` placements (`placements` in `converted_data/places/*.place.json`; runtime via `place_placements.py`)
 5. `worlds/haxima-1.002/townsfolk/*.scm` (plus loaded files) -> NPC conversation/schedule/factory metadata (`converted_data/townsfolk.runtime.json`)
 6. `worlds/haxima-1.002/quests-*.scm` -> quest metadata/state-transition scaffolds (`converted_data/quests/*.quests.json`)
 
@@ -22,6 +22,7 @@ Runtime loading (Pygame):
 - `pygame_haxima.data.place_loader` builds explorable places from converted map + palette + terrain data.
 - `HAXIMA_PLACE=cloviskeep` starts in converted Cloviskeep; default is tutorial slice.
 - In-game **F6** travels between tutorial wilderness and Cloviskeep (dev/content preview).
+- Cloviskeep: wyrm spawn, drawbridge gate tile, lever (**O** to toggle). Saves store `place_id` and reload the correct zone.
 
 ## Immediate command
 

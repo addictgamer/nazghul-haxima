@@ -63,6 +63,26 @@ def test_save_load_round_trip_persists_runtime_state(tmp_path) -> None:
     assert loaded.combat.enemy_ids == ["wolf_1"]
 
 
+def test_load_rebuilds_cloviskeep_from_saved_place_id(tmp_path) -> None:
+    registry = ContentRegistry()
+    manager = SaveManager(tmp_path / "saves", content_registry=registry)
+    session = registry.make_new_session("cloviskeep")
+    session.party.x = 12
+    session.party.y = 14
+    session.party.members[0].x = 12
+    session.party.members[0].y = 14
+    if session.place.monsters:
+        session.place.monsters[0].hp = 3
+    manager.save_slot(4, session)
+
+    loaded = registry.make_new_session("tutorial")
+    assert loaded.place.place_id == "tutorial_wilderness"
+    assert manager.load_slot(4, loaded) is True
+    assert loaded.place.place_id == "p_cloviskeep"
+    assert loaded.party.x == 12
+    assert loaded.party.y == 14
+
+
 def test_load_corrupt_slot_quarantines_file(tmp_path) -> None:
     manager = SaveManager(tmp_path / "saves")
     slot_path = tmp_path / "saves" / "slot1-save.json"

@@ -43,8 +43,8 @@ def run() -> int:
     )
     keymap = KeyMap()
     input_controller = InputController(keymap=keymap, renderer=renderer)
-    save_manager = SaveManager(project_root / "saves")
     content_registry = ContentRegistry(project_root)
+    save_manager = SaveManager(project_root / "saves", content_registry=content_registry)
     loop = TurnLoop(
         renderer=renderer,
         audio=AudioManager(assets),

@@ -605,9 +605,9 @@ class ScmConverter:
 
         if place_id is None or name is None:
             return None
-        objects_count = self._count_list_items(objects_expr)
+        placements = self._extract_place_placements(objects_expr)
         hooks = self._extract_symbol_list(hooks_expr)
-        entrances_count = self._count_list_items(entrances_expr)
+        entrances = self._extract_place_entrances(entrances_expr)
         return {
             "id": place_id,
             "name": name,
@@ -619,9 +619,11 @@ class ScmConverter:
             "tmp_combat": tmp_combat,
             "subplaces": subplaces,
             "neighbors": neighbors,
-            "objects_count": objects_count,
+            "objects_count": len(placements),
+            "placements": placements,
             "on_entry_hooks": hooks,
-            "entrances_count": entrances_count,
+            "entrances_count": len(entrances),
+            "entrances": entrances,
             "source_file": src.name,
         }
 
@@ -672,6 +674,100 @@ class ScmConverter:
             if sym is not None:
                 out.append(sym)
         return out
+
+    def _extract_place_placements(self, objects_expr: Expr | None) -> list[dict[str, object]]:
+        if not isinstance(objects_expr, list) or not objects_expr:
+            return []
+        if self._symbol_name(objects_expr[0]) != "list":
+            return []
+        placements: list[dict[str, object]] = []
+        for item in objects_expr[1:]:
+            parsed = self._parse_put_placement(item)
+            if parsed is not None:
+                placements.append(parsed)
+        return placements
+
+    def _parse_put_placement(self, expr: Expr) -> dict[str, object] | None:
+        if not isinstance(expr, list) or len(expr) < 4:
+            return None
+        if self._symbol_name(expr[0]) != "put":
+            return None
+        x = self._resolve_to_number(expr[-2], {})
+        y = self._resolve_to_number(expr[-1], {})
+        if x is None or y is None:
+            return None
+        object_expr = expr[1]
+        classified = self._classify_placement_object(object_expr)
+        return {
+            "kind": classified["kind"],
+            "x": int(x),
+            "y": int(y),
+            **{key: value for key, value in classified.items() if key != "kind"},
+        }
+
+    def _classify_placement_object(self, object_expr: Expr) -> dict[str, object]:
+        if not isinstance(object_expr, list) or not object_expr:
+            return {"kind": "unknown", "summary": self._expr_to_string(object_expr)}
+        head = self._symbol_name(object_expr[0])
+        if head == "spawn-pt2" and len(object_expr) > 1:
+            species = self._resolve_to_symbol_string(object_expr[1], {})
+            return {
+                "kind": "monster_spawn",
+                "species": species or "unknown",
+                "summary": self._expr_to_string(object_expr),
+            }
+        if head == "mk-lever" and len(object_expr) > 1:
+            bridge_id = self._resolve_to_symbol_string(object_expr[1], {})
+            return {
+                "kind": "lever",
+                "bridge_id": bridge_id or "unknown",
+                "summary": self._expr_to_string(object_expr),
+            }
+        if head == "mk-drawbridge" and len(object_expr) > 1:
+            direction = self._resolve_to_symbol_string(object_expr[1], {})
+            return {
+                "kind": "drawbridge",
+                "direction": direction or "north",
+                "summary": self._expr_to_string(object_expr),
+            }
+        if head == "kern-tag" and len(object_expr) > 2:
+            tag = self._resolve_to_symbol_string(object_expr[1], {})
+            inner = object_expr[2]
+            inner_kind = self._classify_placement_object(inner)
+            if inner_kind.get("kind") == "drawbridge":
+                return {
+                    "kind": "drawbridge",
+                    "bridge_id": tag,
+                    "direction": inner_kind.get("direction", "north"),
+                    "summary": self._expr_to_string(object_expr),
+                }
+            return {
+                "kind": "tagged",
+                "tag": tag,
+                "summary": self._expr_to_string(object_expr),
+            }
+        if head == "mk-monman":
+            return {"kind": "monman", "summary": self._expr_to_string(object_expr)}
+        return {"kind": "unknown", "summary": self._expr_to_string(object_expr)}
+
+    def _extract_place_entrances(self, entrances_expr: Expr | None) -> list[dict[str, object]]:
+        if not isinstance(entrances_expr, list) or not entrances_expr:
+            return []
+        if self._symbol_name(entrances_expr[0]) != "list":
+            return []
+        entrances: list[dict[str, object]] = []
+        for item in entrances_expr[1:]:
+            if not isinstance(item, list) or len(item) < 4:
+                continue
+            if self._symbol_name(item[0]) != "list":
+                continue
+            dest = self._resolve_to_symbol_string(item[1], {})
+            x = self._resolve_to_number(item[2], {})
+            y = self._resolve_to_number(item[3], {})
+            if dest is None or x is None or y is None:
+                continue
+            entrances.append({"dest_place": dest, "x": int(x), "y": int(y)})
+        return entrances
 
     def _is_define(self, expr: Expr) -> bool:
         if not isinstance(expr, list) or len(expr) < 3:

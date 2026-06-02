@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from pygame_haxima.data.place_placements import apply_place_placements
 from pygame_haxima.data.sprite_profile import SpriteProfile
 from pygame_haxima.data.terrain_registry import default_unknown_terrain, load_terrain_registry
 from pygame_haxima.data.tutorial_slice import build_tutorial_place
-from pygame_haxima.domain.models import Entity, Npc, Party, Place, Tile
+from pygame_haxima.domain.models import Entity, Npc, Party, Place, Terrain, Tile
 
 
 def _read_json(path: Path) -> dict:
@@ -117,7 +118,7 @@ def build_place_from_converted(
     hooks = meta.get("on_entry_hooks")
     hook_list = [hook for hook in hooks if isinstance(hook, str)] if isinstance(hooks, list) else []
 
-    return Place(
+    place = Place(
         place_id=place_id,
         name=str(meta.get("name", place_id)),
         width=width,
@@ -130,6 +131,9 @@ def build_place_from_converted(
         spell_context=_spell_context_for_place(meta),
         on_entry_hooks=hook_list,
     )
+    profile = sprite_profile or SpriteProfile(frozenset())
+    apply_place_placements(place, meta, profile)
+    return place
 
 
 def build_cloviskeep_slice(
@@ -168,6 +172,15 @@ def build_cloviskeep_slice(
         },
     )
     place.npcs.append(guard)
+
+    # Ensure inner-yard spawn stays passable if drawbridge blocks nearby tiles.
+    if not place.passable(spawn_x, spawn_y):
+        spawn_x, spawn_y = _find_spawn_tile(place, preferred=None)
+        party.x, party.y = spawn_x, spawn_y
+        party.members[0].x, party.members[0].y = spawn_x, spawn_y
+        guard.x = min(spawn_x + 2, place.width - 2)
+        guard.y = spawn_y
+
     return place, party
 
 

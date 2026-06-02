@@ -180,6 +180,7 @@ class TurnLoop:
         self._apply_tile_field_entry(session, nx, ny, session.party.lead(), "You")
         session.advance_turn()
         session.party.food = max(0, session.party.food - 1)
+        self._check_place_entrance(session)
         self._check_auto_combat(session)
         self._npc_turn(session)
 
@@ -211,8 +212,9 @@ class TurnLoop:
                 (170, 255, 170),
                 world_pos=(monster.x, monster.y),
             )
-            session.quest_flags[f"defeated:{monster.entity_id}"] = True
-            session.victory = True
+            self._mark_monster_defeated(session, monster)
+            if session.place.place_id == "tutorial_wilderness":
+                session.victory = True
             session.mode = Mode.EXPLORE
             session.combat.active = False
             session.combat.enemy_ids = []
@@ -241,6 +243,10 @@ class TurnLoop:
             session.append_log("You see a closed chest.")
         if monster is not None:
             session.append_log(f"You see a hostile {monster.name}.")
+        lever = session.place.lever_at(x, y)
+        if lever is not None:
+            state = "lowered" if lever.activated else "raised"
+            session.append_log(f"You see a drawbridge lever ({state}).")
         if session.party.inventory:
             session.append_log("Inventory: " + ", ".join(item.name for item in session.party.inventory))
         else:
@@ -717,6 +723,15 @@ class TurnLoop:
             self._end_targeting(session)
             return
         if action == "open":
+            lever = session.place.lever_at(x, y)
+            if lever is not None:
+                if self._distance_from_party(session, x, y) > 1:
+                    session.append_log("You can't perform that action there.")
+                    return
+                self._toggle_lever(session, lever)
+                session.advance_turn()
+                self._end_targeting(session)
+                return
             chest = session.place.chest_at(x, y)
             if chest is None:
                 session.append_log("No chest there.")
@@ -802,7 +817,10 @@ class TurnLoop:
         if action == "talk":
             return any(session.place.npc_at(x, y) is not None for x, y in candidates)
         if action == "open":
-            return any(session.place.chest_at(x, y) is not None for x, y in candidates)
+            return any(
+                session.place.chest_at(x, y) is not None or session.place.lever_at(x, y) is not None
+                for x, y in candidates
+            )
         if action == "attack":
             return any(session.place.monster_at(x, y) is not None for x, y in candidates)
         cast_spell_id = self._cast_spell_id(action)
@@ -830,7 +848,11 @@ class TurnLoop:
             matches = [(x, y) for x, y in candidates if session.place.npc_at(x, y) is not None]
             return matches[0] if matches else (px, py)
         if action == "open":
-            matches = [(x, y) for x, y in candidates if session.place.chest_at(x, y) is not None]
+            matches = [
+                (x, y)
+                for x, y in candidates
+                if session.place.chest_at(x, y) is not None or session.place.lever_at(x, y) is not None
+            ]
             return matches[0] if matches else (px, py)
         if action == "attack":
             matches = [(x, y) for x, y in candidates if session.place.monster_at(x, y) is not None]
@@ -2307,6 +2329,33 @@ class TurnLoop:
             session.append_log(f"{entity.name} is defeated.")
             session.quest_flags[f"defeated:{entity.entity_id}"] = True
             session.victory = all(not monster.is_alive() for monster in session.place.monsters)
+
+    def _mark_monster_defeated(self, session: GameSession, monster: Entity) -> None:
+        session.quest_flags[f"defeated:{monster.entity_id}"] = True
+        self.quest_engine.on_monster_defeated(session, monster.entity_id)
+
+    def _toggle_lever(self, session: GameSession, lever) -> None:
+        lever.activated = not lever.activated
+        lever.sprite_key = "s_L_lever_down" if lever.activated else "s_L_lever_up"
+        gate_tiles = session.place.bridge_blocked.get(lever.bridge_id, set())
+        if lever.activated:
+            session.place.blocked_tiles.difference_update(gate_tiles)
+            session.append_log("You lower the lever. The drawbridge opens.")
+        else:
+            session.place.blocked_tiles.update(gate_tiles)
+            session.append_log("You raise the lever. The drawbridge closes.")
+
+    def _check_place_entrance(self, session: GameSession) -> None:
+        if self.content_registry is None:
+            return
+        for entrance in session.place.entrances:
+            if (session.party.x, session.party.y) != (entrance.x, entrance.y):
+                continue
+            from pygame_haxima.data.place_placements import place_key_from_id
+
+            dest_key = place_key_from_id(entrance.dest_place)
+            self.content_registry.travel_to(session, dest_key)
+            return
 
     def _party_can_enter_tile(self, session: GameSession, x: int, y: int) -> bool:
         if not session.place.passable(x, y):

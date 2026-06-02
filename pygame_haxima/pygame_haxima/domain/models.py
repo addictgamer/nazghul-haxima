@@ -98,6 +98,23 @@ class Chest:
 
 
 @dataclass
+class Lever:
+    lever_id: str
+    bridge_id: str
+    x: int
+    y: int
+    activated: bool = False
+    sprite_key: str = "s_L_lever_up"
+
+
+@dataclass
+class PlaceEntrance:
+    dest_place: str
+    x: int
+    y: int
+
+
+@dataclass
 class Trap:
     trap_id: str
     x: int
@@ -126,6 +143,10 @@ class Place:
     monsters: list[Entity] = field(default_factory=list)
     chests: list[Chest] = field(default_factory=list)
     traps: list[Trap] = field(default_factory=list)
+    levers: list[Lever] = field(default_factory=list)
+    blocked_tiles: set[tuple[int, int]] = field(default_factory=set)
+    bridge_blocked: dict[str, set[tuple[int, int]]] = field(default_factory=dict)
+    entrances: list[PlaceEntrance] = field(default_factory=list)
     ground_items: dict[tuple[int, int], list[Item]] = field(default_factory=dict)
     tile_fields: dict[tuple[int, int], TileField] = field(default_factory=dict)
     spell_context: str = "context-town"
@@ -144,6 +165,8 @@ class Place:
     def passable(self, x: int, y: int) -> bool:
         if not self.in_bounds(x, y):
             return False
+        if (x, y) in self.blocked_tiles:
+            return False
         terrain = self.terrain_at(x, y)
         if not terrain.passable:
             return False
@@ -151,6 +174,12 @@ class Place:
             if monster.is_alive() and (monster.x, monster.y) == (x, y):
                 return False
         return True
+
+    def lever_at(self, x: int, y: int) -> Lever | None:
+        for lever in self.levers:
+            if (lever.x, lever.y) == (x, y):
+                return lever
+        return None
 
     def chest_at(self, x: int, y: int) -> Chest | None:
         for chest in self.chests:

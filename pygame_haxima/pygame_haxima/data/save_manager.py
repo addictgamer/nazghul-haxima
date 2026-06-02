@@ -4,7 +4,8 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from pygame_haxima.domain.models import CombatState, Entity, GameSession, Item, Mode, TileField
+from pygame_haxima.data.content_registry import ContentRegistry
+from pygame_haxima.domain.models import CombatState, Entity, GameSession, Item, Lever, Mode, TileField
 from pygame_haxima.engine.spells import known_spell_ids
 
 CURRENT_SAVE_VERSION = 1
@@ -12,8 +13,9 @@ SAVE_SLOT_COUNT = 6
 
 
 class SaveManager:
-    def __init__(self, save_dir: Path) -> None:
+    def __init__(self, save_dir: Path, content_registry: ContentRegistry | None = None) -> None:
         self.save_dir = save_dir
+        self.content_registry = content_registry
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.default_path = self.save_dir / "slot1-save.json"
         self.last_error: str | None = None
@@ -82,6 +84,18 @@ class SaveManager:
                 for npc in session.place.npcs
             ],
             "monsters": [asdict(monster) for monster in session.place.monsters],
+            "levers": [
+                {
+                    "lever_id": lever.lever_id,
+                    "bridge_id": lever.bridge_id,
+                    "x": lever.x,
+                    "y": lever.y,
+                    "activated": lever.activated,
+                    "sprite_key": lever.sprite_key,
+                }
+                for lever in session.place.levers
+            ],
+            "blocked_tiles": [f"{x},{y}" for x, y in sorted(session.place.blocked_tiles)],
             "ground_items": {
                 f"{x},{y}": [asdict(item) for item in items]
                 for (x, y), items in session.place.ground_items.items()
@@ -117,6 +131,9 @@ class SaveManager:
 
         try:
             payload = self._migrate_payload(payload)
+            saved_place_id = payload.get("place_id")
+            if isinstance(saved_place_id, str) and self.content_registry is not None:
+                self.content_registry.rebuild_place_for_load(session, saved_place_id)
             party_payload = payload["party"]
             members_payload = party_payload.get("members", [])
             if members_payload:
@@ -220,16 +237,64 @@ class SaveManager:
                     npc.x = x
                     npc.y = y
             monsters_by_id = {m.entity_id: m for m in session.place.monsters}
-            for monster_payload in payload.get("monsters", []):
-                monster = monsters_by_id.get(monster_payload["entity_id"])
-                if monster is None:
+            saved_monsters = payload.get("monsters", [])
+            if isinstance(saved_monsters, list):
+                for monster_payload in saved_monsters:
+                    if not isinstance(monster_payload, dict):
+                        continue
+                    entity_id = monster_payload.get("entity_id")
+                    if not isinstance(entity_id, str):
+                        continue
+                    monster = monsters_by_id.get(entity_id)
+                    if monster is None:
+                        monster = Entity(
+                            entity_id=entity_id,
+                            name=str(monster_payload.get("name", entity_id)),
+                            x=int(monster_payload.get("x", 0)),
+                            y=int(monster_payload.get("y", 0)),
+                            sprite_key=str(monster_payload.get("sprite_key", "s_wolf")),
+                            hp=int(monster_payload.get("hp", 1)),
+                            max_hp=int(monster_payload.get("max_hp", 1)),
+                            ap=int(monster_payload.get("ap", 50)),
+                            attack=int(monster_payload.get("attack", 3)),
+                            defense=int(monster_payload.get("defense", 1)),
+                            hostile=bool(monster_payload.get("hostile", True)),
+                        )
+                        session.place.monsters.append(monster)
+                        monsters_by_id[entity_id] = monster
+                        continue
+                    monster.hp = int(monster_payload.get("hp", monster.hp))
+                    monster.x = int(monster_payload.get("x", monster.x))
+                    monster.y = int(monster_payload.get("y", monster.y))
+                    facing = monster_payload.get("facing")
+                    if isinstance(facing, str) and facing in {"n", "s", "e", "w"}:
+                        monster.facing = facing
+                session.place.monsters = [
+                    monster for monster in session.place.monsters if monster.is_alive()
+                ]
+
+            levers_by_id = {lever.lever_id: lever for lever in session.place.levers}
+            for lever_payload in payload.get("levers", []):
+                if not isinstance(lever_payload, dict):
                     continue
-                monster.hp = monster_payload["hp"]
-                monster.x = monster_payload["x"]
-                monster.y = monster_payload["y"]
-                facing = monster_payload.get("facing")
-                if isinstance(facing, str) and facing in {"n", "s", "e", "w"}:
-                    monster.facing = facing
+                lever = levers_by_id.get(lever_payload.get("lever_id"))
+                if lever is None:
+                    continue
+                lever.activated = bool(lever_payload.get("activated", lever.activated))
+                sprite_key = lever_payload.get("sprite_key")
+                if isinstance(sprite_key, str):
+                    lever.sprite_key = sprite_key
+            blocked_payload = payload.get("blocked_tiles", [])
+            if isinstance(blocked_payload, list):
+                session.place.blocked_tiles = set()
+                for key in blocked_payload:
+                    if not isinstance(key, str) or "," not in key:
+                        continue
+                    x_str, y_str = key.split(",", maxsplit=1)
+                    try:
+                        session.place.blocked_tiles.add((int(x_str), int(y_str)))
+                    except ValueError:
+                        continue
 
             ground_payload = payload.get("ground_items", {})
             session.place.ground_items.clear()
